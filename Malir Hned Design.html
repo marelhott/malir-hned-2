@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malíř Hned – 3 Design Variace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: 'Outfit', sans-serif; }</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel">
+
+// ================================================================
+// MALÍŘ HNED — 3 VIZUÁLNÍ SMĚRY
+// ================================================================
+
+// ── BAREVNÉ SYSTÉMY ──────────────────────────────────────────
+
+const TA = {
+  name: 'Teplá řemeslná',
+  bg: '#f0ece6',
+  surface: '#ffffff',
+  border: 'rgba(175,165,148,0.28)',
+  text: '#18170f',
+  textMid: '#7a7268',
+  textLight: '#b8b0a4',
+  accent: '#2a7a4e',
+  accentSoft: '#e6f3ec',
+  accentShadow: 'rgba(42,122,78,0.28)',
+  warm: '#f0be38',
+  warmSoft: '#fef8e0',
+  warmBorder: 'rgba(220,182,75,0.45)',
+  panelShadow: '0 2px 8px rgba(20,14,6,0.04), 0 24px 64px rgba(20,14,6,0.09)',
+  cardShadow: '0 1px 4px rgba(20,14,6,0.04), 0 8px 24px rgba(20,14,6,0.07)',
+  r: 32, cr: 18, br: 13,
+};
+
+const TB = {
+  name: 'Vzdušná moderní',
+  bg: '#f3f2ee',
+  surface: '#ffffff',
+  border: 'rgba(162,158,146,0.24)',
+  text: '#141414',
+  textMid: '#888880',
+  textLight: '#c2bfba',
+  accent: '#3a9460',
+  accentSoft: '#ecf8f1',
+  accentShadow: 'rgba(58,148,96,0.26)',
+  warm: '#4878f0',
+  warmSoft: '#edf1ff',
+  warmBorder: 'rgba(72,120,240,0.22)',
+  panelShadow: '0 2px 8px rgba(14,13,10,0.04), 0 18px 52px rgba(14,13,10,0.07)',
+  cardShadow: '0 1px 3px rgba(14,13,10,0.03), 0 6px 20px rgba(14,13,10,0.06)',
+  r: 28, cr: 16, br: 12,
+};
+
+const TC = {
+  name: 'Prémiová editorial',
+  bg: '#eae6df',
+  surface: '#ffffff',
+  border: 'rgba(158,150,136,0.24)',
+  text: '#100f0a',
+  textMid: '#6a6560',
+  textLight: '#b0a9a0',
+  accent: '#1b5e36',
+  accentSoft: '#e3f0e8',
+  accentShadow: 'rgba(27,94,54,0.28)',
+  warm: '#b8821c',
+  warmSoft: '#fdf3e0',
+  warmBorder: 'rgba(185,146,50,0.32)',
+  panelShadow: '0 3px 10px rgba(10,8,5,0.05), 0 28px 70px rgba(10,8,5,0.10)',
+  cardShadow: '0 1px 5px rgba(10,8,5,0.04), 0 10px 30px rgba(10,8,5,0.08)',
+  r: 42, cr: 22, br: 16,
+};
+
+// ── SDÍLENÉ KOMPONENTY ────────────────────────────────────────
+
+function SiteNav({ t }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 48px', height: 64, flexShrink: 0,
+      background: 'rgba(255,255,255,0.75)',
+      borderBottom: `1px solid ${t.border}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 9, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 16 4-4m2-6 2 2m-5.5 9.5L5 19l1.5-3.5L15 7l2 2-8.5 8.5Z" />
+          </svg>
+        </div>
+        <span style={{ fontSize: 16, fontWeight: 500, color: t.text, letterSpacing: '-0.03em' }}>Malíř Hned</span>
+      </div>
+      <div style={{ display: 'flex', gap: 36 }}>
+        {['Jak to funguje', 'Malíři', 'Ceník'].map(l => (
+          <span key={l} style={{ fontSize: 15, fontWeight: 300, color: t.textMid }}>{l}</span>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <span style={{ fontSize: 14, fontWeight: 300, color: t.textMid }}>Výsledek ukázky</span>
+        <div style={{ padding: '7px 18px', borderRadius: t.br, border: `1px solid ${t.border}`, background: t.surface, fontSize: 14, fontWeight: 400, color: t.text, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          Spočítat cenu
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FloatCard({ t, style, bg, bc, children }) {
+  return (
+    <div style={{
+      position: 'absolute', zIndex: 10,
+      background: bg || '#fff',
+      border: `1px solid ${bc || t.border}`,
+      borderRadius: t.cr,
+      padding: '14px 18px',
+      boxShadow: t.cardShadow,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ── MINI VIZUÁLY PRO FEATURE KARTY ───────────────────────────
+
+function PriceVisual({ t }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 24px' }}>
+      <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: t.cardShadow, border: `1px solid ${t.border}`, width: '100%' }}>
+        <div style={{ fontSize: 11, fontWeight: 300, color: t.textMid, marginBottom: 8 }}>Orientační cena</div>
+        <div style={{ fontSize: 21, fontWeight: 500, color: t.text, letterSpacing: '-0.03em', marginBottom: 12 }}>10 500–14 000 Kč</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {['2+1', 'Praha 6', 'Bílá malba'].map(tag => (
+            <div key={tag} style={{ padding: '3px 9px', borderRadius: 99, background: t.accentSoft, fontSize: 11, color: t.accent, fontWeight: 400 }}>{tag}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarVisual({ t }) {
+  const avail = [5, 8, 10, 13, 15, 17, 20];
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 24px' }}>
+      <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: t.cardShadow, border: `1px solid ${t.border}`, width: '100%' }}>
+        <div style={{ fontSize: 11, fontWeight: 300, color: t.textMid, marginBottom: 10 }}>Duben 2026</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+          {Array.from({ length: 21 }, (_, i) => i + 1).map(d => (
+            <div key={d} style={{
+              aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, borderRadius: 5,
+              background: d === 10 ? t.accent : avail.includes(d) ? t.accentSoft : '#f5f5f2',
+              color: d === 10 ? '#fff' : avail.includes(d) ? t.accent : t.textLight,
+              fontWeight: d === 10 ? 600 : 300,
+            }}>{d}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaintersVisual({ t }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8, padding: '14px 20px' }}>
+      {[['P', 'Petr H.', 'Po nájemníkovi', '9–16k Kč'], ['M', 'Martin R.', 'Novostavby', '14–25k Kč']].map(([init, name, spec, price]) => (
+        <div key={name} style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', boxShadow: t.cardShadow, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: t.accent, flexShrink: 0 }}>{init}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: t.text }}>{name}</div>
+            <div style={{ fontSize: 11, fontWeight: 300, color: t.textMid }}>{spec}</div>
+          </div>
+          <div style={{ fontSize: 12, color: t.textMid, fontWeight: 300 }}>{price}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── FEATURE SEKCE ─────────────────────────────────────────────
+
+function FeatureSectionA({ t }) {
+  const features = [
+    { badge: 'Cena', title: 'Orientační cena bez čekání', text: 'Stačí lokalita a dispozice. Výsledek vidíte hned, bez volání.', Visual: PriceVisual },
+    { badge: 'Termín', title: 'Volné termíny dřív než telefon', text: 'Nejdřív se podíváte, kdy to dává smysl. Pak teprve domluva.', Visual: CalendarVisual },
+    { badge: 'Malíři', title: 'Konkrétní lidé, ne anonymní seznam', text: 'Vyberete si podle profilu, stylu práce a dostupnosti.', Visual: PaintersVisual },
+  ];
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ textAlign: 'center', marginBottom: 26 }}>
+        <h2 style={{ fontSize: 38, fontWeight: 300, letterSpacing: '-0.045em', color: t.text, lineHeight: 1.05 }}>Všechno důležité hned před sebou</h2>
+        <p style={{ fontSize: 15, fontWeight: 300, color: t.textMid, marginTop: 10 }}>Cena, termín a výběr malíře v jednom přehledu.</p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, flex: 1 }}>
+        {features.map(({ badge, title, text, Visual }) => (
+          <div key={badge} style={{ background: t.surface, borderRadius: t.cr, border: `1px solid ${t.border}`, boxShadow: t.cardShadow, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'relative', height: 156, background: t.accentSoft, flexShrink: 0 }}>
+              <Visual t={t} />
+            </div>
+            <div style={{ padding: '20px 24px', flex: 1 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: t.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>{badge}</div>
+              <h3 style={{ fontSize: 16, fontWeight: 500, color: t.text, letterSpacing: '-0.03em', lineHeight: 1.25, marginBottom: 8 }}>{title}</h3>
+              <p style={{ fontSize: 13, color: t.textMid, lineHeight: 1.6, fontWeight: 300 }}>{text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FeatureSectionB({ t }) {
+  const items = [
+    { badge: 'Cena', color: t.accent, colorSoft: t.accentSoft, title: 'Orientační cena bez čekání', text: 'Stačí lokalita a dispozice. Výsledek vidíte hned, bez volání.' },
+    { badge: 'Termín', color: t.warm, colorSoft: t.warmSoft, title: 'Volné termíny dřív než telefon', text: 'Nejdřív se podíváte, kdy to dává smysl. Pak teprve domluva.' },
+    { badge: 'Malíři', color: t.accent, colorSoft: t.accentSoft, title: 'Skuteční lidé, ne anonymní seznam', text: 'Profily, specializace, dostupnost. Vyberete si konkrétního člověka.' },
+  ];
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        {items.map(item => (
+          <div key={item.badge} style={{ background: t.surface, borderRadius: t.cr, border: `1px solid ${t.border}`, boxShadow: t.cardShadow, padding: '28px 28px 24px' }}>
+            <div style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: 8, background: item.colorSoft, fontSize: 10, fontWeight: 600, color: item.color, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>{item.badge}</div>
+            <h3 style={{ fontSize: 18, fontWeight: 500, color: t.text, letterSpacing: '-0.03em', lineHeight: 1.25, marginBottom: 10 }}>{item.title}</h3>
+            <p style={{ fontSize: 14, color: t.textMid, lineHeight: 1.6, fontWeight: 300, marginBottom: 20 }}>{item.text}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: item.color, fontSize: 13, fontWeight: 400 }}>
+              <span>Zobrazit</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FeatureSectionC({ t }) {
+  return (
+    <div style={{ height: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+      <div style={{ background: '#fff', borderRadius: t.cr, border: `1px solid ${t.border}`, boxShadow: t.cardShadow, padding: '36px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontSize: 44, fontWeight: 200, letterSpacing: '-0.05em', color: t.text, lineHeight: 1, marginBottom: 8 }}>Cena</div>
+        <div style={{ width: 28, height: 2, background: t.accent, marginBottom: 20 }} />
+        <p style={{ fontSize: 14, color: t.textMid, fontWeight: 300, lineHeight: 1.65, flex: 1 }}>Orientační cena pro 2+1 v Praze 6 vychází přibližně na 10 500–14 000 Kč. Bez čekání, bez volání.</p>
+        <div style={{ marginTop: 24, padding: '16px 20px', background: t.accentSoft, borderRadius: 14, border: `1px solid rgba(27,94,54,0.12)` }}>
+          <div style={{ fontSize: 22, fontWeight: 500, color: t.accent, letterSpacing: '-0.03em' }}>10 500–14 000 Kč</div>
+          <div style={{ fontSize: 12, color: t.textMid, marginTop: 5, fontWeight: 300 }}>2+1, Praha 6, běžná přemalba</div>
+        </div>
+      </div>
+      <div style={{ background: t.accent, borderRadius: t.cr, boxShadow: t.cardShadow, padding: '36px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontSize: 44, fontWeight: 200, letterSpacing: '-0.05em', color: 'rgba(255,255,255,0.9)', lineHeight: 1, marginBottom: 8 }}>Termín</div>
+        <div style={{ width: 28, height: 2, background: 'rgba(255,255,255,0.35)', marginBottom: 20 }} />
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)', fontWeight: 300, lineHeight: 1.65, flex: 1 }}>Nejbližší dostupné termíny jsou středa 10. dubna a pátek 12. dubna.</p>
+        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[['St 10. 4.', '2 volní malíři'], ['Pá 12. 4.', '3 volní malíři']].map(([date, note]) => (
+            <div key={date} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.14)' }}>
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#fff' }}>{date}</span>
+              <span style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.62)' }}>{note}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ background: '#fff', borderRadius: t.cr, border: `1px solid ${t.border}`, boxShadow: t.cardShadow, padding: '36px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontSize: 44, fontWeight: 200, letterSpacing: '-0.05em', color: t.text, lineHeight: 1, marginBottom: 8 }}>Malíři</div>
+        <div style={{ width: 28, height: 2, background: t.warm, marginBottom: 20 }} />
+        <p style={{ fontSize: 14, color: t.textMid, fontWeight: 300, lineHeight: 1.65, flex: 1 }}>Konkrétní lidé s profily, specializací a dostupností. Vyberete si sami.</p>
+        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[['P', 'Petr H.', 'Rychlé termíny'], ['M', 'Martin R.', 'Novostavby']].map(([init, name, spec]) => (
+            <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, border: `1px solid ${t.border}` }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: t.accent, flexShrink: 0 }}>{init}</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: t.text }}>{name}</div>
+                <div style={{ fontSize: 11, fontWeight: 300, color: t.textMid }}>{spec}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ================================================================
+// VARIACE A — TEPLÁ ŘEMESLNÁ
+// Velký bílý kontejner s dot texturou, 4 plovoucí karty v rozích
+// ================================================================
+
+function VariantA() {
+  const t = TA;
+  return (
+    <div style={{ width: 1440, height: 1440, background: t.bg, fontFamily: "'Outfit', sans-serif", overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <SiteNav t={t} />
+
+      {/* Hero — velký bílý panel s dot texturou */}
+      <div style={{ height: 784, padding: '24px 28px 20px', flexShrink: 0 }}>
+        <div style={{
+          height: '100%', borderRadius: t.r,
+          background: `radial-gradient(circle, rgba(0,0,0,0.024) 1px, transparent 1px) 0 0 / 18px 18px, #ffffff`,
+          border: `1px solid ${t.border}`,
+          boxShadow: t.panelShadow,
+          position: 'relative', overflow: 'hidden',
+        }}>
+
+          {/* Plovoucí karta LN — žlutá poznámka */}
+          <FloatCard t={t} style={{ top: 44, left: 44, width: 204, transform: 'rotate(-3.5deg)' }} bg={t.warmSoft} bc={t.warmBorder}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#987018', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>Poznámka</div>
+            <div style={{ fontSize: 13, fontWeight: 400, color: '#3a2c0a', lineHeight: 1.6 }}>Nevíte metry?<br />Nevadí, stačí dispozice nebo pár fotek.</div>
+          </FloatCard>
+
+          {/* Plovoucí karta LD — ukázkové ceny */}
+          <FloatCard t={t} style={{ bottom: 44, left: 44, width: 228, transform: 'rotate(1.5deg)' }}>
+            <div style={{ fontSize: 10, fontWeight: 300, color: t.textMid, marginBottom: 10, letterSpacing: '0.02em' }}>Orientačně třeba:</div>
+            {[['1+kk', '7–11 000 Kč'], ['2+1 po nájemníkovi', '10–16 000 Kč'], ['3+kk novostavba', '14–22 000 Kč']].map(([type, price]) => (
+              <div key={type} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: t.textMid, fontWeight: 300 }}>{type}</span>
+                <span style={{ fontSize: 12, color: t.text, fontWeight: 500, marginLeft: 8, whiteSpace: 'nowrap' }}>{price}</span>
+              </div>
+            ))}
+          </FloatCard>
+
+          {/* Plovoucí karta PN — termíny */}
+          <FloatCard t={t} style={{ top: 44, right: 44, width: 196, transform: 'rotate(2.5deg)' }}>
+            <div style={{ fontSize: 10, fontWeight: 300, color: t.textMid, marginBottom: 10 }}>Nejbližší termíny</div>
+            {[['St 10. 4.', true], ['Pá 12. 4.', true], ['Po 15. 4.', false]].map(([date, avail]) => (
+              <div key={date} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                <div style={{ width: 6, height: 6, borderRadius: 99, background: avail ? '#40b870' : '#d0ccc8', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: avail ? 500 : 300, color: avail ? t.text : t.textMid }}>{date}</span>
+                {avail && <span style={{ fontSize: 11, color: t.textLight, marginLeft: 'auto' }}>volný</span>}
+              </div>
+            ))}
+          </FloatCard>
+
+          {/* Plovoucí karta PD — malíři */}
+          <FloatCard t={t} style={{ bottom: 44, right: 44, width: 214, transform: 'rotate(-2deg)' }}>
+            <div style={{ fontSize: 10, fontWeight: 300, color: t.textMid, marginBottom: 10 }}>3 vhodní malíři</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              {[['P', t.accentSoft, t.accent], ['M', '#f4f4f1', t.textMid], ['R', '#f4f4f1', t.textMid]].map(([l, bg, color]) => (
+                <div key={l} style={{ width: 42, height: 42, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color, border: `1px solid ${t.border}` }}>{l}</div>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 300, color: t.textMid }}>Praha 6 a okolí</div>
+          </FloatCard>
+
+          {/* Střed — hlavní obsah */}
+          <div style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 360px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 99, background: 'rgba(255,255,255,0.9)', border: `1px solid ${t.border}`, fontSize: 13, fontWeight: 300, color: t.textMid, marginBottom: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <div style={{ width: 6, height: 6, borderRadius: 99, background: t.accent }} />
+              Praha a Středočeský kraj
+            </div>
+            <h1 style={{ margin: 0, fontWeight: 300, letterSpacing: '-0.055em', lineHeight: 1.0, textAlign: 'center', fontSize: 68 }}>
+              <span style={{ display: 'block', color: t.text }}>Cena, termín a malíř</span>
+              <span style={{ display: 'block', color: t.textLight }}>na jednom místě</span>
+            </h1>
+            <p style={{ fontSize: 17, lineHeight: 1.65, color: t.textMid, fontWeight: 300, margin: '22px 0 36px', textAlign: 'center', maxWidth: 440 }}>
+              Spočítejte si orientační cenu, podívejte se na nejbližší možnosti a vyberte si konkrétního malíře.
+            </p>
+            <div style={{ padding: '14px 36px', borderRadius: t.br, background: t.accent, color: '#fff', fontSize: 16, fontWeight: 400, cursor: 'pointer', boxShadow: `0 12px 28px ${t.accentShadow}`, letterSpacing: '-0.01em' }}>
+              Ukázat cenu a termíny
+            </div>
+            <div style={{ fontSize: 13, color: t.textLight, marginTop: 12, fontWeight: 300 }}>Zabere asi 30 sekund</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature sekce */}
+      <div style={{ height: 592, padding: '0 72px 40px', overflow: 'hidden' }}>
+        <FeatureSectionA t={t} />
+      </div>
+    </div>
+  );
+}
+
+// ================================================================
+// VARIACE B — VZDUŠNÁ MODERNÍ
+// Rozdělený hero: text vlevo, vstupní karta vpravo
+// ================================================================
+
+function VariantB() {
+  const t = TB;
+  return (
+    <div style={{ width: 1440, height: 1440, background: t.bg, fontFamily: "'Outfit', sans-serif", overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <SiteNav t={t} />
+
+      {/* Hero — split layout */}
+      <div style={{ height: 784, padding: '64px 80px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, flexShrink: 0 }}>
+
+        {/* Vlevo — text */}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 99, background: t.accentSoft, border: `1px solid rgba(58,148,96,0.2)`, fontSize: 13, fontWeight: 300, color: t.accent, marginBottom: 28, alignSelf: 'flex-start' }}>
+            <div style={{ width: 6, height: 6, borderRadius: 99, background: t.accent }} />
+            Praha a Středočeský kraj
+          </div>
+          <h1 style={{ margin: '0 0 24px', fontWeight: 300, letterSpacing: '-0.055em', lineHeight: 0.98, fontSize: 78, color: t.text }}>
+            <span style={{ display: 'block' }}>Malíř, termín</span>
+            <span style={{ display: 'block' }}>a cena hned.</span>
+          </h1>
+          <p style={{ fontSize: 17, lineHeight: 1.65, color: t.textMid, fontWeight: 300, margin: '0 0 40px', maxWidth: 420 }}>
+            Bez aukce, bez přeposílání poptávky desítkám lidí. Cena, dostupnost a konkrétní malíř hned.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {['Orientační cena za 30 sekund', 'Kalendář dostupnosti v reálném čase', 'Skuteční malíři s profily a dostupností'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 20, height: 20, borderRadius: 99, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: 99, background: t.accent }} />
+                </div>
+                <span style={{ fontSize: 15, fontWeight: 300, color: t.textMid }}>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Vpravo — vstupní karta */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: t.r, border: `1px solid ${t.border}`, boxShadow: t.panelShadow, padding: '36px 40px', width: '100%' }}>
+            <div style={{ fontSize: 19, fontWeight: 500, color: t.text, letterSpacing: '-0.03em', marginBottom: 5 }}>Spočítat orientační cenu</div>
+            <div style={{ fontSize: 14, color: t.textMid, fontWeight: 300, marginBottom: 26 }}>Vyplňte pár základních informací</div>
+            {[
+              { label: 'Kde se bude malovat', ph: 'Např. Praha 6, Kladno...' },
+              { label: 'Typ prostoru', ph: 'Byt / dům / kancelář' },
+              { label: 'Dispozice nebo m²', ph: '2+1 nebo 65 m²' },
+            ].map(f => (
+              <div key={f.label} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 400, color: t.textMid, marginBottom: 6 }}>{f.label}</div>
+                <div style={{ padding: '11px 14px', borderRadius: 10, border: `1px solid ${t.border}`, background: '#fafaf8', fontSize: 14, fontWeight: 300, color: t.textLight }}>{f.ph}</div>
+              </div>
+            ))}
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ fontSize: 12, fontWeight: 400, color: t.textMid, marginBottom: 8 }}>Typ práce</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {['Přemalba', 'Po nájemníkovi', 'Novostavba'].map((opt, i) => (
+                  <div key={opt} style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${i === 0 ? t.accent : t.border}`, background: i === 0 ? t.accentSoft : '#fff', fontSize: 13, fontWeight: i === 0 ? 400 : 300, color: i === 0 ? t.accent : t.textMid }}>{opt}</div>
+                ))}
+              </div>
+            </div>
+            <div style={{ padding: '14px', borderRadius: t.br, background: t.accent, color: '#fff', fontSize: 16, fontWeight: 400, textAlign: 'center', boxShadow: `0 10px 24px ${t.accentShadow}` }}>
+              Ukázat cenu a termíny
+            </div>
+            <div style={{ fontSize: 12, color: t.textLight, textAlign: 'center', marginTop: 10, fontWeight: 300 }}>Zabere asi 30 sekund. Fotky nejsou potřeba.</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature sekce */}
+      <div style={{ height: 592, padding: '36px 80px 40px', overflow: 'hidden' }}>
+        <FeatureSectionB t={t} />
+      </div>
+    </div>
+  );
+}
+
+// ================================================================
+// VARIACE C — PRÉMIOVÁ EDITORIAL
+// Velká sazba v celé šíři, minimalistická, zlatý druhý řádek
+// ================================================================
+
+function VariantC() {
+  const t = TC;
+  return (
+    <div style={{ width: 1440, height: 1440, background: t.bg, fontFamily: "'Outfit', sans-serif", overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <SiteNav t={t} />
+
+      {/* Hero — editorial, celá šířka */}
+      <div style={{ height: 784, padding: '52px 80px 0', flexShrink: 0, position: 'relative' }}>
+
+        {/* Horní řádek */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 44 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 6, height: 6, borderRadius: 99, background: t.accent }} />
+            <span style={{ fontSize: 13, fontWeight: 300, color: t.textMid, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Praha a Středočeský kraj</span>
+          </div>
+          <div style={{ display: 'flex', gap: 28 }}>
+            {['10+ ověřených malířů', 'Od 7 000 Kč', 'Termíny od zítřka'].map(s => (
+              <span key={s} style={{ fontSize: 13, fontWeight: 300, color: t.textLight }}>{s}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Velký nadpis */}
+        <h1 style={{ margin: '0 0 20px', fontWeight: 200, letterSpacing: '-0.06em', lineHeight: 0.88, fontSize: 106 }}>
+          <span style={{ display: 'block', color: t.text }}>Cena, termín</span>
+          <span style={{ display: 'block', color: t.warm }}>a malíř hned.</span>
+        </h1>
+
+        {/* Doplňkový řádek čísel */}
+        <div style={{ display: 'flex', gap: 40, marginBottom: 28 }}>
+          {[['286', 'dokončených zakázek'], ['24h', 'průměrná reakce'], ['4.9', 'průměrné hodnocení']].map(([val, label]) => (
+            <div key={val} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontSize: 22, fontWeight: 500, color: t.text, letterSpacing: '-0.04em' }}>{val}</span>
+              <span style={{ fontSize: 13, fontWeight: 300, color: t.textMid }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Oddělovač */}
+        <div style={{ height: 1, background: t.border, marginBottom: 28 }} />
+
+        {/* Spodní řádek */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: 18, color: t.textMid, fontWeight: 300, lineHeight: 1.65, maxWidth: 460, margin: 0 }}>
+            Spočítejte si orientační cenu, podívejte se na nejbližší termíny a vyberte si konkrétního malíře.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+            <div style={{ padding: '15px 40px', borderRadius: t.br, background: t.accent, color: '#fff', fontSize: 16, fontWeight: 400, boxShadow: `0 12px 28px ${t.accentShadow}` }}>
+              Ukázat cenu a termíny
+            </div>
+            <div style={{ padding: '15px 28px', borderRadius: t.br, background: 'transparent', color: t.textMid, fontSize: 16, fontWeight: 300, border: `1px solid ${t.border}` }}>
+              Vybrat malíře
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature sekce — velké editorské karty */}
+      <div style={{ height: 592, padding: '32px 80px 40px', overflow: 'hidden' }}>
+        <FeatureSectionC t={t} />
+      </div>
+    </div>
+  );
+}
+
+// ── APP ───────────────────────────────────────────────────────
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="variace" title="Malíř Hned — 3 vizuální směry">
+        <DCArtboard id="a" label="Variace A — Teplá řemeslná" width={1440} height={1440}>
+          <VariantA />
+        </DCArtboard>
+        <DCArtboard id="b" label="Variace B — Vzdušná moderní" width={1440} height={1440}>
+          <VariantB />
+        </DCArtboard>
+        <DCArtboard id="c" label="Variace C — Prémiová editorial" width={1440} height={1440}>
+          <VariantC />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

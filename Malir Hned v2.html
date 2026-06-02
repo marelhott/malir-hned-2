@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malíř Hned – Redesign Variace A</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Outfit', sans-serif; background: #f0ece6; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { opacity: 0.4; }
+    a:hover { opacity: 0.82; }
+    button:hover { opacity: 0.88; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="mh-data.jsx?v=1780377655416"></script>
+<script type="text/babel" src="mh-ui.jsx?v=1780377655416"></script>
+<script type="text/babel" src="mh-sections.jsx?v=1780377655416"></script>
+
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+const {
+  T, MONTHS, calcPriceRange, getSlots,
+  SiteNav, SiteFooter,
+  HeroSection, StepsSection, CalendarSection, CalcSection, PainterSection, OrderSection,
+  PainterModal, OrderFormModal, ConfirmationModal,
+} = window;
+
+const DEFAULT_FORM = {
+  propertyType:    'Pokoj',
+  customArea:      '',
+  areaMode:        'Podlahové m2',
+  ceilingHeight:   '250 cm',
+  workType:        'Běžná bílá výmalba',
+  repairs:         'Malé',
+  material:        'Ano',
+  furnitureMoving: 'Ano',
+  covering:        'Ano',
+  cleaning:        'Potřebuji',
+  emptySpace:      'Ano',
+  carpets:         'Ne',
+  roomCount:       '',
+  notes:           '',
+};
+
+function App() {
+  const [monthIdx,          setMonthIdx]          = useState(0);
+  const [selectedDay,       setSelectedDay]       = useState(10);
+  const [selectedSlotId,    setSelectedSlotId]    = useState('0-10-0');
+  const [formData,          setFormData]          = useState(DEFAULT_FORM);
+  const [isPainterOpen,     setIsPainterOpen]     = useState(false);
+  const [isOrderOpen,       setIsOrderOpen]       = useState(false);
+  const [isConfirmed,       setIsConfirmed]       = useState(false);
+
+  // Načíst předvybraný slot z Maliri.html
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mh_selected_slot');
+      if (saved) {
+        const { monthIdx: mIdx, day, slotId } = JSON.parse(saved);
+        setMonthIdx(mIdx ?? 0);
+        setSelectedDay(day);
+        setSelectedSlotId(slotId);
+        localStorage.removeItem('mh_selected_slot');
+        setTimeout(() => {
+          const el = document.getElementById('malir');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 400);
+      }
+    } catch(e) {}
+  }, []);
+
+  const priceRange   = useMemo(() => calcPriceRange(formData), [formData]);
+  const slots        = useMemo(() => getSlots(monthIdx, selectedDay, formData), [monthIdx, selectedDay, formData]);
+  const selectedSlot = slots.find(s => s.id === selectedSlotId) || null;
+
+  return (
+    <div style={{ background: T.bg, minHeight: '100vh', fontFamily: "'Outfit', sans-serif" }}>
+      <SiteNav />
+      <main>
+        <HeroSection />
+        <StepsSection />
+        <CalendarSection
+          monthIdx={monthIdx}
+          setMonthIdx={setMonthIdx}
+          selectedDay={selectedDay}
+          setSelectedDay={setSelectedDay}
+          selectedSlotId={selectedSlotId}
+          setSelectedSlotId={setSelectedSlotId}
+          formData={formData}
+        />
+        <CalcSection
+          formData={formData}
+          setFormData={setFormData}
+          priceRange={priceRange}
+        />
+        {selectedSlot && (
+          <PainterSection
+            selectedSlot={selectedSlot}
+            monthIdx={monthIdx}
+            onDetailClick={() => setIsPainterOpen(true)}
+          />
+        )}
+        {selectedSlot && (
+          <OrderSection
+            selectedSlot={selectedSlot}
+            monthIdx={monthIdx}
+            onOrderClick={() => setIsOrderOpen(true)}
+          />
+        )}
+      </main>
+      <SiteFooter />
+
+      {isPainterOpen && selectedSlot && (
+        <PainterModal
+          painter={selectedSlot.painter}
+          priceRange={selectedSlot.priceRange}
+          day={selectedSlot.day}
+          monthIdx={selectedSlot.monthIdx}
+          time={selectedSlot.time}
+          onClose={() => setIsPainterOpen(false)}
+          onConfirm={() => { setIsPainterOpen(false); setIsOrderOpen(true); }}
+        />
+      )}
+      {isOrderOpen && selectedSlot && (
+        <OrderFormModal
+          selectedSlot={selectedSlot}
+          monthIdx={monthIdx}
+          priceRange={priceRange}
+          onClose={() => setIsOrderOpen(false)}
+          onConfirm={() => { setIsOrderOpen(false); setIsConfirmed(true); }}
+        />
+      )}
+      {isConfirmed && selectedSlot && (
+        <ConfirmationModal
+          selectedSlot={selectedSlot}
+          monthIdx={monthIdx}
+          priceRange={priceRange}
+          onClose={() => setIsConfirmed(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

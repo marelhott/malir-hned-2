@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malíři – Malíř Hned</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Outfit', sans-serif; background: #f0ece6; color: #18170f; }
+    a { text-decoration: none; color: inherit; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+// ── TOKENY ────────────────────────────────────────────────────
+const T = {
+  bg: '#f0ece6', surface: '#ffffff',
+  border: 'rgba(175,165,148,0.28)', borderStrong: 'rgba(175,165,148,0.55)',
+  text: '#18170f', textMid: '#7a7268', textLight: '#b8b0a4',
+  accent: '#2a7a4e', accentSoft: '#e6f3ec', accentShadow: 'rgba(42,122,78,0.28)',
+  warm: '#f0be38', warmSoft: '#fef8e0', warmBorder: 'rgba(220,182,75,0.45)',
+  panelShadow: '0 2px 8px rgba(20,14,6,0.04), 0 24px 64px rgba(20,14,6,0.09)',
+  cardShadow: '0 1px 4px rgba(20,14,6,0.04), 0 8px 24px rgba(20,14,6,0.07)',
+  r: 32, cr: 18, br: 13,
+};
+
+// ── PROFILY MALÍŘŮ ────────────────────────────────────────────
+const PAINTERS = [
+  { name: 'Petr Havel',     ini: 'P', exp: '12 let', jobs: '286', resp: '18 min', role: 'Po nájemníkovi a menší byty',   avail: 'green', availLabel: 'Dostupný tento týden', spec: ['Po nájemníkovi','1+kk až 3+1','Rychlé termíny'],     bio: 'Nejčastěji maluju byty před nastěhováním a rychlé přemalby, kde je důležitá jasná domluva a čistá práce bez zbytečných okolků.', img: 'https://images.pexels.com/photos/4981775/pexels-photo-4981775.jpeg?auto=compress&cs=tinysrgb&w=700&h=525&fit=crop' },
+  { name: 'Martin Růžička', ini: 'M', exp: '14 let', jobs: '198', resp: '25 min', role: 'Novostavby a větší byty',       avail: 'green', availLabel: 'Dostupný tento týden', spec: ['Novostavby','3+kk a větší','Stropy'],                 bio: 'Sedí mi čisté zakázky, které se dají dobře naplánovat dopředu. Mám rád přesný rozsah práce a klidnou organizaci.',                img: 'https://images.pexels.com/photos/7788241/pexels-photo-7788241.jpeg?auto=compress&cs=tinysrgb&w=700&h=525&fit=crop' },
+  { name: 'Roman Veselý',   ini: 'R', exp: '11 let', jobs: '244', resp: '22 min', role: 'Přemalby a opravy',             avail: 'yellow',availLabel: 'Příští týden',          spec: ['Opravy stěn','Přemalby','Starší byty'],               bio: 'Dělám běžné přemalby i stěny, které potřebují před malbou srovnat a připravit. Hodí se tam, kde je potřeba opravit drobnosti.',  img: 'https://images.pexels.com/photos/8961528/pexels-photo-8961528.jpeg?auto=compress&cs=tinysrgb&w=700&h=525&fit=crop' },
+  { name: 'David Svoboda',  ini: 'D', exp: '8 let',  jobs: '173', resp: '12 min', role: 'Rychlé termíny',               avail: 'green', availLabel: 'Dnes k dispozici',       spec: ['Menší byty','Kanceláře','Do 48 hodin'],                bio: 'Když je potřeba rychle malovat menší byt nebo kancelář, umím se přizpůsobit tempu a fungovat i v kratším okně.',                  img: 'https://images.pexels.com/photos/3931131/pexels-photo-3931131.jpeg?auto=compress&cs=tinysrgb&w=700&h=525&fit=crop' },
+  { name: 'Jakub Černý',   ini: 'J', exp: '10 let', jobs: '127', resp: '31 min', role: 'Přesné zakrytí a detail',      avail: 'green', availLabel: 'Dostupný tento týden', spec: ['Detailní práce','Zakrytí nábytku','Barevné malby'],      bio: 'Víc než rychlost řeším pečlivost. Hodím se tam, kde je důležité šetrné zakrytí a čistý detail kolem nábytku nebo kuchyně.',      img: 'https://images.pexels.com/photos/10682438/pexels-photo-10682438.jpeg?auto=compress&cs=tinysrgb&w=700&h=525&fit=crop' },
+  { name: 'Tomáš Navrátil', ini: 'T', exp: '16 let', jobs: '341', resp: '20 min', role: 'Velké byty a rodinné domy',    avail: 'yellow',availLabel: 'Příští týden',          spec: ['Rodinné domy','Společné prostory','4+kk a větší'],       bio: 'Specializuji se na větší plochy — rodinné domy, mezonetové byty a společné prostory bytových domů. Organizace ve velkém mi sedí.',img: 'https://images.pexels.com/photos/6816866/pexels-photo-6816866.jpeg?auto=compress&cs=tinysrgb&w=700&h=525&fit=crop' },
+];
+
+// ── KALENDÁŘ ─────────────────────────────────────────────────
+const MONTHS = [
+  { label: 'Duben 2026', year: 2026, month: 4, leading: 2, days: 30,
+    cal: [
+      {d:1,jobs:[{p:'Petr Havel',t:'9:00'},{p:'Roman Veselý',t:'13:30'}]},{d:2,jobs:[{p:'David Svoboda',t:'8:00'},{p:'Martin Růžička',t:'14:00'}]},{d:3,jobs:[{p:'Roman Veselý',t:'11:00'}]},{d:4,jobs:[{p:'Martin Růžička',t:'10:00'},{p:'Jakub Černý',t:'15:00'}]},{d:5,jobs:[]},{d:6,jobs:[]},{d:7,jobs:[{p:'Petr Havel',t:'8:30'},{p:'David Svoboda',t:'12:30'}]},{d:8,jobs:[{p:'David Svoboda',t:'9:00'},{p:'Roman Veselý',t:'13:00'}]},{d:9,jobs:[{p:'Roman Veselý',t:'10:00'},{p:'Jakub Černý',t:'15:00'}]},{d:10,jobs:[{p:'Petr Havel',t:'8:30'},{p:'Martin Růžička',t:'12:00'},{p:'David Svoboda',t:'15:30'}]},{d:11,jobs:[{p:'Jakub Černý',t:'9:00'},{p:'Martin Růžička',t:'14:30'}]},{d:12,jobs:[]},{d:13,jobs:[{p:'Roman Veselý',t:'8:00'},{p:'David Svoboda',t:'13:30'}]},{d:14,jobs:[]},{d:15,jobs:[{p:'David Svoboda',t:'9:30'},{p:'Martin Růžička',t:'12:00'}]},{d:16,jobs:[{p:'Petr Havel',t:'10:00'}]},{d:17,jobs:[{p:'Martin Růžička',t:'11:00'},{p:'Jakub Černý',t:'14:30'}]},{d:18,jobs:[{p:'Petr Havel',t:'7:00'}]},{d:19,jobs:[]},{d:20,jobs:[{p:'David Svoboda',t:'9:00'}]},{d:21,jobs:[{p:'Martin Růžička',t:'11:30'},{p:'Jakub Černý',t:'15:00'}]},{d:22,jobs:[{p:'David Svoboda',t:'9:00'},{p:'Roman Veselý',t:'13:30'}]},{d:23,jobs:[{p:'Martin Růžička',t:'10:00'}]},{d:24,jobs:[{p:'Petr Havel',t:'8:30'},{p:'Roman Veselý',t:'15:30'}]},{d:25,jobs:[]},{d:26,jobs:[]},{d:27,jobs:[{p:'David Svoboda',t:'9:00'}]},{d:28,jobs:[{p:'Martin Růžička',t:'11:00'}]},{d:29,jobs:[{p:'Roman Veselý',t:'9:30'}]},{d:30,jobs:[{p:'Jakub Černý',t:'10:30'}]},
+    ]},
+  { label: 'Květen 2026', year: 2026, month: 5, leading: 4, days: 31,
+    cal: [
+      {d:1,jobs:[]},{d:2,jobs:[]},{d:3,jobs:[]},{d:4,jobs:[{p:'Petr Havel',t:'9:00'},{p:'Roman Veselý',t:'14:00'}]},{d:5,jobs:[{p:'David Svoboda',t:'8:30'}]},{d:6,jobs:[{p:'Martin Růžička',t:'10:00'},{p:'Jakub Černý',t:'15:00'}]},{d:7,jobs:[{p:'Roman Veselý',t:'9:00'},{p:'Petr Havel',t:'13:30'}]},{d:8,jobs:[{p:'David Svoboda',t:'11:00'},{p:'Martin Růžička',t:'15:00'}]},{d:9,jobs:[]},{d:10,jobs:[]},{d:11,jobs:[{p:'Petr Havel',t:'8:00'},{p:'Jakub Černý',t:'13:00'},{p:'Roman Veselý',t:'16:00'}]},{d:12,jobs:[{p:'Roman Veselý',t:'9:30'}]},{d:13,jobs:[{p:'Martin Růžička',t:'10:00'},{p:'David Svoboda',t:'14:30'}]},{d:14,jobs:[{p:'Petr Havel',t:'8:30'}]},{d:15,jobs:[{p:'Jakub Černý',t:'9:00'},{p:'Roman Veselý',t:'13:00'}]},{d:16,jobs:[]},{d:17,jobs:[]},{d:18,jobs:[{p:'David Svoboda',t:'8:00'},{p:'Martin Růžička',t:'12:00'}]},{d:19,jobs:[{p:'Petr Havel',t:'10:00'}]},{d:20,jobs:[{p:'Roman Veselý',t:'9:00'},{p:'Jakub Černý',t:'14:00'}]},{d:21,jobs:[{p:'Martin Růžička',t:'11:00'}]},{d:22,jobs:[{p:'David Svoboda',t:'8:30'},{p:'Petr Havel',t:'13:30'}]},{d:23,jobs:[]},{d:24,jobs:[]},{d:25,jobs:[{p:'Jakub Černý',t:'9:00'},{p:'Roman Veselý',t:'14:00'}]},{d:26,jobs:[{p:'Petr Havel',t:'10:00'}]},{d:27,jobs:[{p:'Martin Růžička',t:'9:00'},{p:'David Svoboda',t:'13:00'}]},{d:28,jobs:[{p:'Roman Veselý',t:'11:00'}]},{d:29,jobs:[{p:'Petr Havel',t:'8:30'},{p:'Jakub Černý',t:'15:00'}]},{d:30,jobs:[]},{d:31,jobs:[]},
+    ]},
+  { label: 'Červen 2026', year: 2026, month: 6, leading: 0, days: 30,
+    cal: [
+      {d:1,jobs:[{p:'Martin Růžička',t:'9:00'},{p:'David Svoboda',t:'14:00'}]},{d:2,jobs:[{p:'Roman Veselý',t:'10:00'}]},{d:3,jobs:[{p:'Petr Havel',t:'9:30'},{p:'Jakub Černý',t:'14:30'}]},{d:4,jobs:[{p:'David Svoboda',t:'8:00'},{p:'Martin Růžička',t:'13:00'}]},{d:5,jobs:[{p:'Roman Veselý',t:'11:00'}]},{d:6,jobs:[]},{d:7,jobs:[]},{d:8,jobs:[{p:'Petr Havel',t:'9:00'},{p:'Roman Veselý',t:'13:30'},{p:'David Svoboda',t:'16:00'}]},{d:9,jobs:[{p:'Martin Růžička',t:'10:00'}]},{d:10,jobs:[{p:'Jakub Černý',t:'9:00'},{p:'Petr Havel',t:'14:00'}]},{d:11,jobs:[{p:'David Svoboda',t:'8:30'}]},{d:12,jobs:[{p:'Roman Veselý',t:'10:00'},{p:'Martin Růžička',t:'15:00'}]},{d:13,jobs:[]},{d:14,jobs:[]},{d:15,jobs:[{p:'Petr Havel',t:'9:00'},{p:'Jakub Černý',t:'13:00'}]},{d:16,jobs:[{p:'David Svoboda',t:'8:00'}]},{d:17,jobs:[{p:'Martin Růžička',t:'10:00'},{p:'Roman Veselý',t:'14:30'}]},{d:18,jobs:[{p:'Petr Havel',t:'9:30'}]},{d:19,jobs:[{p:'Jakub Černý',t:'11:00'},{p:'David Svoboda',t:'15:30'}]},{d:20,jobs:[]},{d:21,jobs:[]},{d:22,jobs:[{p:'Roman Veselý',t:'9:00'},{p:'Martin Růžička',t:'13:00'}]},{d:23,jobs:[{p:'Petr Havel',t:'10:00'}]},{d:24,jobs:[{p:'David Svoboda',t:'8:30'},{p:'Jakub Černý',t:'14:00'}]},{d:25,jobs:[{p:'Roman Veselý',t:'9:00'}]},{d:26,jobs:[{p:'Martin Růžička',t:'11:00'},{p:'Petr Havel',t:'15:00'}]},{d:27,jobs:[]},{d:28,jobs:[]},{d:29,jobs:[{p:'Petr Havel',t:'9:00'},{p:'Roman Veselý',t:'13:30'}]},{d:30,jobs:[{p:'David Svoboda',t:'10:00'}]},
+    ]},
+];
+
+const MONTH_NAMES = ['ledna','února','března','dubna','května','června','července','srpna','září','října','listopadu','prosince'];
+function dayLbl(mIdx, d) { const m = MONTHS[mIdx]; return `${d}. ${MONTH_NAMES[m.month-1]} ${m.year}`; }
+
+function getPainterSlots(painterName) {
+  const slots = [];
+  MONTHS.forEach((month, mIdx) => {
+    month.cal.forEach(day => {
+      day.jobs.forEach((job, i) => {
+        if (job.p === painterName) {
+          slots.push({ id: `${mIdx}-${day.d}-${i}`, mIdx, day: day.d, time: job.t, monthLabel: month.label });
+        }
+      });
+    });
+  });
+  return slots;
+}
+
+// ── MODAL VÝBĚRU TERMÍNU ──────────────────────────────────────
+function SlotPickerModal({ painter, onClose }) {
+  const [selSlot, setSelSlot] = useState(null);
+  const slots = useMemo(() => getPainterSlots(painter.name), [painter.name]);
+
+  useEffect(() => {
+    const h = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', h); document.body.style.overflow = ''; };
+  }, []);
+
+  function handleConfirm() {
+    if (!selSlot) return;
+    localStorage.setItem('mh_selected_slot', JSON.stringify({
+      monthIdx: selSlot.mIdx, day: selSlot.day, slotId: selSlot.id,
+    }));
+    window.location.href = 'Malir Hned v2.html#terminy';
+  }
+
+  // Group slots by month
+  const byMonth = MONTHS.map((m, mIdx) => ({
+    label: m.label,
+    slots: slots.filter(s => s.mIdx === mIdx),
+  })).filter(g => g.slots.length > 0);
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(12,10,6,0.54)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: T.surface, borderRadius: T.r, boxShadow: T.panelShadow, maxWidth: 620, width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Header */}
+        <div style={{ padding: '20px 28px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 4 }}>Vybrat termín</div>
+            <h2 style={{ fontSize: 20, fontWeight: 500, color: T.text, letterSpacing: '-0.04em', margin: 0 }}>{painter.name}</h2>
+            <p style={{ fontSize: 13, fontWeight: 300, color: T.textMid, marginTop: 2 }}>{painter.role}</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+              <img src={painter.img} alt={painter.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <button type="button" onClick={onClose} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${T.border}`, background: '#f7f4f0', fontSize: 16, color: T.textMid, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          </div>
+        </div>
+
+        {/* Sloty */}
+        <div style={{ overflow: 'auto', padding: '20px 28px', flex: 1 }}>
+          {byMonth.map(group => (
+            <div key={group.label} style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.textMid, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>{group.label}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {group.slots.map(slot => {
+                  const active = selSlot?.id === slot.id;
+                  return (
+                    <button key={slot.id} type="button" onClick={() => setSelSlot(slot)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: T.cr, border: `1.5px solid ${active ? T.accent : T.border}`, background: active ? T.accentSoft : '#fafaf7', cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'all 0.15s' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: 99, background: active ? T.accent : '#40b870', flexShrink: 0 }} />
+                        <span style={{ fontSize: 15, fontWeight: 500, color: active ? T.accent : T.text }}>{dayLbl(slot.mIdx, slot.day)}</span>
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 300, color: active ? T.accent : T.textMid }}>{slot.time}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {slots.length === 0 && (
+            <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textAlign: 'center', padding: '32px 0' }}>Pro tohoto malíře nejsou aktuálně dostupné termíny.</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '16px 28px', borderTop: `1px solid ${T.border}`, flexShrink: 0, display: 'flex', gap: 10 }}>
+          <button type="button" onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: T.br, border: `1px solid ${T.border}`, background: T.surface, fontSize: 14, fontWeight: 300, color: T.textMid, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Zrušit</button>
+          <button type="button" onClick={handleConfirm} disabled={!selSlot}
+            style={{ flex: 2, padding: '12px', borderRadius: T.br, background: selSlot ? T.accent : '#cdc8c0', color: '#fff', fontSize: 14, fontWeight: 400, cursor: selSlot ? 'pointer' : 'default', fontFamily: "'Outfit', sans-serif", border: 'none', boxShadow: selSlot ? `0 8px 20px ${T.accentShadow}` : 'none', transition: 'all 0.2s' }}>
+            {selSlot ? `Pokračovat s ${dayLbl(selSlot.mIdx, selSlot.day)} ${selSlot.time}` : 'Vyberte termín'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── KARTA MALÍŘE ─────────────────────────────────────────────
+function PainterCard({ painter, onBook }) {
+  const availColor = painter.avail === 'green' ? { bg: T.accentSoft, color: T.accent, dot: T.accent } : { bg: T.warmSoft, color: '#8a6c20', dot: T.warm };
+  return (
+    <div style={{ background: T.surface, borderRadius: T.cr, border: `1px solid ${T.border}`, boxShadow: T.cardShadow, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'box-shadow 0.2s, transform 0.2s' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(20,14,6,0.07), 0 20px 48px rgba(20,14,6,0.10)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = T.cardShadow; e.currentTarget.style.transform = ''; }}>
+      <img src={painter.img} alt={painter.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+      <div style={{ padding: '24px 24px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Dostupnost */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: availColor.bg, fontSize: 11, fontWeight: 400, color: availColor.color, marginBottom: 14, alignSelf: 'flex-start' }}>
+          <div style={{ width: 5, height: 5, borderRadius: 99, background: availColor.dot }} />
+          {painter.availLabel}
+        </div>
+        <div style={{ fontSize: 19, fontWeight: 500, color: T.text, letterSpacing: '-0.04em', marginBottom: 4 }}>{painter.name}</div>
+        <div style={{ fontSize: 13, fontWeight: 300, color: T.textMid, marginBottom: 12 }}>{painter.role}</div>
+        <p style={{ fontSize: 13, fontWeight: 300, color: T.textMid, lineHeight: 1.65, marginBottom: 16, flex: 1 }}>{painter.bio}</p>
+        {/* Tagy */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+          {painter.spec.map(s => (
+            <span key={s} style={{ padding: '4px 10px', borderRadius: 99, background: T.accentSoft, fontSize: 11, fontWeight: 400, color: T.accent }}>{s}</span>
+          ))}
+        </div>
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 16, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          {[['Praxe', painter.exp], ['Zakázky', painter.jobs], ['Reakce', painter.resp]].map(([lbl, val], i) => (
+            <div key={lbl} style={{ padding: '10px 10px', textAlign: 'center', borderRight: i < 2 ? `1px solid ${T.border}` : 'none' }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{val}</div>
+              <div style={{ fontSize: 10, fontWeight: 300, color: T.textLight, marginTop: 2 }}>{lbl}</div>
+            </div>
+          ))}
+        </div>
+        {/* Akce */}
+        <button type="button" onClick={() => onBook(painter)}
+          style={{ width: '100%', padding: '12px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 14, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", border: 'none', boxShadow: `0 6px 16px ${T.accentShadow}` }}>
+          Vybrat termín u {painter.name.split(' ')[0]}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ───────────────────────────────────────────────────────
+function App() {
+  const [modalPainter, setModalPainter] = useState(null);
+  const [filter, setFilter] = useState('Všichni');
+
+  const filters = ['Všichni', 'Rychlé termíny', 'Novostavby', 'Po nájemníkovi'];
+  const filterMap = {
+    'Rychlé termíny': p => p.spec.some(s => s.toLowerCase().includes('rychl') || s.toLowerCase().includes('48')),
+    'Novostavby':     p => p.spec.some(s => s.toLowerCase().includes('novostavb')),
+    'Po nájemníkovi': p => p.spec.some(s => s.toLowerCase().includes('nájemn')),
+  };
+  const visible = filter === 'Všichni' ? PAINTERS : PAINTERS.filter(filterMap[filter] || (() => true));
+
+  return (
+    <div style={{ background: T.bg, minHeight: '100vh', fontFamily: "'Outfit', sans-serif" }}>
+
+      {/* NAV */}
+      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(240,236,230,0.88)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <a href="Malir Hned v2.html">
+            <img src="uploads/ChatGPT%20Image%201.%206.%202026%2017_27_09%20(1).png" alt="Malíř Hned" style={{ height: 54, width: 'auto', display: 'block' }} />
+          </a>
+          <nav style={{ display: 'flex', gap: 32 }}>
+            {[['Malir Hned v2.html#jak-to-funguje','Jak to funguje'],['Malir Hned v2.html#terminy','Termíny'],['Malir Hned v2.html#cena','Cena'],['Maliri.html','Malíři'],['O nas.html','O nás']].map(([href, lbl]) => (
+              <a key={href} href={href} style={{ fontSize: 15, fontWeight: lbl === 'Malíři' ? 400 : 300, color: lbl === 'Malíři' ? T.text : T.textMid, textDecoration: 'none' }}>{lbl}</a>
+            ))}
+          </nav>
+        </div>
+      </nav>
+
+      {/* HEADER */}
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '52px 64px 48px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', borderBottom: `1px solid ${T.border}` }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 10 }}>Tým</div>
+          <h1 style={{ fontSize: 'clamp(36px,3.2vw,52px)', fontWeight: 300, letterSpacing: '-0.055em', lineHeight: 1.0, color: T.text }}>
+            Ověření malíři<br /><span style={{ color: T.textLight }}>pro Prahu a okolí</span>
+          </h1>
+        </div>
+        <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
+          {filters.map(f => (
+            <button key={f} type="button" onClick={() => setFilter(f)}
+              style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${f === filter ? 'rgba(42,122,78,0.22)' : T.border}`, background: f === filter ? T.accentSoft : T.surface, fontSize: 13, fontWeight: f === filter ? 400 : 300, color: f === filter ? T.accent : T.textMid, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'all 0.15s' }}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* GRID */}
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 64px 80px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+          {visible.map(p => <PainterCard key={p.name} painter={p} onBook={setModalPainter} />)}
+        </div>
+      </div>
+
+      {/* CTA PRUH */}
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px 80px' }}>
+        <div style={{ background: T.accent, borderRadius: T.r, padding: '48px 64px', display: 'grid', gridTemplateColumns: '1fr auto', gap: 48, alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 'clamp(22px,2vw,32px)', fontWeight: 300, letterSpacing: '-0.045em', color: '#fff', marginBottom: 8 }}>Nevíte, koho vybrat?</div>
+            <div style={{ fontSize: 15, fontWeight: 300, color: 'rgba(255,255,255,0.6)' }}>Vyberte termín a my přiřadíme nejlepšího dostupného malíře pro vaši zakázku.</div>
+          </div>
+          <a href="Malir Hned v2.html#terminy" style={{ display: 'inline-block', padding: '14px 32px', borderRadius: T.br, background: '#fff', color: T.accent, fontSize: 15, fontWeight: 500, whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(0,0,0,0.14)' }}>Vybrat termín</a>
+        </div>
+      </div>
+
+      {/* FOOTER */}
+      <footer style={{ background: T.surface, borderTop: `1px solid ${T.border}`, padding: '56px 64px 36px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 36 }}>
+          <div>
+            <img src="uploads/ChatGPT%20Image%201.%206.%202026%2017_27_09%20(1).png" alt="Malíř Hned" style={{ height: 44, width: 'auto', display: 'block', marginBottom: 16 }} />
+            <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.75, maxWidth: 280 }}>Platforma vznikla z reálné malířské praxe. Staví ji lidé, kteří mají za sebou více než deset let zakázek v bytech, kancelářích a menších domech po Praze a okolí.</p>
+          </div>
+          {[['Služby',['Volné termíny','Orientační cena','Dokončit objednávku']],['Společnost',['Jak to funguje','O nás','+420 777 650 320','info@malirhned.cz']],['Kontakt',['K Červenému dvoru 18, 160 00 Praha 6','IČO: 218 45 731','Profily malířů']]].map(([title, items]) => (
+            <div key={title}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: T.text, marginBottom: 14 }}>{title}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {items.map(item => <span key={item} style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>{item}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 20, borderTop: `1px solid ${T.border}`, fontSize: 13, fontWeight: 300, color: T.textLight }}>© 2026 Malíř Hned s.r.o.</div>
+      </footer>
+
+      {/* MODAL */}
+      {modalPainter && <SlotPickerModal painter={modalPainter} onClose={() => setModalPainter(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

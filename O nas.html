@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O nás – Malíř Hned</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Outfit', sans-serif; background: #f0ece6; color: #18170f; }
+    a { text-decoration: none; color: inherit; }
+
+    :root {
+      --bg: #f0ece6;
+      --surface: #ffffff;
+      --border: rgba(175,165,148,0.28);
+      --border-strong: rgba(175,165,148,0.55);
+      --text: #18170f;
+      --mid: #7a7268;
+      --light: #b8b0a4;
+      --accent: #2a7a4e;
+      --accent-soft: #e6f3ec;
+      --accent-shadow: rgba(42,122,78,0.28);
+      --warm: #f0be38;
+      --warm-soft: #fef8e0;
+      --r: 32px;
+      --cr: 18px;
+      --br: 13px;
+      --card-shadow: 0 1px 4px rgba(20,14,6,0.04), 0 8px 24px rgba(20,14,6,0.07);
+      --panel-shadow: 0 2px 8px rgba(20,14,6,0.04), 0 24px 64px rgba(20,14,6,0.09);
+      --max: 1280px;
+    }
+
+    /* NAV */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(240,236,230,0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: var(--max); margin: 0 auto; padding: 0 64px;
+      height: 64px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo img { height: 54px; width: auto; display: block; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { font-size: 15px; font-weight: 300; color: var(--mid); }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--text); font-weight: 400; }
+
+    /* HERO */
+    .hero {
+      max-width: var(--max); margin: 40px auto 0; padding: 0 64px;
+    }
+    .hero-panel {
+      background: var(--surface);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      box-shadow: var(--panel-shadow);
+      padding: 80px 96px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .hero-eyebrow {
+      font-size: 11px; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 20px;
+    }
+    .hero-h1 {
+      font-size: clamp(38px,3.4vw,54px); font-weight: 300;
+      letter-spacing: -0.055em; line-height: 1.0; color: var(--text);
+      margin-bottom: 28px;
+    }
+    .hero-h1 span { color: var(--light); }
+    .hero-p {
+      font-size: 16px; font-weight: 300; color: var(--mid);
+      line-height: 1.75; margin-bottom: 36px; max-width: 460px;
+    }
+    .hero-cta {
+      display: inline-block; padding: 13px 32px;
+      border-radius: var(--br); background: var(--accent); color: #fff;
+      font-size: 15px; font-weight: 400;
+      box-shadow: 0 12px 28px var(--accent-shadow);
+    }
+    .hero-right {
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .stat-row {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 14px;
+    }
+    .stat-card {
+      background: #f7f4f0; border-radius: var(--cr);
+      border: 1px solid var(--border); padding: 20px 18px;
+    }
+    .stat-num {
+      font-size: 30px; font-weight: 300; color: var(--text);
+      letter-spacing: -0.05em; line-height: 1; margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 12px; font-weight: 300; color: var(--light); line-height: 1.4;
+    }
+    .note-card {
+      background: var(--warm-soft); border-radius: var(--cr);
+      border: 1px solid rgba(220,182,75,0.35); padding: 22px 24px;
+    }
+    .note-card p {
+      font-size: 15px; font-weight: 300; color: #4a3c10;
+      line-height: 1.7; font-style: italic;
+    }
+    .note-card cite {
+      display: block; font-size: 12px; font-weight: 400;
+      color: #8a6c20; margin-top: 10px; font-style: normal;
+    }
+
+    /* SECTION */
+    .section { max-width: var(--max); margin: 0 auto; padding: 80px 64px 0; }
+    .section-eyebrow {
+      font-size: 11px; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px,2.6vw,40px); font-weight: 300;
+      letter-spacing: -0.05em; line-height: 1.05; color: var(--text);
+      margin-bottom: 40px;
+    }
+
+    /* HODNOTY */
+    .values-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 16px;
+    }
+    .value-card {
+      background: var(--surface); border-radius: var(--cr);
+      border: 1px solid var(--border); box-shadow: var(--card-shadow);
+      padding: 32px 28px;
+    }
+    .value-icon {
+      width: 40px; height: 40px; border-radius: 11px;
+      background: var(--accent-soft); display: flex; align-items: center;
+      justify-content: center; margin-bottom: 18px;
+    }
+    .value-title {
+      font-size: 17px; font-weight: 500; color: var(--text);
+      letter-spacing: -0.03em; margin-bottom: 10px;
+    }
+    .value-text {
+      font-size: 14px; font-weight: 300; color: var(--mid); line-height: 1.7;
+    }
+
+    /* PŘÍBĚH */
+    .story {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start;
+    }
+    .story-text p {
+      font-size: 15px; font-weight: 300; color: var(--mid);
+      line-height: 1.8; margin-bottom: 18px;
+    }
+    .story-text p strong { color: var(--text); font-weight: 500; }
+    .story-visual {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .timeline-item {
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .timeline-dot {
+      width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+      background: var(--accent-soft); border: 1px solid rgba(42,122,78,0.18);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; color: var(--accent);
+    }
+    .timeline-body { padding-top: 4px; }
+    .timeline-year { font-size: 12px; font-weight: 400; color: var(--accent); margin-bottom: 3px; }
+    .timeline-label { font-size: 14px; font-weight: 400; color: var(--text); margin-bottom: 3px; }
+    .timeline-text { font-size: 12px; font-weight: 300; color: var(--mid); line-height: 1.55; }
+
+    /* PRUH */
+    .strip {
+      max-width: var(--max); margin: 80px auto 0; padding: 0 64px;
+    }
+    .strip-inner {
+      background: var(--accent); border-radius: var(--r);
+      padding: 48px 64px;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 48px; align-items: center;
+    }
+    .strip-title {
+      font-size: clamp(22px,2vw,32px); font-weight: 300;
+      letter-spacing: -0.045em; color: #fff; margin-bottom: 8px;
+    }
+    .strip-sub { font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.6); }
+    .strip-btn {
+      display: inline-block; padding: 14px 32px;
+      border-radius: var(--br); background: #fff; color: var(--accent);
+      font-size: 15px; font-weight: 500; white-space: nowrap;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.14);
+    }
+
+    /* FOOTER */
+    footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 56px 64px 36px; margin-top: 80px;
+    }
+    .footer-inner {
+      max-width: var(--max); margin: 0 auto;
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
+      margin-bottom: 36px;
+    }
+    .footer-logo { height: 44px; width: auto; display: block; margin-bottom: 16px; }
+    .footer-desc { font-size: 14px; font-weight: 300; color: var(--mid); line-height: 1.75; max-width: 280px; }
+    .footer-col-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 14px; }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a, .footer-links span { font-size: 14px; font-weight: 300; color: var(--mid); }
+    .footer-bottom {
+      max-width: var(--max); margin: 0 auto;
+      padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 13px; font-weight: 300; color: var(--light);
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="Malir Hned v2.html" class="nav-logo">
+      <img src="uploads/ChatGPT%20Image%201.%206.%202026%2017_27_09%20(1).png" alt="Malíř Hned" />
+    </a>
+    <div class="nav-links">
+      <a href="Malir Hned v2.html#jak-to-funguje">Jak to funguje</a>
+      <a href="Malir Hned v2.html#terminy">Termíny</a>
+      <a href="Malir Hned v2.html#cena">Cena</a>
+      <a href="Maliri.html">Malíři</a>
+      <a href="O nas.html" class="active">O nás</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-panel">
+    <div>
+      <div class="hero-eyebrow">O nás</div>
+      <h1 class="hero-h1">
+        Vznikli jsme z praxe,<br />
+        <span>ne z kanceláře.</span>
+      </h1>
+      <p class="hero-p">
+        Malíř Hned postavili malíři a lidé, kteří zakázky sami dělali. Víme, jak vypadá špatná domluva, nejasná cena nebo termín, který se dvakrát přeloží. Vytvořili jsme platformu, která tohle řeší.
+      </p>
+      <a href="Malir Hned v2.html#terminy" class="hero-cta">Vybrat termín</a>
+    </div>
+    <div class="hero-right">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-num">1 028</div>
+          <div class="stat-label">Dokončených zakázek</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">4,9</div>
+          <div class="stat-label">Průměrné hodnocení</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">18 min</div>
+          <div class="stat-label">Průměrná reakce malíře</div>
+        </div>
+      </div>
+      <div class="note-card">
+        <p>„Nechtěli jsme dělat další seznam firem. Chtěli jsme, aby si člověk vybral konkrétního malíře, věděl přibližnou cenu dopředu a nemusel čekat týden na odpověď."</p>
+        <cite>— zakladatelé Malíř Hned</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HODNOTY -->
+<section class="section">
+  <div class="section-eyebrow">Přístup</div>
+  <h2 class="section-title">Tři věci, na kterých stavíme</h2>
+  <div class="values-grid">
+    <div class="value-card">
+      <div class="value-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a7a4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div class="value-title">Transparentní cena</div>
+      <p class="value-text">Orientační cena je vidět ještě před první zprávou. Žádné čekání na nabídku, žádné překvapení na faktuře. Finální částka se potvrdí na místě, ale výchozí bod je vždy jasný.</p>
+    </div>
+    <div class="value-card">
+      <div class="value-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a7a4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="value-title">Skutečný termín</div>
+      <p class="value-text">Termíny jsou reálné a v reálném čase. Nevybíráte si z teoretické dostupnosti — vidíte, kdy konkrétní malíř skutečně může přijít. Žádné přeložené schůzky.</p>
+    </div>
+    <div class="value-card">
+      <div class="value-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a7a4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <div class="value-title">Konkrétní člověk</div>
+      <p class="value-text">Nevybíráte si firmu nebo anonymní tým — vybíráte si konkrétního malíře s profilem, specializací a referencemi. Víte, s kým přijdete do bytu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PŘÍBĚH -->
+<section class="section" style="padding-bottom:0">
+  <div class="section-eyebrow">Příběh</div>
+  <h2 class="section-title">Jak Malíř Hned vznikl</h2>
+  <div class="story">
+    <div class="story-text">
+      <p>Příběh začal v <strong>roce 1996 projektem Non signature</strong> — tehdy ještě bez webu, jen s rukama a štětci. Zakázky chodily od sousedů, od přátel přátel, z vizitek na nástěnkách.</p>
+      <p>Po letech se projekt digitalizoval a přešel pod značku <strong>walldecorart.online</strong> — první pokus dát malířské službě online tvář. Rezervace, fotogalerie, kontakt. Byl to krok kupředu, ale domluva stále probíhala po telefonu.</p>
+      <p>V roce 2025 vznikla <strong>Malíři v černém</strong> (<a href="https://www.malirivcernem.cz" target="_blank" style="color:var(--accent)">malirivcernem.cz</a>) — tým ověřených malířů s vlastní kalkulačkou a poptávkovým formulářem. Zákazníci konečně dostali cenu online.</p>
+      <p>Malíř Hned je <strong>další krok</strong> — nejen kalkulačka, ale i skutečný kalendář dostupnosti a výběr konkrétního malíře dopředu. <strong>Bez telefonátů, bez čekání na nabídku.</strong></p>
+    </div>
+    <div class="story-visual">
+      <div class="timeline-item">
+        <div class="timeline-dot">01</div>
+        <div class="timeline-body">
+          <div class="timeline-year">1996</div>
+          <div class="timeline-label">Non signature</div>
+          <div class="timeline-text">Původní projekt. Malování bytů v Praze, zakázky z doporučení, žádný web.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">02</div>
+        <div class="timeline-body">
+          <div class="timeline-year">2010s</div>
+          <div class="timeline-label">walldecorart.online</div>
+          <div class="timeline-text">První digitální tvář projektu — web, fotogalerie, kontakt. Domluva stále po telefonu. <a href="https://www.walldecorart.online" target="_blank" style="color:var(--accent);font-weight:400;">walldecorart.online</a></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">03</div>
+        <div class="timeline-body">
+          <div class="timeline-year">2025</div>
+          <div class="timeline-label">Malíři v černém</div>
+          <div class="timeline-text">Nová značka, vlastní kalkulačka a poptávkový formulář. Zákazníci poprvé vidí cenu online. <a href="https://www.malirivcernem.cz" target="_blank" style="color:var(--accent);font-weight:400;">malirivcernem.cz</a></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">04</div>
+        <div class="timeline-body">
+          <div class="timeline-year">2026</div>
+          <div class="timeline-label">Malíř Hned</div>
+          <div class="timeline-text">Kalendář dostupnosti, výběr konkrétního malíře, objednávka bez telefonátu.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">05</div>
+        <div class="timeline-body">
+          <div class="timeline-year">Dnes</div>
+          <div class="timeline-label">Co dál</div>
+          <div class="timeline-text">Více malířů, Brno a Ostrava, mobilní aplikace. Ale jedno pravidlo zůstává: jen ověření lidé.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA PRUH -->
+<div class="strip">
+  <div class="strip-inner">
+    <div>
+      <div class="strip-title">Připraveni začít?</div>
+      <div class="strip-sub">Vyberte termín a orientační cenu máte do 30 sekund.</div>
+    </div>
+    <a href="Malir Hned v2.html#terminy" class="strip-btn">Vybrat termín</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <img src="uploads/ChatGPT%20Image%201.%206.%202026%2017_27_09%20(1).png" alt="Malíř Hned" class="footer-logo" />
+      <p class="footer-desc">Platforma vznikla z reálné malířské praxe. Staví ji lidé, kteří mají za sebou více než deset let zakázek v bytech, kancelářích a menších domech po Praze a okolí.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Služby</div>
+      <div class="footer-links">
+        <a href="Malir Hned v2.html#terminy">Volné termíny</a>
+        <a href="Malir Hned v2.html#cena">Orientační cena</a>
+        <a href="Malir Hned v2.html#objednavka">Dokončit objednávku</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Společnost</div>
+      <div class="footer-links">
+        <a href="Malir Hned v2.html#jak-to-funguje">Jak to funguje</a>
+        <a href="O nas.html">O nás</a>
+        <span>+420 777 650 320</span>
+        <span>info@malirhned.cz</span>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Kontakt</div>
+      <div class="footer-links">
+        <span>K Červenému dvoru 18, 160 00 Praha 6</span>
+        <span>IČO: 218 45 731</span>
+        <a href="Maliri.html">Profily malířů</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 Malíř Hned s.r.o.</div>
+</footer>
+
+</body>
+</html>
