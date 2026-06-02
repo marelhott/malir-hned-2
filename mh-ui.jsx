@@ -34,24 +34,27 @@ function SiteFooter() {
         <div>
           <div style={{ fontSize: 13, fontWeight: 500, color: T.text, marginBottom: 16 }}>Služby</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {['Volné termíny', 'Orientační cena', 'Dokončit objednávku'].map(item => (
-              <a key={item} href="#" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>{item}</a>
-            ))}
+            <a href="#terminy" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>Volné termíny</a>
+            <a href="#cena" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>Orientační cena</a>
+            <a href="#objednavka" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>Dokončit objednávku</a>
           </div>
         </div>
         <div>
           <div style={{ fontSize: 13, fontWeight: 500, color: T.text, marginBottom: 16 }}>Společnost</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {['Jak to funguje', 'O nás', '+420 777 650 320', 'info@malirhned.cz'].map(item => (
-              <a key={item} href="#" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>{item}</a>
-            ))}
+            <a href="#jak-to-funguje" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>Jak to funguje</a>
+            <a href="O nas.html" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>O nás</a>
+            <a href="tel:+420777650320" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>+420 777 650 320</a>
+            <a href="mailto:info@malirhned.cz" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>info@malirhned.cz</a>
           </div>
         </div>
         <div>
           <div style={{ fontSize: 13, fontWeight: 500, color: T.text, marginBottom: 16 }}>Kontakt</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {['K Červenému dvoru 18, 160 00 Praha 6', 'IČO: 218 45 731', 'Dostupné termíny', 'Výpočet ceny'].map(item => (
-              <span key={item} style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>{item}</span>
+              (item === 'Dostupné termíny' || item === 'Výpočet ceny')
+                ? <a key={item} href={item === 'Dostupné termíny' ? '#terminy' : '#cena'} style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>{item}</a>
+                : <span key={item} style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>{item}</span>
             ))}
           </div>
         </div>

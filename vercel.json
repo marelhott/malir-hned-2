@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/maliri", "destination": "/Maliri.html" },
+    { "source": "/o-nas", "destination": "/O nas.html" }
+  ]
+}

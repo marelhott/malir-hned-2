@@ -30,6 +30,7 @@
 const { useState, useMemo, useEffect } = React;
 const {
   T, MONTHS, calcPriceRange, getSlots,
+  createOrderPayload,
   SiteNav, SiteFooter,
   HeroSection, StepsSection, CalendarSection, CalcSection, PainterSection, OrderSection,
   PainterModal, OrderFormModal, ConfirmationModal,
@@ -57,6 +58,7 @@ function App() {
   const [selectedDay,       setSelectedDay]       = useState(10);
   const [selectedSlotId,    setSelectedSlotId]    = useState('0-10-0');
   const [formData,          setFormData]          = useState(DEFAULT_FORM);
+  const [selectedSlotOverride, setSelectedSlotOverride] = useState(null);
   const [isPainterOpen,     setIsPainterOpen]     = useState(false);
   const [isOrderOpen,       setIsOrderOpen]       = useState(false);
   const [isConfirmed,       setIsConfirmed]       = useState(false);
@@ -64,6 +66,11 @@ function App() {
   // Načíst předvybraný slot z Maliri.html
   useEffect(() => {
     try {
+      const savedDraft = localStorage.getItem('mh_booking_draft');
+      if (savedDraft) {
+        setFormData(prev => ({ ...prev, ...JSON.parse(savedDraft) }));
+      }
+
       const saved = localStorage.getItem('mh_selected_slot');
       if (saved) {
         const { monthIdx: mIdx, day, slotId } = JSON.parse(saved);
@@ -71,6 +78,11 @@ function App() {
         setSelectedDay(day);
         setSelectedSlotId(slotId);
         localStorage.removeItem('mh_selected_slot');
+        const savedPayload = localStorage.getItem('mh_selected_slot_payload');
+        if (savedPayload) {
+          setSelectedSlotOverride(JSON.parse(savedPayload));
+          localStorage.removeItem('mh_selected_slot_payload');
+        }
         setTimeout(() => {
           const el = document.getElementById('malir');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -79,9 +91,16 @@ function App() {
     } catch(e) {}
   }, []);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('mh_booking_draft', JSON.stringify(formData));
+    } catch (e) {}
+  }, [formData]);
+
   const priceRange   = useMemo(() => calcPriceRange(formData), [formData]);
   const slots        = useMemo(() => getSlots(monthIdx, selectedDay, formData), [monthIdx, selectedDay, formData]);
-  const selectedSlot = slots.find(s => s.id === selectedSlotId) || null;
+  const selectedSlot = slots.find(s => s.id === selectedSlotId)
+    || (selectedSlotOverride && selectedSlotOverride.id === selectedSlotId && selectedSlotOverride.day === selectedDay && selectedSlotOverride.monthIdx === monthIdx ? selectedSlotOverride : null);
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', fontFamily: "'Outfit', sans-serif" }}>
@@ -137,7 +156,16 @@ function App() {
           monthIdx={monthIdx}
           priceRange={priceRange}
           onClose={() => setIsOrderOpen(false)}
-          onConfirm={() => { setIsOrderOpen(false); setIsConfirmed(true); }}
+          onConfirm={(customerData) => {
+            const payload = createOrderPayload(formData, selectedSlot, customerData);
+            try {
+              const existing = JSON.parse(localStorage.getItem('mh_orders') || '[]');
+              localStorage.setItem('mh_orders', JSON.stringify([payload, ...existing]));
+              localStorage.setItem('mh_last_order', JSON.stringify(payload));
+            } catch (e) {}
+            setIsOrderOpen(false);
+            setIsConfirmed(true);
+          }}
         />
       )}
       {isConfirmed && selectedSlot && (

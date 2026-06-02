@@ -31,6 +31,38 @@ const PM = {
   'Jakub Černý':   { name: 'Jakub Černý',    ini: 'J', exp: '10 let praxe', role: 'Přesné zakrytí a detail',      summary: 'Víc než rychlost řeším pečlivost. Hodím se tam, kde je důležité šetrné zakrytí a čistý detail kolem nábytku nebo kuchyně.',                      price: '12 000–20 000 Kč', resp: 'Volá do 31 min', jobs: '127 zakázek', spec: ['Detailní práce', 'Zakrytí nábytku', 'Barevné malby'],   fit: 'Dobrý tam, kde hraje roli detail a pečlivost.',     img: 'https://images.pexels.com/photos/10682438/pexels-photo-10682438.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop' },
 };
 
+const PROPERTY_BASE_PRICES = {
+  'Pokoj': 6500,
+  'Byt': 13200,
+  '1+kk': 8900,
+  '2+kk': 11800,
+  '2+1': 13200,
+  '3+kk': 15600,
+  '3+1': 17100,
+  '4+kk': 21400,
+  'Kancelář': 19700,
+};
+
+const PROPERTY_AREAS = {
+  'Pokoj': 18,
+  'Byt': 58,
+  '1+kk': 34,
+  '2+kk': 52,
+  '2+1': 58,
+  '3+kk': 72,
+  '3+1': 81,
+  '4+kk': 102,
+  'Kancelář': 110,
+};
+
+const WORK_TYPE_MULTIPLIERS = {
+  'Běžná bílá výmalba': 1,
+  'Po nájemníkovi': 1.08,
+  'Opravy stěn': 1.16,
+  'Stropy': 1.1,
+  'Barevné stěny': 1.14,
+};
+
 
 // ── KALENDÁŘ — 3 MĚSÍCE ──────────────────────────────────────
 // Duben 2026: 1.4 = středa → leading 2 | Květen: 1.5 = pátek → 4 | Červen: 1.6 = pondělí → 0
@@ -138,14 +170,64 @@ function dayLbl(monthIdx, dayNum) {
   return `${dayNum}. ${MONTH_NAMES_GEN[m.month - 1]} ${m.year}`;
 }
 
+function getAreaEstimate(form) {
+  const customArea = Number(form.customArea) || 0;
+  if (customArea > 0) return customArea;
+
+  if (PROPERTY_AREAS[form.propertyType]) {
+    return PROPERTY_AREAS[form.propertyType];
+  }
+
+  const roomCount = Number(form.roomCount) || 0;
+  if (roomCount > 0) {
+    return Math.max(18, roomCount * 18);
+  }
+
+  return PROPERTY_AREAS['Byt'];
+}
+
+function getPainterFitScore(form, painter) {
+  if (!painter) return 0;
+
+  const specText = `${painter.role} ${painter.summary} ${(painter.spec || []).join(' ')}`.toLowerCase();
+  const area = getAreaEstimate(form);
+  let score = 0;
+
+  if (form.workType === 'Po nájemníkovi' && specText.includes('nájem')) score += 5;
+  if (form.workType === 'Opravy stěn' && specText.includes('oprav')) score += 5;
+  if (form.workType === 'Stropy' && specText.includes('strop')) score += 4;
+  if (form.workType === 'Barevné stěny' && specText.includes('barev')) score += 4;
+  if (form.workType === 'Běžná bílá výmalba' && specText.includes('rychl')) score += 2;
+
+  if (area <= 40 && (specText.includes('menší') || specText.includes('1+kk'))) score += 3;
+  if (area >= 70 && (specText.includes('větší') || specText.includes('novostav'))) score += 3;
+  if (area >= 95 && specText.includes('strop')) score += 1;
+
+  if ((form.repairs === 'Střední' || form.repairs === 'Velké') && specText.includes('oprav')) score += 3;
+  if (form.covering === 'Ano' && specText.includes('zakryt')) score += 2;
+  if (form.furnitureMoving === 'Ano' && specText.includes('detail')) score += 1;
+  if (form.cleaning === 'Potřebuji' && specText.includes('rychl')) score += 1;
+
+  return score;
+}
+
 function getSlots(monthIdx, dayNum, form) {
   const month = MONTHS[monthIdx];
   const day = month.cal.find(d => d.d === dayNum);
   if (!day || !day.jobs.length) return [];
   const pr = calcPriceRange(form);
   return day.jobs
-    .map((j, i) => ({ id: `${monthIdx}-${dayNum}-${i}`, monthIdx, day: dayNum, time: j.t, painter: PM[j.p], priceRange: pr }))
-    .filter(s => s.painter);
+    .map((j, i) => ({
+      id: `${monthIdx}-${dayNum}-${i}`,
+      monthIdx,
+      day: dayNum,
+      time: j.t,
+      painter: PM[j.p],
+      priceRange: pr,
+      fitScore: getPainterFitScore(form, PM[j.p]),
+    }))
+    .filter(s => s.painter)
+    .sort((a, b) => b.fitScore - a.fitScore || a.time.localeCompare(b.time, 'cs'));
 }
 
 
@@ -163,14 +245,16 @@ const WALL_AREA_RATE  = FLOOR_AREA_RATE / 3.5;
 const MIN_PRICE       = 3000;
 
 function calcPriceRange(form) {
-  const area = Number(form.customArea) || 0;
-  if (area <= 0) return { low: 0, high: 0, single: true };
-
+  const area = getAreaEstimate(form);
+  const hasManualArea = (Number(form.customArea) || 0) > 0;
+  if (!hasManualArea) {
+    return { low: 0, high: 0, single: true, areaEstimate: 0 };
+  }
   const isPudorys = form.areaMode === 'Podlahové m2';
-  const basePrice = Math.max(
-    isPudorys ? area * FLOOR_AREA_RATE : area * WALL_AREA_RATE,
-    MIN_PRICE
-  );
+  const propertyBase = PROPERTY_BASE_PRICES[form.propertyType] || PROPERTY_BASE_PRICES['Byt'];
+  const basePrice = hasManualArea
+    ? Math.max(isPudorys ? area * FLOOR_AREA_RATE : area * WALL_AREA_RATE, MIN_PRICE)
+    : propertyBase;
 
   let total = basePrice;
 
@@ -188,11 +272,34 @@ function calcPriceRange(form) {
   if (form.furnitureMoving === 'Ano')       total += basePrice * 0.18;
   if (form.covering        === 'Ano')       total += basePrice * 0.14;
   if (form.cleaning        === 'Potřebuji') total += basePrice * 0.16;
+  if (form.emptySpace      === 'Ne')        total += basePrice * 0.08;
+  if (form.carpets         === 'Ano')       total += basePrice * 0.05;
 
-  const final = Math.round(total);
-  const low   = Math.floor(final / 1000) * 1000;
-  const high  = Math.ceil(final  / 1000) * 1000 + 1000;
-  return { low, high, single: false };
+  total *= WORK_TYPE_MULTIPLIERS[form.workType] || 1;
+
+  const low   = Math.round((total * 0.94) / 100) * 100;
+  const high  = Math.round((total * 1.06) / 100) * 100;
+  return { low, high, single: false, areaEstimate: area };
 }
 
-Object.assign(window, { T, MONTHS, PM, calcPriceRange, fmtP, fmtRange, dayLbl, getSlots });
+function createOrderPayload(form, slot, customer) {
+  const range = calcPriceRange(form);
+  return {
+    submittedAt: new Date().toISOString(),
+    reference: `MH-${Date.now().toString().slice(-6)}`,
+    customer,
+    booking: {
+      ...form,
+      dateLabel: dayLbl(slot.monthIdx, slot.day),
+      day: slot.day,
+      slot: slot.time,
+      painter: slot.painter.name,
+      painterRole: slot.painter.role,
+      monthIdx: slot.monthIdx,
+      priceLow: range.low,
+      priceHigh: range.high,
+    },
+  };
+}
+
+Object.assign(window, { T, MONTHS, PM, calcPriceRange, fmtP, fmtRange, dayLbl, getSlots, createOrderPayload });

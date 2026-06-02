@@ -412,7 +412,7 @@ function OrderSection({ selectedSlot, monthIdx, onOrderClick }) {
             <div style={{ width: 1, height: 44, background: T.border, flexShrink: 0 }} />
             {/* Text */}
             <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.65, margin: 0, flex: 1 }}>
-              Potvrdíte termín, doplníte kontakt a objednávka odejde přímo dostupnému malíři. Reaguje {selectedSlot.painter.resp.toLowerCase()}.
+              Potvrdíte termín, doplníte kontakt a objednávka odejde přímo dostupnému malíři. {selectedSlot.painter.resp}.
             </p>
           </div>
           <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
@@ -534,6 +534,42 @@ function OrderFormModal({ selectedSlot, monthIdx, priceRange, onClose, onConfirm
     return () => { document.removeEventListener('keydown', h); document.body.style.overflow = ''; };
   }, []);
   const inp = { padding: '10px 14px', borderRadius: T.br, border: `1px solid ${T.border}`, background: T.surface, fontSize: 14, fontWeight: 300, color: T.text, fontFamily: "'Outfit', sans-serif", outline: 'none', width: '100%' };
+
+  function handleSubmit() {
+    const requiredFields = [
+      ['name', 'Vyplňte prosím jméno.'],
+      ['phone', 'Vyplňte prosím telefon.'],
+      ['email', 'Vyplňte prosím e-mail.'],
+      ['address', 'Vyplňte prosím přesnou adresu.'],
+    ];
+
+    const missing = requiredFields.find(([key]) => !String(form[key] || '').trim());
+    if (missing) {
+      window.alert(missing[1]);
+      return;
+    }
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+    if (!emailOk) {
+      window.alert('Zadejte prosím platný e-mail.');
+      return;
+    }
+
+    const digits = form.phone.replace(/\D/g, '');
+    if (digits.length < 9) {
+      window.alert('Zadejte prosím platné telefonní číslo.');
+      return;
+    }
+
+    onConfirm({
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      address: form.address.trim(),
+      notes: form.notes.trim(),
+    });
+  }
+
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(12,10,6,0.54)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: T.surface, borderRadius: T.r, boxShadow: T.panelShadow, maxWidth: 820, width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -577,7 +613,7 @@ function OrderFormModal({ selectedSlot, monthIdx, priceRange, onClose, onConfirm
             <span style={{ fontSize: 12, color: T.textMid, fontWeight: 300 }}>Poznámka pro malíře</span>
             <textarea placeholder="Např. byt po nájemníkovi, klíče u správce, preferuji dopoledne..." rows={4} value={form.notes} onChange={e => sf('notes', e.target.value)} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} />
           </label>
-          <button type="button" onClick={onConfirm} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none' }}>
+          <button type="button" onClick={handleSubmit} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none' }}>
             Potvrdit termín a odeslat zadání
           </button>
           <p style={{ fontSize: 12, fontWeight: 300, color: T.textLight, textAlign: 'center', marginTop: 12 }}>
