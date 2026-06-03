@@ -324,6 +324,7 @@ function CalcSection({ formData, setFormData, priceRange }) {
 // ── MALÍŘ ─────────────────────────────────────────────────────
 function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
   if (!selectedSlot) return null;
+  const painters = Object.values(PM);
 
   return (
     <section id="malir" style={{ padding: '0 0 80px' }}>
@@ -342,6 +343,16 @@ function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
               <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.72, margin: 0 }}>
                 Pro vybraný den teď vidíme dostupnou kapacitu služby. Dispečink podle termínu, lokality a typu práce vybere nejvhodnějšího malíře a po jeho přijetí vám ho potvrdí.
               </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10, marginTop: 20 }}>
+                {painters.map((p) => (
+                  <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
+                    <div style={{ width: '100%', maxWidth: 64, aspectRatio: '1', borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: T.cardShadow }}>
+                      <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 400, color: T.textMid, textAlign: 'center', lineHeight: 1.2 }}>{p.name.split(' ')[0]}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div style={{ padding: '18px 20px', borderRadius: T.cr, background: '#f7f4f0', border: `1px solid ${T.border}` }}>
