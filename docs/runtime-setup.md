@@ -9,11 +9,17 @@ Data se ukládají do lokálního souboru `.data/demo-store.json`.
 2. `Produkční režim`
 Aktivuje se automaticky po doplnění Supabase envů.
 
+3. `Supabase Storage režim`
+Pro rychlé nasazení bez přímého Postgres schema přístupu lze použít persistentní JSON store v Supabase Storage bucketu.
+Aktivuje se přes `SUPABASE_STORE_MODE=storage`.
+
 ## Povinné proměnné pro produkci
 
 ```bash
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_STORE_MODE=
+SUPABASE_STORAGE_BUCKET=
 ADMIN_EMAIL=
 ADMIN_PASSWORD=
 ADMIN_SESSION_SECRET=
@@ -33,6 +39,18 @@ OFFER_EXPIRY_MINUTES=10
 `/supabase/migrations/20260603_initial_dispatch_schema.sql`
 
 2. doplnit produkční malíře do tabulky `painters` nebo nechat první seed proběhnout automaticky přes API
+
+## Rychlá produkční varianta bez DB migrace
+
+Pokud nechceš sahat do Postgres schema nebo nemáš po ruce DB heslo:
+
+```bash
+SUPABASE_STORE_MODE=storage
+SUPABASE_STORAGE_BUCKET=malir-hned2-data
+```
+
+V tom případě se celý stav systému ukládá do jednoho JSON objektu v Supabase Storage bucketu.
+Pro MVP dispečink to stačí a backend je persistentní i na Vercelu.
 
 ## Hlavní cesty aplikace
 
