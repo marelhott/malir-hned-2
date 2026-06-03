@@ -5,6 +5,7 @@ create table if not exists painters (
   name text not null,
   email text,
   phone text,
+  profile_photo text,
   approx_location text,
   experience_label text,
   role text,
@@ -14,21 +15,36 @@ create table if not exists painters (
   jobs_label text,
   image_url text,
   specialties jsonb not null default '[]'::jsonb,
+  service_areas jsonb not null default '[]'::jsonb,
+  work_types jsonb not null default '[]'::jsonb,
   is_active boolean not null default true,
-  created_at timestamptz not null default now()
+  is_express_enabled boolean not null default false,
+  reliability_score numeric not null default 4.5,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists jobs (
   id uuid primary key default gen_random_uuid(),
   reference text not null unique,
+  public_token text,
   status text not null,
   client_name text,
   client_phone text,
   client_email text,
+  address text,
+  locality text,
+  service_area text,
   client_address text,
   client_note text,
+  notes text,
   booking_note text,
+  preferred_date date,
   property_type text,
+  space_type text,
+  size_label text,
+  square_meters numeric,
   room_count integer,
   area_mode text,
   custom_area numeric,
@@ -47,8 +63,13 @@ create table if not exists jobs (
   approximate_location text,
   estimated_price_low integer,
   estimated_price_high integer,
+  estimated_client_price_min integer,
+  estimated_client_price_max integer,
   confirmed_price integer,
+  confirmed_client_price integer,
   painter_payout integer,
+  painter_reward integer,
+  assigned_painter_id uuid references painters(id),
   selected_painter_id uuid references painters(id),
   selected_offer_id uuid,
   selected_painter_name text,
@@ -57,14 +78,43 @@ create table if not exists jobs (
   cancel_token_hash text not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  assigned_at timestamptz
+  assigned_at timestamptz,
+  cancelled_at timestamptz,
+  completed_at timestamptz
 );
 
 create table if not exists job_photos (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references jobs(id) on delete cascade,
   storage_path text not null,
+  public_url text,
   created_at timestamptz not null default now()
+);
+
+create table if not exists painter_availability (
+  id uuid primary key default gen_random_uuid(),
+  painter_id uuid not null references painters(id) on delete cascade,
+  date date not null,
+  status text not null,
+  capacity integer not null default 1,
+  accepts_express boolean not null default false,
+  note text,
+  source text not null default 'painter',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (painter_id, date)
+);
+
+create table if not exists painter_capacity_blocks (
+  id uuid primary key default gen_random_uuid(),
+  painter_id uuid not null references painters(id) on delete cascade,
+  job_id uuid not null references jobs(id) on delete cascade,
+  date date not null,
+  block_type text not null,
+  status text not null,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists job_offers (
@@ -72,12 +122,17 @@ create table if not exists job_offers (
   job_id uuid not null references jobs(id) on delete cascade,
   painter_id uuid not null references painters(id),
   painter_name text not null,
+  offer_token text,
   status text not null,
   token_hash text not null unique,
+  offered_reward integer,
   offered_payout integer,
   approx_location text,
   sanitized_note text,
   expires_at timestamptz not null,
+  accepted_at timestamptz,
+  declined_at timestamptz,
+  withdrawn_at timestamptz,
   responded_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -89,6 +144,7 @@ create table if not exists job_events (
   offer_id uuid references job_offers(id) on delete set null,
   event_type text not null,
   actor_type text not null,
+  actor_id uuid,
   actor_label text not null,
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
@@ -97,7 +153,8 @@ create table if not exists job_events (
 create table if not exists notifications (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references jobs(id) on delete cascade,
-  offer_id uuid references job_offers(id) on delete set null,
+  recipient_type text,
+  recipient_id uuid,
   channel text not null,
   recipient text not null,
   template_key text not null,
@@ -111,8 +168,10 @@ create table if not exists admin_users (
   id uuid primary key default gen_random_uuid(),
   email text not null unique,
   name text,
+  role text not null default 'owner',
   is_active boolean not null default true,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists idx_jobs_status_created_at on jobs(status, created_at desc);

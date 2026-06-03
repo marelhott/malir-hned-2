@@ -98,6 +98,7 @@ async function buildPaintersPage() {
 async function copyStaticPages() {
   await cp(path.join(rootDir, 'O nas.html'), path.join(distDir, 'O nas.html'))
   await cp(path.join(rootDir, 'admin.html'), path.join(distDir, 'admin.html'))
+  await cp(path.join(rootDir, 'malir.html'), path.join(distDir, 'malir.html'))
   await cp(path.join(rootDir, 'nabidka.html'), path.join(distDir, 'nabidka.html'))
   await cp(path.join(rootDir, 'zakazka.html'), path.join(distDir, 'zakazka.html'))
   await cp(path.join(rootDir, 'uploads'), path.join(distDir, 'uploads'), { recursive: true })
@@ -108,6 +109,7 @@ async function copyStaticPages() {
 async function buildInternalPages() {
   await Promise.all([
     bundleEntry('src/admin.jsx', 'admin.js'),
+    bundleEntry('src/painter-app.jsx', 'painter-app.js'),
     bundleEntry('src/offer.jsx', 'offer.js'),
     bundleEntry('src/job-status.jsx', 'job-status.js'),
   ])

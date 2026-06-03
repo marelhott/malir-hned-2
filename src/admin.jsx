@@ -38,6 +38,40 @@ function waitLabel(value) {
   return `${hours} h ${mins % 60} min`
 }
 
+function jobStatusLabel(value) {
+  return {
+    new: 'Nová',
+    waiting_for_review: 'Čeká na kontrolu',
+    waiting_for_client_details: 'Čeká na doplnění',
+    ready_to_offer: 'Připravená k nabídnutí',
+    offered_to_painter: 'Nabídnuto malíři',
+    painter_accepted: 'Malíř přijal',
+    assigned: 'Přiřazeno',
+    confirmed_to_client: 'Potvrzeno klientovi',
+    in_progress: 'V řešení',
+    completed: 'Dokončeno',
+    cancelled: 'Zrušeno',
+  }[value] || value
+}
+
+function offerStatusLabel(value) {
+  return {
+    pending: 'Čeká na reakci',
+    accepted: 'Přijatá',
+    declined: 'Odmítnutá',
+    expired: 'Prošlá',
+    withdrawn: 'Stažená',
+  }[value] || value
+}
+
+function availabilityLabel(value) {
+  return {
+    available: 'Dostupný',
+    limited: 'Omezeně dostupný',
+    unavailable: 'Nedostupný',
+  }[value] || value
+}
+
 function Login({ onLogin, loading, error }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -256,9 +290,10 @@ function App() {
                   <div style={{ fontSize: 14, color: UI.text, marginBottom: 6 }}>{job.approximate_location || 'Bez lokality'} · {job.property_type || 'Zakázka'}</div>
                   <div style={{ fontSize: 13, color: UI.textMid, lineHeight: 1.5 }}>{job.preferred_date_label || 'Bez termínu'} · {job.preferred_time_label || 'Čas neurčen'}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 10, fontSize: 12, color: UI.textMid }}>
-                    <span>{job.status}</span>
+                    <span>{jobStatusLabel(job.status)}</span>
                     <span>{money(job.estimated_price_high)}</span>
                   </div>
+                  <div style={{ fontSize: 12, color: UI.textLight, marginTop: 6 }}>{job.best_painter_status || 'Bez doporučení'}</div>
                 </button>
               ))}
             </div>
@@ -276,8 +311,8 @@ function App() {
                       <h2 style={{ fontSize: 30, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '6px 0 8px' }}>{selectedJob.client_name || 'Klient bez jména'}</h2>
                       <div style={{ fontSize: 14, color: UI.textMid, lineHeight: 1.6 }}>{selectedJob.client_address || 'Adresa bude doplněna'}</div>
                     </div>
-                    <div style={{ fontSize: 13, color: UI.textMid }}>
-                      <div>Stav: <strong style={{ color: UI.text }}>{selectedJob.status}</strong></div>
+                      <div style={{ fontSize: 13, color: UI.textMid }}>
+                      <div>Stav: <strong style={{ color: UI.text }}>{jobStatusLabel(selectedJob.status)}</strong></div>
                       <div>Čeká: {waitLabel(selectedJob.created_at)}</div>
                     </div>
                   </div>
@@ -307,7 +342,7 @@ function App() {
 
                           <select value={form.painterId} onChange={(e) => setForm({ ...form, painterId: e.target.value })} style={inputStyle()}>
                             <option value="">Vyberte malíře</option>
-                            {painters.map((painter) => <option key={painter.id} value={painter.id}>{painter.name} · {painter.role}</option>)}
+                            {(detail?.recommendedPainters?.length ? detail.recommendedPainters : painters).map((painter) => <option key={painter.id} value={painter.id}>{painter.name} · {painter.display_status || painter.role}</option>)}
                           </select>
                           <button style={primaryButton()} disabled={!form.painterId || busyAction === 'send_offer'} onClick={() => doAction('send_offer', { painterId: form.painterId })}>Poslat nabídku malíři</button>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -328,11 +363,29 @@ function App() {
                           <div key={offer.id} style={{ padding: '12px 0', borderBottom: `1px solid ${UI.border}` }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                               <strong style={{ fontSize: 14, color: UI.text }}>{offer.painter_name}</strong>
-                              <span style={{ fontSize: 12, color: UI.textMid }}>{offer.status}</span>
+                              <span style={{ fontSize: 12, color: UI.textMid }}>{offerStatusLabel(offer.status)}</span>
                             </div>
                             <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{dt(offer.created_at)} · exp. {dt(offer.expires_at)}</div>
+                            {offer.status === 'pending' ? <button style={{ ...ghostButton(), marginTop: 8 }} onClick={() => doAction('withdraw_offer', { offerId: offer.id })}>Stáhnout nabídku</button> : null}
                           </div>
                         )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Zatím bez nabídek.</div>}
+                      </Panel>
+
+                      <Panel title="Vhodní malíři">
+                        {(detail?.recommendedPainters || []).length ? detail.recommendedPainters.map((painter) => (
+                          <div key={painter.id} style={{ padding: '12px 0', borderBottom: `1px solid ${UI.border}` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                              <strong style={{ fontSize: 14, color: UI.text }}>{painter.name}</strong>
+                              <span style={{ fontSize: 12, color: UI.textMid }}>{availabilityLabel(painter.availability_status)}</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{painter.display_status}</div>
+                            <div style={{ fontSize: 12, color: UI.textLight, marginTop: 4 }}>Kapacita: {painter.remaining_capacity} · Lokalita: {painter.locality_match ? 'sedí' : 'mimo lokalitu'} · Expres: {painter.accepts_express ? 'ano' : 'ne'}</div>
+                            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <button style={ghostButton()} onClick={() => setForm((prev) => ({ ...prev, painterId: painter.id }))}>Vybrat do nabídky</button>
+                              {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Portál malíře</a> : null}
+                            </div>
+                          </div>
+                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Doporučení se objeví po zadání preferovaného dne.</div>}
                       </Panel>
 
                       <Panel title="Historie">

@@ -1,5 +1,21 @@
 const { useEffect, useState } = React
 
+function jobStatusLabel(value) {
+  return {
+    new: 'Nová',
+    waiting_for_review: 'Čeká na kontrolu',
+    waiting_for_client_details: 'Čeká na doplnění',
+    ready_to_offer: 'Připravená k nabídnutí',
+    offered_to_painter: 'Nabídnuto malíři',
+    painter_accepted: 'Malíř přijal',
+    assigned: 'Přiřazeno',
+    confirmed_to_client: 'Potvrzeno klientovi',
+    in_progress: 'V řešení',
+    completed: 'Dokončeno',
+    cancelled: 'Zrušeno',
+  }[value] || value
+}
+
 function StatusApp() {
   const [data, setData] = useState({ loading: true, error: '', job: null, events: [], mode: '' })
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', notes: '' })
@@ -69,7 +85,7 @@ function StatusApp() {
               Zakázku jsme přijali ke zpracování. Ověříme dostupnost vhodného malíře pro vámi preferovaný termín. Jakmile bude malíř potvrzený, pošleme vám jeho jméno a bude vás kontaktovat napřímo.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-              <Box label="Stav" value={data.job.status} />
+              <Box label="Stav" value={jobStatusLabel(data.job.status)} />
               <Box label="Termín" value={`${data.job.preferred_date_label || '—'} · ${data.job.preferred_time_label || '—'}`} />
               <Box label="Lokalita" value={data.job.client_address || 'Bude doplněna'} />
               <Box label="Orientační cena" value={data.job.estimated_price_high ? `${new Intl.NumberFormat('cs-CZ').format(data.job.estimated_price_high)} Kč` : '—'} />

@@ -29,7 +29,7 @@
 <script type="text/babel">
 const { useState, useMemo, useEffect } = React;
 const {
-  T, MONTHS, calcPriceRange, getSlots,
+  T, calcPriceRange, getSlots,
   createOrderPayload, submitJobRequest,
   SiteNav, SiteFooter,
   HeroSection, StepsSection, CalendarSection, CalcSection, PainterSection, OrderSection,
@@ -54,9 +54,12 @@ const DEFAULT_FORM = {
 };
 
 function App() {
+  const [calendarMonths,    setCalendarMonths]    = useState([]);
+  const [calendarLoading,   setCalendarLoading]   = useState(true);
+  const [calendarError,     setCalendarError]     = useState('');
   const [monthIdx,          setMonthIdx]          = useState(0);
-  const [selectedDay,       setSelectedDay]       = useState(10);
-  const [selectedSlotId,    setSelectedSlotId]    = useState('0-10-0');
+  const [selectedDay,       setSelectedDay]       = useState(null);
+  const [selectedSlotId,    setSelectedSlotId]    = useState('');
   const [formData,          setFormData]          = useState(DEFAULT_FORM);
   const [selectedSlotOverride, setSelectedSlotOverride] = useState(null);
   const [isPainterOpen,     setIsPainterOpen]     = useState(false);
@@ -64,8 +67,38 @@ function App() {
   const [isConfirmed,       setIsConfirmed]       = useState(false);
   const [submissionResult,  setSubmissionResult]  = useState(null);
 
+  async function loadAvailability(workType = DEFAULT_FORM.workType) {
+    setCalendarLoading(true);
+    setCalendarError('');
+    try {
+      const params = new URLSearchParams({ days: '90', workType });
+      const response = await fetch(`/api/public/availability?${params.toString()}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Kalendář dostupnosti se nepodařilo načíst.');
+      }
+      setCalendarMonths(data.months || []);
+      const firstMonthIndex = (data.months || []).findIndex((month) => month.cal.some((day) => day.selectable));
+      const safeMonthIndex = firstMonthIndex >= 0 ? firstMonthIndex : 0;
+      setMonthIdx((current) => Math.min(current, Math.max(0, (data.months || []).length - 1)));
+      if (!selectedDay) {
+        const firstDay = data.months?.[safeMonthIndex]?.cal?.find((day) => day.selectable);
+        if (firstDay) {
+          setMonthIdx(safeMonthIndex);
+          setSelectedDay(firstDay.d);
+        }
+      }
+    } catch (error) {
+      setCalendarError(error.message || 'Kalendář dostupnosti se nepodařilo načíst.');
+      setCalendarMonths([]);
+    } finally {
+      setCalendarLoading(false);
+    }
+  }
+
   // Načíst předvybraný slot z Maliri.html
   useEffect(() => {
+    loadAvailability(DEFAULT_FORM.workType);
     try {
       const savedDraft = localStorage.getItem('mh_booking_draft');
       if (savedDraft) {
@@ -77,7 +110,7 @@ function App() {
         const { monthIdx: mIdx, day, slotId } = JSON.parse(saved);
         setMonthIdx(mIdx ?? 0);
         setSelectedDay(day);
-        setSelectedSlotId(slotId);
+        setSelectedSlotId(slotId || '');
         localStorage.removeItem('mh_selected_slot');
         const savedPayload = localStorage.getItem('mh_selected_slot_payload');
         if (savedPayload) {
@@ -98,8 +131,12 @@ function App() {
     } catch (e) {}
   }, [formData]);
 
+  useEffect(() => {
+    loadAvailability(formData.workType);
+  }, [formData.workType]);
+
   const priceRange   = useMemo(() => calcPriceRange(formData), [formData]);
-  const slots        = useMemo(() => getSlots(monthIdx, selectedDay, formData), [monthIdx, selectedDay, formData]);
+  const slots        = useMemo(() => getSlots(calendarMonths, monthIdx, selectedDay, formData), [calendarMonths, monthIdx, selectedDay, formData]);
   const selectedSlot = slots.find(s => s.id === selectedSlotId)
     || (selectedSlotOverride && selectedSlotOverride.id === selectedSlotId && selectedSlotOverride.day === selectedDay && selectedSlotOverride.monthIdx === monthIdx ? selectedSlotOverride : null);
 
@@ -110,6 +147,7 @@ function App() {
         <HeroSection />
         <StepsSection />
         <CalendarSection
+          months={calendarMonths}
           monthIdx={monthIdx}
           setMonthIdx={setMonthIdx}
           selectedDay={selectedDay}
@@ -117,6 +155,8 @@ function App() {
           selectedSlotId={selectedSlotId}
           setSelectedSlotId={setSelectedSlotId}
           formData={formData}
+          loading={calendarLoading}
+          error={calendarError}
         />
         <CalcSection
           formData={formData}

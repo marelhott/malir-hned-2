@@ -85,11 +85,11 @@ function StepsSection() {
 }
 
 // ── KALENDÁŘ ─────────────────────────────────────────────────
-function CalendarSection({ monthIdx, setMonthIdx, selectedDay, setSelectedDay, selectedSlotId, setSelectedSlotId, formData }) {
+function CalendarSection({ months, monthIdx, setMonthIdx, selectedDay, setSelectedDay, selectedSlotId, setSelectedSlotId, formData, loading, error }) {
   const WEEKDAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
-  const month = MONTHS[monthIdx];
-  const slots = getSlots(monthIdx, selectedDay, formData);
-  const selDayData = selectedDay ? month.cal.find(d => d.d === selectedDay) : null;
+  const month = months?.[monthIdx];
+  const slots = getSlots(months, monthIdx, selectedDay, formData);
+  const selDayData = selectedDay && month ? month.cal.find(d => d.d === selectedDay) : null;
 
   const NavBtn = ({ dir, onClick, disabled }) => (
     <button type="button" onClick={onClick} disabled={disabled} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${disabled ? 'transparent' : T.border}`, background: disabled ? 'transparent' : T.surface, cursor: disabled ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: disabled ? T.textLight : T.textMid, flexShrink: 0, transition: 'all 0.15s' }}>
@@ -110,7 +110,7 @@ function CalendarSection({ monthIdx, setMonthIdx, selectedDay, setSelectedDay, s
           <Card style={{ padding: '28px 28px 24px' }}>
             {/* Legenda */}
             <div style={{ display: 'flex', gap: 20, marginBottom: 20 }}>
-              {[['#40b870', 'Dostupný'], ['#d0ccc8', 'Obsazeno']].map(([c, l]) => (
+              {[['#40b870', 'Volno'], ['#f0be38', 'Omezená kapacita'], ['#d0ccc8', 'Plno']].map(([c, l]) => (
                 <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 99, background: c }} />
                   <span style={{ fontSize: 12, fontWeight: 300, color: T.textMid }}>{l}</span>
@@ -122,8 +122,8 @@ function CalendarSection({ monthIdx, setMonthIdx, selectedDay, setSelectedDay, s
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f4f0ea', borderRadius: 12, padding: '6px 10px', border: `1px solid ${T.border}` }}>
               <NavBtn dir="prev" disabled={monthIdx === 0} onClick={() => { setMonthIdx(Math.max(0, monthIdx - 1)); setSelectedDay(null); setSelectedSlotId(''); }} />
-              <div style={{ fontSize: 14, fontWeight: 500, color: T.text, letterSpacing: '-0.02em', userSelect: 'none', minWidth: 104, textAlign: 'center' }}>{month.label}</div>
-              <NavBtn dir="next" disabled={monthIdx === 2} onClick={() => { setMonthIdx(Math.min(2, monthIdx + 1)); setSelectedDay(null); setSelectedSlotId(''); }} />
+              <div style={{ fontSize: 14, fontWeight: 500, color: T.text, letterSpacing: '-0.02em', userSelect: 'none', minWidth: 104, textAlign: 'center' }}>{month?.label || 'Načítám'}</div>
+              <NavBtn dir="next" disabled={monthIdx >= (months?.length || 1) - 1} onClick={() => { setMonthIdx(Math.min((months?.length || 1) - 1, monthIdx + 1)); setSelectedDay(null); setSelectedSlotId(''); }} />
             </div>
             </div>
 
@@ -136,16 +136,17 @@ function CalendarSection({ monthIdx, setMonthIdx, selectedDay, setSelectedDay, s
 
             {/* Mřížka dnů */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
-              {Array.from({ length: month.leading }, (_, i) => <div key={`e${i}`} />)}
-              {month.cal.map(day => {
-                const free = day.jobs.length > 0;
+              {Array.from({ length: month?.leading || 0 }, (_, i) => <div key={`e${i}`} />)}
+              {(month?.cal || []).map(day => {
+                const free = day.selectable;
                 const sel  = selectedDay === day.d;
+                const dot = day.service_status === 'volno' ? '#40b870' : day.service_status === 'omezena_kapacita' || day.service_status === 'posledni_misto' ? '#f0be38' : '#d0ccc8';
                 return (
                   <button key={day.d} type="button"
                     onClick={() => { if (free) { setSelectedDay(day.d); setSelectedSlotId(''); } }}
                     style={{ aspectRatio: '1', borderRadius: 9, border: `1.5px solid ${sel ? T.accent : free ? T.border : 'transparent'}`, background: sel ? T.accent : free ? T.surface : '#f0ece6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: free ? 'pointer' : 'default', fontFamily: "'Outfit', sans-serif", transition: 'all 0.15s', boxShadow: sel ? `0 4px 12px ${T.accentShadow}` : 'none' }}>
                     <span style={{ fontSize: 12, fontWeight: sel ? 600 : free ? 400 : 300, color: sel ? '#fff' : free ? T.text : T.textLight, lineHeight: 1 }}>{day.d}</span>
-                    {free && <div style={{ width: 4, height: 4, borderRadius: 99, background: sel ? 'rgba(255,255,255,0.6)' : '#40b870' }} />}
+                    <div style={{ width: 4, height: 4, borderRadius: 99, background: sel ? 'rgba(255,255,255,0.6)' : dot }} />
                   </button>
                 );
               })}
@@ -155,12 +156,14 @@ function CalendarSection({ monthIdx, setMonthIdx, selectedDay, setSelectedDay, s
           {/* Detail vybraného dne */}
           <div>
             {selDayData ? (() => {
-              const count = slots.length;
+              const count = selDayData.available_painters_count || 0;
               const status = count === 0
-                ? { label: 'Obsazeno', sub: 'Pro tento den nejsou k dispozici žádní malíři.', dot: '#d0ccc8', bg: '#f7f4f0', border: T.border, btnLabel: null }
+                ? { label: 'Plno / nedostupné', sub: 'Pro tento den teď neevidujeme vhodnou volnou kapacitu.', dot: '#d0ccc8', bg: '#f7f4f0', border: T.border, btnLabel: null }
                 : count === 1
-                ? { label: '1 malíř k dispozici', sub: 'Je tu jeden volný termín. Klikněte pro pokračování.', dot: '#f0be38', bg: T.warmSoft, border: T.warmBorder, btnLabel: 'Vybrat tento den' }
-                : { label: `${count} malíři k dispozici`, sub: 'Tento den má více volných termínů.', dot: '#40b870', bg: T.accentSoft, border: 'rgba(42,122,78,0.18)', btnLabel: 'Vybrat tento den' };
+                ? { label: 'Poslední místo', sub: 'V tomto dni zbývá poslední vhodná kapacita. Termín po odeslání ještě ověříme.', dot: '#f0be38', bg: T.warmSoft, border: T.warmBorder, btnLabel: 'Vybrat tento den' }
+                : count === 2
+                ? { label: 'Omezená kapacita', sub: 'Vhodní malíři jsou k dispozici, ale kapacita už je omezená.', dot: '#f0be38', bg: T.warmSoft, border: T.warmBorder, btnLabel: 'Vybrat tento den' }
+                : { label: 'Volno', sub: 'Pro tento den vidíme dobrou dostupnost služby. Finální potvrzení vznikne až po přijetí malířem.', dot: '#40b870', bg: T.accentSoft, border: 'rgba(42,122,78,0.18)', btnLabel: 'Vybrat tento den' };
               return (
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 10 }}>Vybraný den</div>
@@ -182,7 +185,7 @@ function CalendarSection({ monthIdx, setMonthIdx, selectedDay, setSelectedDay, s
               );
             })() : (
               <Card style={{ padding: '36px', textAlign: 'center' }}>
-                <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: 0 }}>Klikněte na den v kalendáři pro zobrazení dostupnosti.</p>
+                <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: 0 }}>{loading ? 'Načítám dostupnost služby…' : error ? error : 'Klikněte na den v kalendáři pro zobrazení dostupnosti.'}</p>
               </Card>
             )}
           </div>

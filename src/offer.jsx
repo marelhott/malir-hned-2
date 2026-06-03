@@ -66,6 +66,15 @@ function OfferApp() {
               <Card label="Nabízená odměna" value={`${new Intl.NumberFormat('cs-CZ').format(state.offer.offered_payout || 0)} Kč`} />
               <Card label="Reagovat do" value={new Intl.DateTimeFormat('cs-CZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(state.offer.expires_at))} />
             </div>
+            {state.job.client_phone ? (
+              <div style={{ marginTop: 18, padding: 16, borderRadius: 18, background: C.accentSoft, border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Zakázka finálně potvrzena</div>
+                <div style={{ fontSize: 14, color: C.text, lineHeight: 1.7 }}>
+                  {state.job.client_name || 'Klient'} · {state.job.client_phone || '—'}<br />
+                  {state.job.address || state.job.client_address || 'Adresa bude doplněna'}
+                </div>
+              </div>
+            ) : null}
             {state.done ? <p style={{ fontSize: 14, color: C.accent, marginTop: 18 }}>{state.done}</p> : (
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
                 <button onClick={() => respond('accept')} style={{ padding: '13px 18px', borderRadius: 14, border: 'none', background: C.accent, color: '#fff', cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Přijímám</button>

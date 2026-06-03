@@ -211,23 +211,34 @@ function getPainterFitScore(form, painter) {
   return score;
 }
 
-function getSlots(monthIdx, dayNum, form) {
-  const month = MONTHS[monthIdx];
-  const day = month.cal.find(d => d.d === dayNum);
-  if (!day || !day.jobs.length) return [];
+function getSlots(months, monthIdx, dayNum, form) {
+  const month = months?.[monthIdx];
+  const day = month?.cal?.find(d => d.d === dayNum);
+  if (!day || !day.selectable) return [];
   const pr = calcPriceRange(form);
-  return day.jobs
-    .map((j, i) => ({
-      id: `${monthIdx}-${dayNum}-${i}`,
-      monthIdx,
-      day: dayNum,
-      time: j.t,
-      painter: PM[j.p],
-      priceRange: pr,
-      fitScore: getPainterFitScore(form, PM[j.p]),
-    }))
-    .filter(s => s.painter)
-    .sort((a, b) => b.fitScore - a.fitScore || a.time.localeCompare(b.time, 'cs'));
+  return [{
+    id: day.date,
+    monthIdx,
+    day: dayNum,
+    date: day.date,
+    time: 'Preferovaný den',
+    painter: {
+      name: 'Bude potvrzen po zpracování',
+      role: 'Dostupného malíře vybere dispečink podle reálné dostupnosti',
+      summary: 'Termín na webu ukazuje reálnou dostupnost služby. Finální potvrzení a konkrétní malíř vznikají až po zpracování zakázky v dispečinku.',
+      fit: 'Po odeslání ověříme vhodného dostupného malíře a potvrdíme vám přiřazení.',
+      exp: `${day.available_painters_count || 0} dostupní`,
+      jobs: day.service_label,
+      resp: 'Potvrdíme po přijetí',
+      spec: ['Denní dostupnost', 'Ruční dispečink', 'Potvrzení po zpracování'],
+      img: 'uploads/hero.png',
+    },
+    priceRange: pr,
+    fitScore: day.available_painters_count || 0,
+    serviceStatus: day.service_status,
+    serviceLabel: day.service_label,
+    availablePaintersCount: day.available_painters_count || 0,
+  }];
 }
 
 
@@ -290,15 +301,19 @@ function createOrderPayload(form, slot, customer) {
     customer,
     booking: {
       ...form,
+      preferredDate: slot.date,
       dateLabel: dayLbl(slot.monthIdx, slot.day),
       day: slot.day,
       slot: slot.time,
       slotId: slot.id,
-      painter: slot.painter.name,
-      painterRole: slot.painter.role,
+      painter: '',
+      painterRole: '',
       monthIdx: slot.monthIdx,
       priceLow: range.low,
       priceHigh: range.high,
+      serviceStatus: slot.serviceStatus,
+      serviceLabel: slot.serviceLabel,
+      availablePaintersCount: slot.availablePaintersCount,
     },
   };
 }
