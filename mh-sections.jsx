@@ -324,69 +324,34 @@ function CalcSection({ formData, setFormData, priceRange }) {
 // ── MALÍŘ ─────────────────────────────────────────────────────
 function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
   if (!selectedSlot) return null;
-  const painters = Object.values(PM);
 
   return (
     <section id="malir" style={{ padding: '0 0 80px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
-        <SectionHead eyebrow="Malíř" title="Váš malíř" />
-        <Card style={{ padding: '40px 44px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
-
-            {/* Levá strana — text */}
+        <SectionHead eyebrow="Malíř" title="Přiřazení malíře" />
+        <Card style={{ padding: '30px 32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 26, alignItems: 'center' }}>
             <div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 13px', borderRadius: 99, background: T.accentSoft, border: `1px solid rgba(42,122,78,0.15)`, fontSize: 12, fontWeight: 400, color: T.accent, marginBottom: 20 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 13px', borderRadius: 99, background: T.accentSoft, border: `1px solid rgba(42,122,78,0.15)`, fontSize: 12, fontWeight: 400, color: T.accent, marginBottom: 16 }}>
                 <div style={{ width: 6, height: 6, borderRadius: 99, background: T.accent }} />
-                Automatický výběr
+                Dispečink vybírá ručně
               </div>
-              <h3 style={{ fontSize: 22, fontWeight: 500, color: T.text, letterSpacing: '-0.045em', lineHeight: 1.2, margin: '0 0 14px' }}>
-                Vybereme nejlepšího kandidáta, který bude nejlépe sedět na vaši poptávku
+              <h3 style={{ fontSize: 22, fontWeight: 500, color: T.text, letterSpacing: '-0.045em', lineHeight: 1.2, margin: '0 0 10px' }}>
+                Konkrétního malíře potvrdíme až po zpracování zakázky
               </h3>
-              <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.72, margin: '0 0 8px' }}>
-                Z naší sítě ověřených malířů přiřadíme toho, kdo nejpřesněji odpovídá vašemu termínu, typu práce a rozsahu zakázky.
+              <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.72, margin: 0 }}>
+                Pro vybraný den teď vidíme dostupnou kapacitu služby. Dispečink podle termínu, lokality a typu práce vybere nejvhodnějšího malíře a po jeho přijetí vám ho potvrdí.
               </p>
-              <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.72, margin: '0 0 24px' }}>
-                Ozve se vám <strong style={{ fontWeight: 500, color: T.text }}>velmi rychle</strong> — průměrně do 20 minut od potvrzení.
-              </p>
-              <a href="Maliri.html" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 14, fontWeight: 400, color: T.accent, textDecoration: 'none' }}>
-                Seznamte se s našimi malíři
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
             </div>
 
-            {/* Pravá strana — miniatury malířů */}
-            <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
-                {painters.map(p => {
-                  const dotColor = p.resp.includes('12') ? '#40b870' : p.resp.includes('18') ? '#40b870' : '#f0be38';
-                  return (
-                    <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9 }}>
-                      <div style={{ position: 'relative', width: '100%' }}>
-                        <div style={{ aspectRatio: '1', borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: T.cardShadow }}>
-                          <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                        </div>
-                        <div style={{ position: 'absolute', bottom: 6, right: 6, width: 9, height: 9, borderRadius: 99, background: dotColor, border: '2px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,0.18)' }} />
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 12, fontWeight: 500, color: T.text, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{p.name.split(' ')[0]}</div>
-                        <div style={{ fontSize: 10, fontWeight: 300, color: T.textLight, marginTop: 2 }}>{p.exp.replace(' praxe','')}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ marginTop: 18, padding: '12px 16px', borderRadius: T.cr, background: '#f7f4f0', border: `1px solid ${T.border}`, fontSize: 12, fontWeight: 300, color: T.textMid, lineHeight: 1.6 }}>
-                <span style={{ fontWeight: 500, color: T.text }}>{painters.length} ověřených malířů</span> — každý prošel osobním pohovorem a referencemi. Zelená tečka = dostupný tento týden.
-              </div>
+            <div style={{ padding: '18px 20px', borderRadius: T.cr, background: '#f7f4f0', border: `1px solid ${T.border}` }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: T.textLight, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>Vybraný den</div>
+              <div style={{ fontSize: 20, fontWeight: 500, color: T.text, letterSpacing: '-0.04em', marginBottom: 6 }}>{dayLbl(monthIdx, selectedSlot.day)}</div>
+              <div style={{ fontSize: 14, fontWeight: 300, color: T.textMid, marginBottom: 12 }}>{selectedSlot.serviceLabel || 'Dostupnost ověřena'}</div>
+              <button type="button" onClick={onDetailClick} style={{ width: '100%', padding: '12px 16px', borderRadius: T.br, border: `1px solid ${T.border}`, background: '#fff', color: T.text, fontSize: 14, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>
+                Zobrazit detail přiřazení
+              </button>
             </div>
-          </div>
-
-          {/* Spodní akce */}
-          <div style={{ paddingTop: 24, marginTop: 28, borderTop: `1px solid ${T.border}`, display: 'flex', justifyContent: 'flex-end' }}>
-            <a href="#objednavka" style={{ padding: '12px 28px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 14, fontWeight: 400, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: `0 8px 20px ${T.accentShadow}` }}>
-              Pokračovat k objednávce
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
           </div>
         </Card>
       </div>

@@ -379,10 +379,9 @@ function App() {
                               <span style={{ fontSize: 12, color: UI.textMid }}>{availabilityLabel(painter.availability_status)}</span>
                             </div>
                             <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{painter.display_status}</div>
-                            <div style={{ fontSize: 12, color: UI.textLight, marginTop: 4 }}>Kapacita: {painter.remaining_capacity} · Lokalita: {painter.locality_match ? 'sedí' : 'mimo lokalitu'} · Expres: {painter.accepts_express ? 'ano' : 'ne'}</div>
                             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                               <button style={ghostButton()} onClick={() => setForm((prev) => ({ ...prev, painterId: painter.id }))}>Vybrat do nabídky</button>
-                              {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Portál malíře</a> : null}
+                              {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendář malíře</a> : null}
                             </div>
                           </div>
                         )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Doporučení se objeví po zadání preferovaného dne.</div>}

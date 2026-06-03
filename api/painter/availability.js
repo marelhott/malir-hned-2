@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJsonBody(req)
-    const result = await getStore().updatePainterAvailability(body.token, body.entries)
+    const result = await getStore().updatePainterAvailability(body.token, body)
     return sendJson(res, 200, { ok: true, ...result })
   } catch (error) {
     return sendJson(res, 400, { error: error.message || 'Dostupnost se nepodařilo uložit.' })

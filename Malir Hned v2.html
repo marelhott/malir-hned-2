@@ -138,6 +138,7 @@ function App() {
   const priceRange   = useMemo(() => calcPriceRange(formData), [formData]);
   const slots        = useMemo(() => getSlots(calendarMonths, monthIdx, selectedDay, formData), [calendarMonths, monthIdx, selectedDay, formData]);
   const selectedSlot = slots.find(s => s.id === selectedSlotId)
+    || slots[0]
     || (selectedSlotOverride && selectedSlotOverride.id === selectedSlotId && selectedSlotOverride.day === selectedDay && selectedSlotOverride.monthIdx === monthIdx ? selectedSlotOverride : null);
 
   return (
