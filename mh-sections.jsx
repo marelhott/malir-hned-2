@@ -350,7 +350,7 @@ function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
                 {painters.map((p) => (
                   <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
                     <div style={{ width: '100%', maxWidth: 76, aspectRatio: '1', borderRadius: 16, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: T.cardShadow }}>
-                      <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: p.imgPos || 'center center', display: 'block' }} />
                     </div>
                     <div style={{ fontSize: 12, fontWeight: 400, color: T.textMid, textAlign: 'center', lineHeight: 1.2 }}>{p.name.split(' ')[0]}</div>
                   </div>
@@ -443,7 +443,7 @@ function PainterModal({ painter, priceRange, day, monthIdx, time, onClose, onCon
           <div style={{ overflow: 'auto', padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
               <div style={{ width: 96, height: 96, borderRadius: 18, overflow: 'hidden', flexShrink: 0, border: `1px solid ${T.border}` }}>
-                <img src={painter.img} alt={painter.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={painter.img} alt={painter.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: painter.imgPos || 'center center', display: 'block' }} />
               </div>
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 500, color: T.text, letterSpacing: '-0.02em', margin: '0 0 8px', lineHeight: 1.4 }}>{painter.summary}</h3>
