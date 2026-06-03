@@ -3,15 +3,28 @@ const { useEffect, useMemo, useState } = React
 const C = {
   bg: '#f0ece6',
   surface: '#ffffff',
+  surfaceSoft: '#f7f3ee',
   border: 'rgba(175,165,148,0.28)',
   text: '#18170f',
   textMid: '#7a7268',
   textLight: '#b8b0a4',
   accent: '#2a7a4e',
   accentSoft: '#e6f3ec',
+  warn: '#b89236',
+  warnSoft: '#f7eed8',
+  muted: '#8b8173',
+  mutedSoft: '#efe9e0',
   danger: '#b54d43',
   shadow: '0 2px 8px rgba(20,14,6,0.04), 0 24px 64px rgba(20,14,6,0.09)',
 }
+
+const STATUS_META = {
+  available: { label: 'Volno', bg: C.accentSoft, text: C.accent, dot: C.accent },
+  limited: { label: 'Omezeně', bg: C.warnSoft, text: C.warn, dot: C.warn },
+  unavailable: { label: 'Pryč', bg: C.mutedSoft, text: C.muted, dot: C.muted },
+}
+
+const WEEKDAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
 
 function field() {
   return {
@@ -23,12 +36,62 @@ function field() {
     fontFamily: "'Outfit', sans-serif",
     fontSize: 14,
     outline: 'none',
+    boxSizing: 'border-box',
   }
 }
 
-function fmtDate(value) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('cs-CZ', { weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(`${value}T12:00:00Z`))
+function monthStart(value) {
+  const date = new Date(`${value}T12:00:00Z`)
+  date.setUTCDate(1)
+  return date.toISOString().slice(0, 10)
+}
+
+function addMonths(value, diff) {
+  const date = new Date(`${value}T12:00:00Z`)
+  date.setUTCDate(1)
+  date.setUTCMonth(date.getUTCMonth() + diff)
+  return date.toISOString().slice(0, 10)
+}
+
+function pad(num) {
+  return String(num).padStart(2, '0')
+}
+
+function monthLabel(value) {
+  return new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' }).format(new Date(`${value}T12:00:00Z`))
+}
+
+function dayLabel(value) {
+  return new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${value}T12:00:00Z`))
+}
+
+function buildMonthCells(month, availabilityMap) {
+  const first = new Date(`${month}T12:00:00Z`)
+  const year = first.getUTCFullYear()
+  const monthIndex = first.getUTCMonth()
+  const leading = (new Date(Date.UTC(year, monthIndex, 1)).getUTCDay() + 6) % 7
+  const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate()
+  const cells = []
+
+  for (let i = 0; i < leading; i += 1) cells.push(null)
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${year}-${pad(monthIndex + 1)}-${pad(day)}`
+    cells.push({
+      date,
+      day,
+      row: availabilityMap.get(date) || {
+        date,
+        status: 'available',
+        capacity: 1,
+        accepts_express: false,
+        note: '',
+      },
+    })
+  }
+
+  while (cells.length % 7) cells.push(null)
+  return cells
 }
 
 function App() {
@@ -36,6 +99,9 @@ function App() {
   const [state, setState] = useState({ loading: true, error: '', painter: null, availability: [] })
   const [saving, setSaving] = useState('')
   const [painterNote, setPainterNote] = useState('')
+  const [month, setMonth] = useState(monthStart(new Date().toISOString().slice(0, 10)))
+  const [detailDate, setDetailDate] = useState('')
+  const [draft, setDraft] = useState(null)
 
   async function load() {
     const response = await fetch(`/api/painter/portal?token=${encodeURIComponent(token)}`)
@@ -52,6 +118,31 @@ function App() {
     load()
   }, [token])
 
+  const availabilityMap = useMemo(
+    () => new Map((state.availability || []).map((row) => [row.date, row])),
+    [state.availability],
+  )
+
+  const monthCells = useMemo(() => buildMonthCells(month, availabilityMap), [month, availabilityMap])
+
+  useEffect(() => {
+    if (!detailDate) return
+    const base = availabilityMap.get(detailDate) || {
+      date: detailDate,
+      status: 'available',
+      capacity: 1,
+      accepts_express: false,
+      note: '',
+    }
+    setDraft({
+      date: detailDate,
+      status: base.status || 'available',
+      capacity: base.capacity ?? 1,
+      accepts_express: Boolean(base.accepts_express),
+      note: base.note || '',
+    })
+  }, [detailDate, availabilityMap])
+
   async function save(payload, savingKey) {
     setSaving(savingKey)
     const response = await fetch('/api/painter/availability', {
@@ -63,23 +154,26 @@ function App() {
     setSaving('')
     if (!response.ok) {
       setState((prev) => ({ ...prev, error: data.error || 'Uložení se nepodařilo.' }))
-      return
+      return false
     }
     setPainterNote(data.painter?.notes || '')
     setState((prev) => ({ ...prev, error: '', painter: data.painter, availability: data.availability || prev.availability }))
+    return true
   }
 
-  function updateDay(row, patch) {
-    save({
+  async function saveDay() {
+    if (!draft?.date) return
+    const ok = await save({
       entries: [{
-        date: row.date,
-        status: patch.status ?? row.status,
-        capacity: patch.capacity ?? row.capacity,
-        accepts_express: patch.accepts_express ?? row.accepts_express,
-        note: patch.note ?? row.note,
+        date: draft.date,
+        status: draft.status,
+        capacity: draft.capacity,
+        accepts_express: draft.accepts_express,
+        note: draft.note,
         source: 'painter',
       }],
-    }, row.date)
+    }, draft.date)
+    if (ok) setDetailDate('')
   }
 
   if (state.loading) {
@@ -92,48 +186,63 @@ function App() {
         <div style={{ padding: 18, borderBottom: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Kalendář malíře</div>
           <div style={{ fontSize: 24, fontWeight: 400, color: C.text, letterSpacing: '-0.04em' }}>{state.painter?.name || 'Malíř'}</div>
-          <div style={{ fontSize: 13, color: C.textMid, marginTop: 6 }}>Jednoduchá denní dostupnost pro dispečink.</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 6 }}>Zaklikejte dny, kdy můžete pracovat. Detail dne otevřete tapnutím.</div>
           {state.error ? <div style={{ fontSize: 12, color: C.danger, marginTop: 8 }}>{state.error}</div> : null}
         </div>
 
-        <div style={{ padding: 14, display: 'grid', gap: 10 }}>
-          {state.availability.slice(0, 14).map((row) => (
-            <div key={row.date} style={{ border: `1px solid ${C.border}`, borderRadius: 16, padding: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <strong style={{ fontSize: 14, color: C.text }}>{fmtDate(row.date)}</strong>
-                <span style={{ fontSize: 11, color: saving === row.date ? C.accent : C.textLight }}>{saving === row.date ? 'Ukládám…' : 'den'}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 8 }}>
-                {[
-                  ['available', 'Volno'],
-                  ['limited', 'Omezeně'],
-                  ['unavailable', 'Pryč'],
-                ].map(([value, label]) => (
+        <div style={{ padding: 14, display: 'grid', gap: 14 }}>
+          <div style={{ border: `1px solid ${C.border}`, borderRadius: 18, padding: 12, background: C.surfaceSoft }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+              <button type="button" onClick={() => setMonth((prev) => addMonths(prev, -1))} style={navButton()} aria-label="Předchozí měsíc">‹</button>
+              <strong style={{ fontSize: 16, color: C.text, textTransform: 'capitalize' }}>{monthLabel(month)}</strong>
+              <button type="button" onClick={() => setMonth((prev) => addMonths(prev, 1))} style={navButton()} aria-label="Další měsíc">›</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 8 }}>
+              {WEEKDAYS.map((item) => (
+                <div key={item} style={{ textAlign: 'center', fontSize: 11, color: C.textLight }}>{item}</div>
+              ))}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+              {monthCells.map((cell, index) => {
+                if (!cell) return <div key={`empty-${index}`} />
+                const meta = STATUS_META[cell.row.status] || STATUS_META.available
+                const isSelected = detailDate === cell.date
+                return (
                   <button
-                    key={value}
+                    key={cell.date}
                     type="button"
-                    onClick={() => updateDay(row, { status: value })}
+                    onClick={() => setDetailDate(cell.date)}
                     style={{
-                      padding: '10px 8px',
-                      borderRadius: 12,
-                      border: `1px solid ${row.status === value ? C.accent : C.border}`,
-                      background: row.status === value ? C.accentSoft : '#fff',
-                      color: row.status === value ? C.accent : C.textMid,
-                      fontSize: 12,
-                      fontFamily: "'Outfit', sans-serif",
+                      minHeight: 48,
+                      borderRadius: 14,
+                      border: `1px solid ${isSelected ? C.text : C.border}`,
+                      background: meta.bg,
+                      color: meta.text,
+                      display: 'grid',
+                      placeItems: 'center',
+                      padding: 6,
                       cursor: 'pointer',
+                      fontFamily: "'Outfit', sans-serif",
                     }}
                   >
-                    {label}
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{cell.day}</div>
+                    <div style={{ width: 6, height: 6, borderRadius: 999, background: meta.dot }} />
                   </button>
-                ))}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '88px 1fr', gap: 8 }}>
-                <input type="number" min="0" value={row.capacity ?? 1} onChange={(e) => updateDay(row, { capacity: e.target.value })} style={field()} />
-                <input value={row.note || ''} onChange={(e) => updateDay(row, { note: e.target.value })} placeholder="Zpráva k tomuto dni" style={field()} />
-              </div>
+                )
+              })}
             </div>
-          ))}
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+              {Object.entries(STATUS_META).map(([key, meta]) => (
+                <div key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 9px', borderRadius: 999, background: meta.bg, color: meta.text, fontSize: 12 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 999, background: meta.dot }} />
+                  {meta.label}
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div style={{ border: `1px solid ${C.border}`, borderRadius: 16, padding: 12 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Zpráva pro dispečink</div>
@@ -153,8 +262,98 @@ function App() {
           </div>
         </div>
       </div>
+
+      {detailDate && draft ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setDetailDate('')}
+          onKeyDown={(event) => { if (event.key === 'Escape') setDetailDate('') }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(20,14,6,0.36)', display: 'grid', alignItems: 'end', padding: 10 }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: 18, boxShadow: C.shadow, maxWidth: 430, width: '100%', margin: '0 auto' }}
+          >
+            <div style={{ width: 48, height: 4, borderRadius: 999, background: C.border, margin: '0 auto 14px' }} />
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Detail dne</div>
+            <div style={{ fontSize: 20, color: C.text, letterSpacing: '-0.04em', marginBottom: 14 }}>{dayLabel(detailDate)}</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+              {Object.entries(STATUS_META).map(([value, meta]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setDraft((prev) => ({ ...prev, status: value }))}
+                  style={{
+                    padding: '11px 8px',
+                    borderRadius: 14,
+                    border: `1px solid ${draft.status === value ? meta.dot : C.border}`,
+                    background: draft.status === value ? meta.bg : '#fff',
+                    color: draft.status === value ? meta.text : C.textMid,
+                    fontSize: 12,
+                    fontFamily: "'Outfit', sans-serif",
+                    cursor: 'pointer',
+                  }}
+                >
+                  {meta.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'grid', gap: 10 }}>
+              <input
+                type="number"
+                min="0"
+                value={draft.capacity ?? 1}
+                onChange={(e) => setDraft((prev) => ({ ...prev, capacity: e.target.value }))}
+                placeholder="Kapacita na den"
+                style={field()}
+              />
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.text }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(draft.accepts_express)}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, accepts_express: e.target.checked }))}
+                />
+                Bere expresní zakázky
+              </label>
+
+              <textarea
+                value={draft.note || ''}
+                onChange={(e) => setDraft((prev) => ({ ...prev, note: e.target.value }))}
+                placeholder="Poznámka k tomuto dni"
+                style={{ ...field(), minHeight: 84, resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
+              <button type="button" onClick={() => setDetailDate('')} style={{ ...field(), cursor: 'pointer', textAlign: 'center' }}>Zavřít</button>
+              <button type="button" onClick={saveDay} style={{ padding: '11px 12px', borderRadius: 12, border: 'none', background: C.accent, color: '#fff', fontSize: 14, fontFamily: "'Outfit', sans-serif", cursor: 'pointer' }}>
+                {saving === draft.date ? 'Ukládám…' : 'Uložit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
+}
+
+function navButton() {
+  return {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    border: `1px solid ${C.border}`,
+    background: '#fff',
+    color: C.text,
+    cursor: 'pointer',
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: 20,
+    lineHeight: 1,
+  }
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />)

@@ -3,15 +3,28 @@ const { useEffect, useMemo, useState } = React
 const UI = {
   bg: '#f0ece6',
   surface: '#ffffff',
+  surfaceSoft: '#f7f3ee',
   border: 'rgba(175,165,148,0.28)',
   text: '#18170f',
   textMid: '#7a7268',
   textLight: '#b8b0a4',
   accent: '#2a7a4e',
   accentSoft: '#e6f3ec',
+  warn: '#b89236',
+  warnSoft: '#f7eed8',
+  muted: '#8b8173',
+  mutedSoft: '#efe9e0',
   danger: '#b54d43',
   dangerSoft: '#fbeceb',
   shadow: '0 2px 8px rgba(20,14,6,0.04), 0 24px 64px rgba(20,14,6,0.09)',
+}
+
+const WEEKDAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
+
+const STATUS_META = {
+  available: { label: 'Dostupný', bg: UI.accentSoft, text: UI.accent },
+  limited: { label: 'Omezeně', bg: UI.warnSoft, text: UI.warn },
+  unavailable: { label: 'Pryč', bg: UI.mutedSoft, text: UI.muted },
 }
 
 function money(value) {
@@ -27,6 +40,15 @@ function dt(value) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function dayLabel(value) {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('cs-CZ', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date(`${value}T12:00:00Z`))
 }
 
 function waitLabel(value) {
@@ -65,34 +87,7 @@ function offerStatusLabel(value) {
 }
 
 function availabilityLabel(value) {
-  return {
-    available: 'Dostupný',
-    limited: 'Omezeně dostupný',
-    unavailable: 'Nedostupný',
-  }[value] || value
-}
-
-function Login({ onLogin, loading, error }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-
-  return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: UI.bg, padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 420, background: UI.surface, border: `1px solid ${UI.border}`, borderRadius: 26, boxShadow: UI.shadow, padding: 32 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Admin / Dispečink</div>
-        <h1 style={{ fontSize: 32, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '0 0 10px' }}>Přihlášení</h1>
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: UI.textMid, margin: '0 0 20px' }}>Interní provozní rozhraní pro zpracování zakázek a odesílání nabídek malířům.</p>
-        <div style={{ display: 'grid', gap: 12 }}>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail admina" style={inputStyle()} />
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Heslo" style={inputStyle()} />
-          {error ? <div style={{ color: UI.danger, fontSize: 13 }}>{error}</div> : null}
-          <button onClick={() => onLogin({ email, password })} disabled={loading} style={primaryButton()}>
-            {loading ? 'Přihlašuji…' : 'Přihlásit'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  return STATUS_META[value]?.label || value || '—'
 }
 
 function inputStyle() {
@@ -104,6 +99,7 @@ function inputStyle() {
     fontSize: 14,
     fontFamily: "'Outfit', sans-serif",
     outline: 'none',
+    boxSizing: 'border-box',
   }
 }
 
@@ -133,6 +129,42 @@ function ghostButton() {
   }
 }
 
+function monthStart(value) {
+  const date = new Date(`${value}T12:00:00Z`)
+  date.setUTCDate(1)
+  return date.toISOString().slice(0, 10)
+}
+
+function addMonths(value, count) {
+  const date = new Date(`${value}T12:00:00Z`)
+  date.setUTCDate(1)
+  date.setUTCMonth(date.getUTCMonth() + count)
+  return date.toISOString().slice(0, 10)
+}
+
+function Login({ onLogin, loading, error }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: UI.bg, padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 420, background: UI.surface, border: `1px solid ${UI.border}`, borderRadius: 26, boxShadow: UI.shadow, padding: 32 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Admin / Dispečink</div>
+        <h1 style={{ fontSize: 32, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '0 0 10px' }}>Přihlášení</h1>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: UI.textMid, margin: '0 0 20px' }}>Interní provozní rozhraní pro zpracování zakázek a práci s kapacitou malířů.</p>
+        <div style={{ display: 'grid', gap: 12 }}>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail admina" style={inputStyle()} />
+          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Heslo" style={inputStyle()} />
+          {error ? <div style={{ color: UI.danger, fontSize: 13 }}>{error}</div> : null}
+          <button onClick={() => onLogin({ email, password })} disabled={loading} style={primaryButton()}>
+            {loading ? 'Přihlašuji…' : 'Přihlásit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [session, setSession] = useState(null)
   const [loginError, setLoginError] = useState('')
@@ -141,6 +173,10 @@ function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [detail, setDetail] = useState(null)
   const [painters, setPainters] = useState([])
+  const [calendar, setCalendar] = useState(null)
+  const [calendarMonth, setCalendarMonth] = useState(monthStart(new Date().toISOString().slice(0, 10)))
+  const [calendarDate, setCalendarDate] = useState('')
+  const [calendarBusy, setCalendarBusy] = useState(false)
   const [form, setForm] = useState({ reason: '', confirmedPrice: '', painterPayout: '', painterId: '' })
   const [busyAction, setBusyAction] = useState('')
   const [message, setMessage] = useState('')
@@ -183,6 +219,28 @@ function App() {
         confirmedPrice: data.job.confirmed_price || data.job.estimated_price_high || '',
         painterPayout: data.job.painter_payout || '',
       }))
+      if (data.job.preferred_date) {
+        setCalendarMonth(monthStart(data.job.preferred_date))
+        setCalendarDate(data.job.preferred_date)
+      }
+    }
+  }
+
+  async function fetchCalendar(jobId, date = calendarDate, month = calendarMonth) {
+    if (!session) return
+    setCalendarBusy(true)
+    const query = new URLSearchParams({
+      from: month,
+      months: '2',
+      ...(jobId ? { jobId } : {}),
+      ...(date ? { date } : {}),
+    })
+    const res = await fetch(`/api/admin/availability?${query.toString()}`)
+    const data = await res.json()
+    setCalendarBusy(false)
+    if (res.ok) {
+      setCalendar(data)
+      if (data.selected_date) setCalendarDate(data.selected_date)
     }
   }
 
@@ -193,6 +251,10 @@ function App() {
   useEffect(() => {
     if (session && selectedId) fetchDetail(selectedId)
   }, [session, selectedId])
+
+  useEffect(() => {
+    if (session) fetchCalendar(selectedId, calendarDate, calendarMonth)
+  }, [session, selectedId, calendarMonth])
 
   const orderedJobs = useMemo(
     () => [...jobs].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
@@ -234,7 +296,39 @@ function App() {
       return
     }
     setMessage(action === 'send_offer' && data.result.offerUrl ? `Nabídka připravena: ${data.result.offerUrl}` : 'Uloženo.')
-    await Promise.all([fetchJobs(), fetchDetail(selectedJob.id)])
+    await Promise.all([fetchJobs(), fetchDetail(selectedJob.id), fetchCalendar(selectedJob.id, calendarDate, calendarMonth)])
+  }
+
+  async function updatePainterDay(painter, patch) {
+    if (!calendarDate) return
+    setCalendarBusy(true)
+    setMessage('')
+    const res = await fetch('/api/admin/availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        painterId: painter.id,
+        jobId: selectedJob?.id || null,
+        from: calendarMonth,
+        months: 2,
+        date: calendarDate,
+        entries: [{
+          date: calendarDate,
+          status: patch.status ?? painter.availability_status,
+          capacity: patch.capacity ?? painter.capacity,
+          accepts_express: patch.accepts_express ?? painter.accepts_express,
+          note: patch.note ?? painter.note,
+        }],
+      }),
+    })
+    const data = await res.json()
+    setCalendarBusy(false)
+    if (!res.ok) {
+      setMessage(data.error || 'Dostupnost se nepodařilo uložit.')
+      return
+    }
+    setCalendar(data)
+    setMessage('Dostupnost malíře uložena.')
   }
 
   async function logout() {
@@ -242,6 +336,7 @@ function App() {
     setSession(null)
     setSelectedId(null)
     setDetail(null)
+    setCalendar(null)
     setJobs([])
   }
 
@@ -250,8 +345,8 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: UI.bg, padding: 24 }}>
-      <div style={{ maxWidth: 1480, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ maxWidth: 1520, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Malíř Hned / Dispečink</div>
             <h1 style={{ fontSize: 36, fontWeight: 400, color: UI.text, letterSpacing: '-0.06em', margin: '6px 0 0' }}>Fronta zakázek</h1>
@@ -311,7 +406,7 @@ function App() {
                       <h2 style={{ fontSize: 30, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '6px 0 8px' }}>{selectedJob.client_name || 'Klient bez jména'}</h2>
                       <div style={{ fontSize: 14, color: UI.textMid, lineHeight: 1.6 }}>{selectedJob.client_address || 'Adresa bude doplněna'}</div>
                     </div>
-                      <div style={{ fontSize: 13, color: UI.textMid }}>
+                    <div style={{ fontSize: 13, color: UI.textMid }}>
                       <div>Stav: <strong style={{ color: UI.text }}>{jobStatusLabel(selectedJob.status)}</strong></div>
                       <div>Čeká: {waitLabel(selectedJob.created_at)}</div>
                     </div>
@@ -319,7 +414,7 @@ function App() {
                 </div>
 
                 <div style={{ padding: 24, overflow: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 20 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.12fr 0.88fr', gap: 20 }}>
                     <div style={{ display: 'grid', gap: 18 }}>
                       <Panel title="Zadání klienta">
                         <KV label="Kontakt" value={`${selectedJob.client_phone || '—'} · ${selectedJob.client_email || '—'}`} />
@@ -342,7 +437,9 @@ function App() {
 
                           <select value={form.painterId} onChange={(e) => setForm({ ...form, painterId: e.target.value })} style={inputStyle()}>
                             <option value="">Vyberte malíře</option>
-                            {(detail?.recommendedPainters?.length ? detail.recommendedPainters : painters).map((painter) => <option key={painter.id} value={painter.id}>{painter.name} · {painter.display_status || painter.role}</option>)}
+                            {(calendar?.selected_day?.painters?.length ? calendar.selected_day.painters : detail?.recommendedPainters?.length ? detail.recommendedPainters : painters).map((painter) => (
+                              <option key={painter.id} value={painter.id}>{painter.name} · {painter.display_status || painter.role}</option>
+                            ))}
                           </select>
                           <button style={primaryButton()} disabled={!form.painterId || busyAction === 'send_offer'} onClick={() => doAction('send_offer', { painterId: form.painterId })}>Poslat nabídku malíři</button>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -352,7 +449,149 @@ function App() {
                             <button style={ghostButton()} disabled={busyAction === 'mark_done'} onClick={() => doAction('mark_done')}>Dokončeno</button>
                             <button style={{ ...ghostButton(), color: UI.danger, borderColor: 'rgba(181,77,67,0.28)' }} disabled={busyAction === 'cancel_job'} onClick={() => doAction('cancel_job')}>Zrušit zakázku</button>
                           </div>
-                          {message ? <div style={{ fontSize: 13, color: message.startsWith('Nabídka') ? UI.accent : UI.textMid }}>{message}</div> : null}
+                          {message ? <div style={{ fontSize: 13, color: message.startsWith('Nabídka') || message.includes('uložena') ? UI.accent : UI.textMid }}>{message}</div> : null}
+                        </div>
+                      </Panel>
+
+                      <Panel title="Kalendář kapacity týmu">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                          <div>
+                            <div style={{ fontSize: 14, color: UI.text }}>{selectedJob.preferred_date_label || 'Vyberte den v kalendáři'}</div>
+                            <div style={{ fontSize: 12, color: UI.textMid }}>Denní přehled dostupnosti pro dispečink</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button type="button" onClick={() => setCalendarMonth((prev) => addMonths(prev, -1))} style={iconButton()}>‹</button>
+                            <button type="button" onClick={() => setCalendarMonth((prev) => addMonths(prev, 1))} style={iconButton()}>›</button>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: 14 }}>
+                          {(calendar?.months || []).map((month) => (
+                            <div key={month.key} style={{ border: `1px solid ${UI.border}`, borderRadius: 18, padding: 12, background: UI.surfaceSoft }}>
+                              <div style={{ fontSize: 15, color: UI.text, marginBottom: 10, textTransform: 'capitalize' }}>{month.label}</div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 8 }}>
+                                {WEEKDAYS.map((item) => <div key={item} style={{ textAlign: 'center', fontSize: 11, color: UI.textLight }}>{item}</div>)}
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+                                {Array.from({ length: month.leading }).map((_, idx) => <div key={`${month.key}-lead-${idx}`} />)}
+                                {month.cal.map((day) => {
+                                  const active = calendarDate === day.date
+                                  const tone = day.available_slots >= 3 ? UI.accentSoft : day.available_slots >= 1 ? UI.warnSoft : UI.mutedSoft
+                                  return (
+                                    <button
+                                      key={day.date}
+                                      type="button"
+                                      onClick={() => {
+                                        setCalendarDate(day.date)
+                                        fetchCalendar(selectedId, day.date, calendarMonth)
+                                      }}
+                                      style={{
+                                        minHeight: 78,
+                                        borderRadius: 14,
+                                        border: `1px solid ${active ? UI.text : UI.border}`,
+                                        background: tone,
+                                        textAlign: 'left',
+                                        padding: 8,
+                                        cursor: 'pointer',
+                                        fontFamily: "'Outfit', sans-serif",
+                                      }}
+                                    >
+                                      <div style={{ fontSize: 14, color: UI.text, marginBottom: 6 }}>{day.d}</div>
+                                      <div style={{ fontSize: 11, color: UI.textMid, lineHeight: 1.35 }}>{day.available_count} volno</div>
+                                      <div style={{ fontSize: 11, color: UI.textMid, lineHeight: 1.35 }}>{day.limited_count} omezeně</div>
+                                      <div style={{ fontSize: 11, color: UI.textLight, lineHeight: 1.35 }}>{day.blocked_count} blokace</div>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ))}
+
+                          <div style={{ border: `1px solid ${UI.border}`, borderRadius: 18, padding: 14 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10, flexWrap: 'wrap' }}>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Detail dne</div>
+                                <div style={{ fontSize: 20, color: UI.text, letterSpacing: '-0.04em', marginTop: 4 }}>{dayLabel(calendar?.selected_day?.date || calendarDate)}</div>
+                              </div>
+                              {calendarBusy ? <div style={{ fontSize: 12, color: UI.textMid }}>Načítám…</div> : null}
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                              <Tag label={`${calendar?.selected_day?.available_count || 0} dostupní`} tone="good" />
+                              <Tag label={`${calendar?.selected_day?.limited_count || 0} omezeně`} tone="warn" />
+                              <Tag label={`${calendar?.selected_day?.blocked_count || 0} blokace`} tone="muted" />
+                              <Tag label={`${calendar?.selected_day?.available_slots || 0} volná kapacita`} tone="light" />
+                            </div>
+
+                            {(calendar?.selected_day?.painters || []).length ? (
+                              <div style={{ display: 'grid', gap: 10 }}>
+                                {calendar.selected_day.painters.map((painter) => {
+                                  const meta = STATUS_META[painter.availability_status] || STATUS_META.available
+                                  return (
+                                    <div key={painter.id} style={{ border: `1px solid ${UI.border}`, borderRadius: 16, padding: 12 }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                                        <div>
+                                          <strong style={{ fontSize: 14, color: UI.text }}>{painter.name}</strong>
+                                          <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{painter.service_areas?.join(', ') || 'Bez lokality'}</div>
+                                        </div>
+                                        <span style={{ padding: '6px 10px', borderRadius: 999, background: meta.bg, color: meta.text, fontSize: 12 }}>{painter.display_status}</span>
+                                      </div>
+
+                                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                                        <Tag label={`Kapacita ${painter.capacity}`} tone="light" />
+                                        <Tag label={`Zbývá ${painter.remaining_capacity}`} tone="light" />
+                                        {painter.accepts_express ? <Tag label="Bere expres" tone="good" /> : null}
+                                        {painter.job_fit?.locality_match ? <Tag label="Sedí lokalita" tone="good" /> : <Tag label="Mimo lokalitu" tone="muted" />}
+                                        {painter.job_fit?.work_type_match ? <Tag label="Sedí typ práce" tone="good" /> : null}
+                                        {painter.block_count ? <Tag label={`${painter.block_count} blokace`} tone="warn" /> : null}
+                                      </div>
+
+                                      {painter.note || painter.painter_note ? (
+                                        <div style={{ fontSize: 12, color: UI.textMid, marginTop: 10, lineHeight: 1.5 }}>
+                                          {painter.note || painter.painter_note}
+                                        </div>
+                                      ) : null}
+
+                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginTop: 12 }}>
+                                        {['available', 'limited', 'unavailable'].map((value) => (
+                                          <button
+                                            key={value}
+                                            type="button"
+                                            onClick={() => updatePainterDay(painter, { status: value })}
+                                            style={{
+                                              padding: '9px 8px',
+                                              borderRadius: 12,
+                                              border: `1px solid ${painter.availability_status === value ? UI.text : UI.border}`,
+                                              background: painter.availability_status === value ? STATUS_META[value].bg : '#fff',
+                                              color: painter.availability_status === value ? STATUS_META[value].text : UI.textMid,
+                                              fontFamily: "'Outfit', sans-serif",
+                                              fontSize: 12,
+                                              cursor: 'pointer',
+                                            }}
+                                          >
+                                            {availabilityLabel(value)}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr auto', gap: 8, marginTop: 8 }}>
+                                        <input type="number" min="0" defaultValue={painter.capacity} onBlur={(e) => updatePainterDay(painter, { capacity: e.target.value })} style={inputStyle()} />
+                                        <input defaultValue={painter.note || ''} onBlur={(e) => updatePainterDay(painter, { note: e.target.value })} placeholder="Poznámka k tomuto dni" style={inputStyle()} />
+                                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, color: UI.textMid }}>
+                                          <input type="checkbox" defaultChecked={Boolean(painter.accepts_express)} onChange={(e) => updatePainterDay(painter, { accepts_express: e.target.checked })} />
+                                          Expres
+                                        </label>
+                                      </div>
+
+                                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                                        <button style={ghostButton()} onClick={() => setForm((prev) => ({ ...prev, painterId: painter.id }))}>Vybrat do nabídky</button>
+                                        {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendář malíře</a> : null}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            ) : <div style={{ color: UI.textMid, fontSize: 13 }}>Pro tento den zatím nemáme detail dostupnosti.</div>}
+                          </div>
                         </div>
                       </Panel>
                     </div>
@@ -408,6 +647,32 @@ function App() {
       </div>
     </div>
   )
+}
+
+function iconButton() {
+  return {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    border: `1px solid ${UI.border}`,
+    background: '#fff',
+    color: UI.text,
+    cursor: 'pointer',
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: 20,
+    lineHeight: 1,
+  }
+}
+
+function Tag({ label, tone = 'light' }) {
+  const tones = {
+    good: { bg: UI.accentSoft, color: UI.accent },
+    warn: { bg: UI.warnSoft, color: UI.warn },
+    muted: { bg: UI.mutedSoft, color: UI.muted },
+    light: { bg: UI.surfaceSoft, color: UI.textMid },
+  }
+  const meta = tones[tone] || tones.light
+  return <span style={{ padding: '6px 10px', borderRadius: 999, background: meta.bg, color: meta.color, fontSize: 12 }}>{label}</span>
 }
 
 function Panel({ title, children }) {
