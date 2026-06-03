@@ -23,8 +23,8 @@ function SiteNav() {
 // ── FOOTER ────────────────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer style={{ background: T.surface, borderTop: `1px solid ${T.border}`, padding: '56px 64px 36px', marginTop: 80 }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 48 }}>
+    <footer style={{ background: T.surface, borderTop: `1px solid ${T.border}`, padding: '40px 64px 28px', marginTop: 44 }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 34 }}>
         <div>
           <div style={{ marginBottom: 16 }}>
             <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 44, width: 'auto', display: 'block' }} />
@@ -59,7 +59,7 @@ function SiteFooter() {
           </div>
         </div>
       </div>
-      <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 20, borderTop: `1px solid ${T.border}` }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
         <span style={{ fontSize: 13, fontWeight: 300, color: T.textLight }}>© 2026 Malíř Hned s.r.o.</span>
       </div>
     </footer>
@@ -78,8 +78,8 @@ function Card({ style, children }) {
 // ── SECTION HEAD ──────────────────────────────────────────────
 function SectionHead({ eyebrow, title }) {
   return (
-    <div style={{ marginBottom: 36 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 10 }}>{eyebrow}</div>
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>{eyebrow}</div>
       <h2 style={{ fontSize: 'clamp(1.75rem, 2.6vw, 2.5rem)', fontWeight: 300, color: T.text, letterSpacing: '-0.05em', lineHeight: 1.05, margin: 0 }}>{title}</h2>
     </div>
   );

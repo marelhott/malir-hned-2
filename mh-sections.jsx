@@ -100,7 +100,7 @@ function CalendarSection({ months, monthIdx, setMonthIdx, selectedDay, setSelect
   );
 
   return (
-    <section id="terminy" style={{ padding: '80px 0' }}>
+    <section id="terminy" style={{ padding: '52px 0 56px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <SectionHead eyebrow="Termín" title="Vyberte si termín" />
 
@@ -202,7 +202,7 @@ function CalcSection({ formData, setFormData, priceRange }) {
   const sel = { ...inp, appearance: 'none', WebkitAppearance: 'none' };
 
   return (
-    <section id="cena" style={{ padding: '0 0 80px' }}>
+    <section id="cena" style={{ padding: '0 0 56px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <SectionHead eyebrow="Cena" title="Spočítejte si přibližnou cenu" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 316px', gap: 28, alignItems: 'start' }}>
@@ -327,7 +327,7 @@ function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
   const painters = Object.values(PM);
 
   return (
-    <section id="malir" style={{ padding: '0 0 80px' }}>
+    <section id="malir" style={{ padding: '0 0 56px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <SectionHead eyebrow="Malíř" title="Přiřazení malíře" />
         <Card style={{ padding: '30px 32px' }}>
@@ -377,7 +377,7 @@ function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
 function OrderSection({ selectedSlot, monthIdx, onOrderClick }) {
   if (!selectedSlot) return null;
   return (
-    <section id="objednavka" style={{ padding: '0 0 80px' }}>
+    <section id="objednavka" style={{ padding: '0 0 44px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <SectionHead eyebrow="Objednávka" title="Závazná objednávka" />
         <Card style={{ padding: '28px 32px' }}>
