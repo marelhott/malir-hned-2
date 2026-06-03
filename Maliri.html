@@ -169,7 +169,7 @@ function SlotPickerModal({ painter, onClose }) {
 }
 
 // ── KARTA MALÍŘE ─────────────────────────────────────────────
-function PainterCard({ painter, onBook }) {
+function PainterCard({ painter }) {
   const availColor = painter.avail === 'green' ? { bg: T.accentSoft, color: T.accent, dot: T.accent } : { bg: T.warmSoft, color: '#8a6c20', dot: T.warm };
   return (
     <div style={{ background: T.surface, borderRadius: T.cr, border: `1px solid ${T.border}`, boxShadow: T.cardShadow, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'box-shadow 0.2s, transform 0.2s' }}
@@ -200,11 +200,9 @@ function PainterCard({ painter, onBook }) {
             </div>
           ))}
         </div>
-        {/* Akce */}
-        <button type="button" onClick={() => onBook(painter)}
-          style={{ width: '100%', padding: '12px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 14, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", border: 'none', boxShadow: `0 6px 16px ${T.accentShadow}` }}>
-          Vybrat termín u {painter.name.split(' ')[0]}
-        </button>
+        <div style={{ padding: '12px 14px', borderRadius: T.br, background: '#f6f2eb', border: `1px solid ${T.border}`, fontSize: 12, fontWeight: 300, color: T.textMid, lineHeight: 1.55 }}>
+          Profil je pouze informativní. Konkrétního malíře pro zakázku vybírá dispečer podle termínu, lokality a typu práce.
+        </div>
       </div>
     </div>
   );
@@ -212,7 +210,6 @@ function PainterCard({ painter, onBook }) {
 
 // ── APP ───────────────────────────────────────────────────────
 function App() {
-  const [modalPainter, setModalPainter] = useState(null);
   const [filter, setFilter] = useState('Všichni');
 
   const filters = ['Všichni', 'Rychlé termíny', 'Novostavby', 'Po nájemníkovi'];
@@ -261,7 +258,7 @@ function App() {
       {/* GRID */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 64px 80px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
-          {visible.map(p => <PainterCard key={p.name} painter={p} onBook={setModalPainter} />)}
+          {visible.map(p => <PainterCard key={p.name} painter={p} />)}
         </div>
       </div>
 
@@ -315,9 +312,6 @@ function App() {
         </div>
         <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 20, borderTop: `1px solid ${T.border}`, fontSize: 13, fontWeight: 300, color: T.textLight }}>© 2026 Malíř Hned s.r.o.</div>
       </footer>
-
-      {/* MODAL */}
-      {modalPainter && <SlotPickerModal painter={modalPainter} onClose={() => setModalPainter(null)} />}
     </div>
   );
 }
