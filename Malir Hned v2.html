@@ -30,7 +30,7 @@
 const { useState, useMemo, useEffect } = React;
 const {
   T, MONTHS, calcPriceRange, getSlots,
-  createOrderPayload,
+  createOrderPayload, submitJobRequest,
   SiteNav, SiteFooter,
   HeroSection, StepsSection, CalendarSection, CalcSection, PainterSection, OrderSection,
   PainterModal, OrderFormModal, ConfirmationModal,
@@ -62,6 +62,7 @@ function App() {
   const [isPainterOpen,     setIsPainterOpen]     = useState(false);
   const [isOrderOpen,       setIsOrderOpen]       = useState(false);
   const [isConfirmed,       setIsConfirmed]       = useState(false);
+  const [submissionResult,  setSubmissionResult]  = useState(null);
 
   // Načíst předvybraný slot z Maliri.html
   useEffect(() => {
@@ -130,10 +131,10 @@ function App() {
           />
         )}
         {selectedSlot && (
-          <OrderSection
-            selectedSlot={selectedSlot}
-            monthIdx={monthIdx}
-            onOrderClick={() => setIsOrderOpen(true)}
+        <OrderSection
+          selectedSlot={selectedSlot}
+          monthIdx={monthIdx}
+          onOrderClick={() => setIsOrderOpen(true)}
           />
         )}
       </main>
@@ -156,13 +157,16 @@ function App() {
           monthIdx={monthIdx}
           priceRange={priceRange}
           onClose={() => setIsOrderOpen(false)}
-          onConfirm={(customerData) => {
+          onConfirm={async (customerData) => {
             const payload = createOrderPayload(formData, selectedSlot, customerData);
+            const response = await submitJobRequest(payload);
+            const enriched = { ...payload, submission: response };
             try {
               const existing = JSON.parse(localStorage.getItem('mh_orders') || '[]');
-              localStorage.setItem('mh_orders', JSON.stringify([payload, ...existing]));
-              localStorage.setItem('mh_last_order', JSON.stringify(payload));
+              localStorage.setItem('mh_orders', JSON.stringify([enriched, ...existing]));
+              localStorage.setItem('mh_last_order', JSON.stringify(enriched));
             } catch (e) {}
+            setSubmissionResult(response);
             setIsOrderOpen(false);
             setIsConfirmed(true);
           }}
@@ -173,6 +177,7 @@ function App() {
           selectedSlot={selectedSlot}
           monthIdx={monthIdx}
           priceRange={priceRange}
+          submissionResult={submissionResult}
           onClose={() => setIsConfirmed(false)}
         />
       )}

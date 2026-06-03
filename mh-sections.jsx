@@ -47,7 +47,7 @@ function HeroSection() {
         {/* Vpravo — obrázek malíře */}
         <div style={{ position: 'relative', background: '#ffffff', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
           <img
-            src="uploads/ChatGPT%20Image%2031.%205.%202026%2014_45_33.png"
+            src="uploads/hero.png"
             alt="Malíř Hned – jak to funguje"
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center', display: 'block' }}
           />
@@ -412,7 +412,7 @@ function OrderSection({ selectedSlot, monthIdx, onOrderClick }) {
             <div style={{ width: 1, height: 44, background: T.border, flexShrink: 0 }} />
             {/* Text */}
             <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.65, margin: 0, flex: 1 }}>
-              Potvrdíte termín, doplníte kontakt a objednávka odejde přímo dostupnému malíři. {selectedSlot.painter.resp}.
+              Doplníte kontakt a zakázka odejde do zpracování dispečinku. Jakmile bude vybraný malíř potvrzený, ozve se vám napřímo.
             </p>
           </div>
           <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
@@ -526,6 +526,8 @@ function PainterModal({ painter, priceRange, day, monthIdx, time, onClose, onCon
 function OrderFormModal({ selectedSlot, monthIdx, priceRange, onClose, onConfirm }) {
   if (!selectedSlot) return null;
   const [form, setForm] = React.useState({ name: '', phone: '', email: '', address: '', notes: '' });
+  const [submitting, setSubmitting] = React.useState(false);
+  const [error, setError] = React.useState('');
   const sf = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
   React.useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose(); };
@@ -535,7 +537,7 @@ function OrderFormModal({ selectedSlot, monthIdx, priceRange, onClose, onConfirm
   }, []);
   const inp = { padding: '10px 14px', borderRadius: T.br, border: `1px solid ${T.border}`, background: T.surface, fontSize: 14, fontWeight: 300, color: T.text, fontFamily: "'Outfit', sans-serif", outline: 'none', width: '100%' };
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const requiredFields = [
       ['name', 'Vyplňte prosím jméno.'],
       ['phone', 'Vyplňte prosím telefon.'],
@@ -561,13 +563,22 @@ function OrderFormModal({ selectedSlot, monthIdx, priceRange, onClose, onConfirm
       return;
     }
 
-    onConfirm({
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-      address: form.address.trim(),
-      notes: form.notes.trim(),
-    });
+    setSubmitting(true);
+    setError('');
+
+    try {
+      await onConfirm({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        address: form.address.trim(),
+        notes: form.notes.trim(),
+      });
+    } catch (submitError) {
+      setError(submitError.message || 'Zakázku se nepodařilo odeslat.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -613,11 +624,12 @@ function OrderFormModal({ selectedSlot, monthIdx, priceRange, onClose, onConfirm
             <span style={{ fontSize: 12, color: T.textMid, fontWeight: 300 }}>Poznámka pro malíře</span>
             <textarea placeholder="Např. byt po nájemníkovi, klíče u správce, preferuji dopoledne..." rows={4} value={form.notes} onChange={e => sf('notes', e.target.value)} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} />
           </label>
-          <button type="button" onClick={handleSubmit} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none' }}>
-            Potvrdit termín a odeslat zadání
+          {error ? <p style={{ fontSize: 12, fontWeight: 300, color: '#b54d43', textAlign: 'center', marginBottom: 12 }}>{error}</p> : null}
+          <button type="button" disabled={submitting} onClick={handleSubmit} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: submitting ? 'default' : 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', opacity: submitting ? 0.75 : 1 }}>
+            {submitting ? 'Odesílám zakázku…' : 'Odeslat zakázku ke zpracování'}
           </button>
           <p style={{ fontSize: 12, fontWeight: 300, color: T.textLight, textAlign: 'center', marginTop: 12 }}>
-            {selectedSlot.painter.name} dostane vaše zadání a ozve se napřímo. {selectedSlot.painter.resp}.
+            Po odeslání ověříme dostupnost vhodného malíře a potvrdíme vám přiřazení.
           </p>
         </div>
       </div>
@@ -626,7 +638,7 @@ function OrderFormModal({ selectedSlot, monthIdx, priceRange, onClose, onConfirm
 }
 
 // ── CONFIRMATION MODAL ────────────────────────────────────────
-function ConfirmationModal({ selectedSlot, monthIdx, priceRange, onClose }) {
+function ConfirmationModal({ selectedSlot, monthIdx, priceRange, submissionResult, onClose }) {
   React.useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', h);
@@ -640,13 +652,13 @@ function ConfirmationModal({ selectedSlot, monthIdx, priceRange, onClose }) {
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 500, color: T.text, letterSpacing: '-0.04em', margin: '0 0 12px' }}>Termín je předaný!</h2>
+        <h2 style={{ fontSize: 26, fontWeight: 500, color: T.text, letterSpacing: '-0.04em', margin: '0 0 12px' }}>Zakázku jsme přijali ke zpracování</h2>
         <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.65, margin: '0 0 28px' }}>
-          Malíř dostal vaše zadání a ozve se vám napřímo. Není potřeba nic dál obvolávat.
+          Ověříme dostupnost vhodného malíře pro vámi preferovaný termín. Jakmile bude malíř potvrzený, pošleme vám jeho jméno a bude vás kontaktovat napřímo.
         </p>
         {selectedSlot && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
-            {[['Termín', monthIdx != null ? dayLbl(monthIdx, selectedSlot.day) : dayLbl(0, selectedSlot.day)], ['Malíř', selectedSlot.painter.name], ['Cena', fmtRange(priceRange)]].map(([lbl, val]) => (
+            {[['Termín', monthIdx != null ? dayLbl(monthIdx, selectedSlot.day) : dayLbl(0, selectedSlot.day)], ['Reference', submissionResult?.reference || '—'], ['Cena', fmtRange(priceRange)]].map(([lbl, val]) => (
               <Card key={lbl} style={{ padding: '12px 14px' }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: T.textLight, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 4 }}>{lbl}</div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{val}</div>

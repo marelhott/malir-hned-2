@@ -8,7 +8,7 @@ function SiteNav() {
     <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(240,236,230,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.border}` }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <a href="#" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img src="uploads/ChatGPT%20Image%201.%206.%202026%2017_27_09%20(1).png" alt="Malíř Hned" style={{ height: 54, width: 'auto', display: 'block' }} />
+          <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 54, width: 'auto', display: 'block' }} />
         </a>
         <nav style={{ display: 'flex', gap: 32 }}>
           {[['#jak-to-funguje', 'Jak to funguje'], ['#terminy', 'Termíny'], ['#cena', 'Cena'], ['Maliri.html', 'Malíři'], ['O nas.html', 'O nás']].map(([href, lbl]) => (
@@ -27,7 +27,7 @@ function SiteFooter() {
       <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 48 }}>
         <div>
           <div style={{ marginBottom: 16 }}>
-            <img src="uploads/ChatGPT%20Image%201.%206.%202026%2017_27_09%20(1).png" alt="Malíř Hned" style={{ height: 44, width: 'auto', display: 'block' }} />
+            <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 44, width: 'auto', display: 'block' }} />
           </div>
           <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.75, maxWidth: 280, margin: '0 0 20px' }}>Platforma vznikla z reálné malířské praxe. Staví ji lidé, kteří mají za sebou více než deset let zakázek v bytech, kancelářích a menších domech po Praze a okolí.</p>
         </div>

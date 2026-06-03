@@ -293,6 +293,7 @@ function createOrderPayload(form, slot, customer) {
       dateLabel: dayLbl(slot.monthIdx, slot.day),
       day: slot.day,
       slot: slot.time,
+      slotId: slot.id,
       painter: slot.painter.name,
       painterRole: slot.painter.role,
       monthIdx: slot.monthIdx,
@@ -302,4 +303,19 @@ function createOrderPayload(form, slot, customer) {
   };
 }
 
-Object.assign(window, { T, MONTHS, PM, calcPriceRange, fmtP, fmtRange, dayLbl, getSlots, createOrderPayload });
+async function submitJobRequest(payload) {
+  const response = await fetch('/api/public/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Zakázku se nepodařilo odeslat.');
+  }
+
+  return data;
+}
+
+Object.assign(window, { T, MONTHS, PM, calcPriceRange, fmtP, fmtRange, dayLbl, getSlots, createOrderPayload, submitJobRequest });

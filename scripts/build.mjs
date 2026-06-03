@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile, cp, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { transform } from 'esbuild'
+import { build, transform } from 'esbuild'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
@@ -26,6 +26,19 @@ async function compileJs(source, outfileName) {
   })
 
   await writeFile(path.join(distDir, 'assets', outfileName), result.code, 'utf8')
+}
+
+async function bundleEntry(entryFile, outfileName) {
+  await build({
+    entryPoints: [path.join(rootDir, entryFile)],
+    outfile: path.join(distDir, 'assets', outfileName),
+    bundle: true,
+    format: 'iife',
+    target: 'es2019',
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
+    logLevel: 'silent',
+  })
 }
 
 function stripBabelScripts(html) {
@@ -84,10 +97,24 @@ async function buildPaintersPage() {
 
 async function copyStaticPages() {
   await cp(path.join(rootDir, 'O nas.html'), path.join(distDir, 'O nas.html'))
+  await cp(path.join(rootDir, 'admin.html'), path.join(distDir, 'admin.html'))
+  await cp(path.join(rootDir, 'nabidka.html'), path.join(distDir, 'nabidka.html'))
+  await cp(path.join(rootDir, 'zakazka.html'), path.join(distDir, 'zakazka.html'))
   await cp(path.join(rootDir, 'uploads'), path.join(distDir, 'uploads'), { recursive: true })
+  await cp(path.join(rootDir, 'uploads', 'ChatGPT Image 1. 6. 2026 17_27_09 (1).png'), path.join(distDir, 'uploads', 'logo.png'))
+  await cp(path.join(rootDir, 'uploads', 'ChatGPT Image 31. 5. 2026 14_45_33.png'), path.join(distDir, 'uploads', 'hero.png'))
+}
+
+async function buildInternalPages() {
+  await Promise.all([
+    bundleEntry('src/admin.jsx', 'admin.js'),
+    bundleEntry('src/offer.jsx', 'offer.js'),
+    bundleEntry('src/job-status.jsx', 'job-status.js'),
+  ])
 }
 
 await ensureCleanDist()
 await buildHomePage()
 await buildPaintersPage()
+await buildInternalPages()
 await copyStaticPages()
