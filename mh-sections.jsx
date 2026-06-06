@@ -341,7 +341,7 @@ function OrderSection({ selectedSlot, monthIdx, priceRange, onOrderClick }) {
             ))}
           </div>
           <div style={{ padding: '24px 28px' }}>
-            <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.7, margin: '0 0 18px' }}>
+            <p style={{ fontSize: 28, fontWeight: 300, color: T.textMid, lineHeight: 1.5, margin: '0 0 22px', textAlign: 'center' }}>
               Vyplníte kontaktní údaje a zakázka odejde dispečinku. Obratem vám potvrdíme přijetí a jakmile malíř zakázku přijme, ozve se vám napřímo.
             </p>
             <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
