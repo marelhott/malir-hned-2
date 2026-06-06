@@ -21,9 +21,9 @@ const UI = {
 const WEEKDAYS = ['Po', 'Ut', 'St', 'Ct', 'Pa', 'So', 'Ne']
 
 const STATUS_META = {
-  available: { label: 'Dostupny', bg: UI.accentSoft, text: UI.accent },
-  limited: { label: 'Omezeny', bg: UI.warnSoft, text: UI.warn },
-  unavailable: { label: 'Pryc', bg: UI.mutedSoft, text: UI.muted },
+  available: { label: 'Dostupný', bg: UI.accentSoft, text: UI.accent },
+  limited: { label: 'Omezený', bg: UI.warnSoft, text: UI.warn },
+  unavailable: { label: 'Pryč', bg: UI.mutedSoft, text: UI.muted },
 }
 
 function money(value) {
@@ -53,7 +53,7 @@ function dayLabel(value) {
 function waitLabel(value) {
   const diff = Math.max(0, Date.now() - new Date(value).getTime())
   const mins = Math.round(diff / 60000)
-  if (mins < 1) return 'prave ted'
+  if (mins < 1) return 'právě teď'
   if (mins < 60) return `${mins} min`
   const hours = Math.floor(mins / 60)
   return `${hours} h ${mins % 60} min`
@@ -61,17 +61,17 @@ function waitLabel(value) {
 
 function jobStatusLabel(value) {
   return {
-    new: 'Nova',
-    waiting_for_review: 'Ceka na kontrolu',
-    waiting_for_client_details: 'Ceka na doplneni',
-    ready_to_offer: 'Pripravena k nabidnuti',
-    offered_to_painter: 'Nabidnuto maliri',
-    painter_accepted: 'Malir prijal',
-    assigned: 'Prirazeno',
+    new: 'Nová',
+    waiting_for_review: 'Čeká na kontrolu',
+    waiting_for_client_details: 'Čeká na doplnění',
+    ready_to_offer: 'Připravena k nabídnutí',
+    offered_to_painter: 'Nabídnuto malíři',
+    painter_accepted: 'Malíř přijal',
+    assigned: 'Přiřazeno',
     confirmed_to_client: 'Potvrzeno klientovi',
-    in_progress: 'V reseni',
-    completed: 'Dokonceno',
-    cancelled: 'Zruseno',
+    in_progress: 'V řešení',
+    completed: 'Dokončeno',
+    cancelled: 'Zrušeno',
   }[value] || value
 }
 
@@ -148,15 +148,15 @@ function Login({ onLogin, loading, error }) {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: UI.bg, padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 420, background: UI.surface, border: `1px solid ${UI.border}`, borderRadius: 26, boxShadow: UI.shadow, padding: 32 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Admin / Dispecink</div>
-        <h1 style={{ fontSize: 32, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '0 0 10px' }}>Prihlaseni</h1>
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: UI.textMid, margin: '0 0 20px' }}>Interi provozni rozhrani pro zpracovani zakazek a praci s kapacitou maliru.</p>
+        <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Admin / Dispečink</div>
+        <h1 style={{ fontSize: 32, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '0 0 10px' }}>Přihlášení</h1>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: UI.textMid, margin: '0 0 20px' }}>Interní provozní rozhraní pro zpracování zakázek a práci s kapacitou malířů.</p>
         <div style={{ display: 'grid', gap: 12 }}>
           <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail admina" style={inputStyle()} />
           <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Heslo" style={inputStyle()} />
           {error ? <div style={{ color: UI.danger, fontSize: 13 }}>{error}</div> : null}
           <button onClick={() => onLogin({ email, password })} disabled={loading} style={primaryButton()}>
-            {loading ? 'Prihlasuji…' : 'Prihlasit'}
+            {loading ? 'Přihlašuji…' : 'Přihlásit'}
           </button>
         </div>
       </div>
@@ -181,6 +181,7 @@ function App() {
   const [message, setMessage] = useState('')
   const [openSidePanel, setOpenSidePanel] = useState('recommended')
   const [expandedPainterId, setExpandedPainterId] = useState('')
+  const [copied, setCopied] = useState(false)
 
   const selectedJob = detail?.job || null
 
@@ -217,8 +218,8 @@ function App() {
       setDetail(data)
       setForm((prev) => ({
         ...prev,
-        confirmedPrice: data.job.confirmed_price || data.job.estimated_price_high || '',
-        painterPayout: data.job.painter_payout || '',
+        confirmedPrice: data.job.confirmed_client_price || data.job.estimated_client_price_max || '',
+        painterPayout: data.job.painter_reward || '',
       }))
       if (data.job.preferred_date) {
         setCalendarMonth(monthStart(data.job.preferred_date))
@@ -250,6 +251,12 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (!session) return
+    const id = setInterval(fetchJobs, 30000)
+    return () => clearInterval(id)
+  }, [session])
+
+  useEffect(() => {
     if (session && selectedId) fetchDetail(selectedId)
   }, [session, selectedId])
 
@@ -269,7 +276,7 @@ function App() {
     })
     const data = await res.json()
     if (!res.ok) {
-      setLoginError(data.error || 'Prihlaseni se nepodarilo.')
+      setLoginError(data.error || 'Přihlášení se nepodařilo.')
       setLoading(false)
       return
     }
@@ -290,10 +297,10 @@ function App() {
     const data = await res.json()
     setBusyAction('')
     if (!res.ok) {
-      setMessage(data.error || 'Akce se nepodarila.')
+      setMessage(data.error || 'Akce se nepodařila.')
       return
     }
-    setMessage(action === 'send_offer' && data.result.offerUrl ? `Nabidka pripravena: ${data.result.offerUrl}` : 'Ulozeno.')
+    setMessage(action === 'send_offer' && data.result.offerUrl ? `Nabidka pripravena: ${data.result.offerUrl}` : 'Uloženo.')
     await Promise.all([fetchJobs(), fetchDetail(selectedJob.id), fetchCalendar(selectedJob.id, calendarDate, calendarMonth)])
   }
 
@@ -322,11 +329,11 @@ function App() {
     const data = await res.json()
     setCalendarBusy(false)
     if (!res.ok) {
-      setMessage(data.error || 'Dostupnost se nepodarilo ulozit.')
+      setMessage(data.error || 'Dostupnost se nepodařilo uložit.')
       return
     }
     setCalendar(data)
-    setMessage('Dostupnost malire ulozena.')
+    setMessage('Dostupnost malíře uložena.')
   }
 
   async function logout() {
@@ -346,19 +353,19 @@ function App() {
       <div style={{ maxWidth: 1460, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 16, flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Malir Hned / Dispecink</div>
-            <h1 style={{ fontSize: 34, fontWeight: 400, color: UI.text, letterSpacing: '-0.06em', margin: '6px 0 0' }}>Fronta zakazek</h1>
+            <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Malíř Hned / Dispečink</div>
+            <h1 style={{ fontSize: 34, fontWeight: 400, color: UI.text, letterSpacing: '-0.06em', margin: '6px 0 0' }}>Fronta zakázek</h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <span style={{ fontSize: 13, color: UI.textMid }}>{session.email}</span>
-            <button style={ghostButton()} onClick={logout}>Odhlasit</button>
+            <button style={ghostButton()} onClick={logout}>Odhlásit</button>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 16 }}>
           <div style={{ background: UI.surface, borderRadius: 24, border: `1px solid ${UI.border}`, boxShadow: UI.shadow, overflow: 'hidden' }}>
             <div style={{ padding: 16, borderBottom: `1px solid ${UI.border}`, fontSize: 13, color: UI.textMid }}>
-              {orderedJobs.length} zakazek ve fronte
+              {orderedJobs.length} zakázek ve frontě
             </div>
             <div style={{ maxHeight: '78vh', overflow: 'auto' }}>
               {orderedJobs.map((job) => (
@@ -380,8 +387,8 @@ function App() {
                     <strong style={{ color: UI.text, fontSize: 15 }}>{job.reference}</strong>
                     <span style={{ fontSize: 12, color: UI.textMid }}>{waitLabel(job.created_at)}</span>
                   </div>
-                  <div style={{ fontSize: 14, color: UI.text, marginBottom: 5 }}>{job.approximate_location || 'Bez lokality'} · {job.property_type || 'Zakazka'}</div>
-                  <div style={{ fontSize: 13, color: UI.textMid, lineHeight: 1.45 }}>{job.preferred_date_label || 'Bez terminu'} · {job.preferred_time_label || 'Cas neurcen'}</div>
+                  <div style={{ fontSize: 14, color: UI.text, marginBottom: 5 }}>{job.locality || job.service_area || 'Bez lokality'} · {job.space_type || job.work_type || 'Zakázka'}</div>
+                  <div style={{ fontSize: 13, color: UI.textMid, lineHeight: 1.45 }}>{job.preferred_date_label || 'Bez termínu'} · {job.preferred_time_label || 'Čas neurčen'}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 8, fontSize: 12, color: UI.textMid }}>
                     <span>{jobStatusLabel(job.status)}</span>
                     <span>{money(job.estimated_price_high)}</span>
@@ -400,12 +407,12 @@ function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{selectedJob.reference}</div>
-                      <h2 style={{ fontSize: 28, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '6px 0 6px' }}>{selectedJob.client_name || 'Klient bez jmena'}</h2>
-                      <div style={{ fontSize: 14, color: UI.textMid, lineHeight: 1.6 }}>{selectedJob.client_address || 'Adresa bude doplnena'}</div>
+                      <h2 style={{ fontSize: 28, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '6px 0 6px' }}>{selectedJob.client_name || 'Klient bez jména'}</h2>
+                      <div style={{ fontSize: 14, color: UI.textMid, lineHeight: 1.6 }}>{selectedJob.client_address || 'Adresa bude doplněna'}</div>
                     </div>
                     <div style={{ fontSize: 13, color: UI.textMid }}>
                       <div>Stav: <strong style={{ color: UI.text }}>{jobStatusLabel(selectedJob.status)}</strong></div>
-                      <div>Ceka: {waitLabel(selectedJob.created_at)}</div>
+                      <div>Čeká: {waitLabel(selectedJob.created_at)}</div>
                     </div>
                   </div>
                 </div>
@@ -413,51 +420,80 @@ function App() {
                 <div style={{ padding: 16, overflow: 'auto' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 330px', gap: 16, alignItems: 'start' }}>
                     <div style={{ display: 'grid', gap: 12 }}>
-                      <Panel title="Zadani klienta">
+                      <Panel title="Zadání klienta">
                         <KV label="Kontakt" value={`${selectedJob.client_phone || '—'} · ${selectedJob.client_email || '—'}`} />
-                        <KV label="Preferovany termin" value={`${selectedJob.preferred_date_label || '—'} · ${selectedJob.preferred_time_label || '—'}`} />
-                        <KV label="Typ prace" value={`${selectedJob.work_type || '—'} · ${selectedJob.repairs || '—'}`} />
+                        <KV label="Preferovaný termín" value={`${selectedJob.preferred_date_label || '—'} · ${selectedJob.preferred_time_label || '—'}`} />
+                        <KV label="Typ práce" value={`${selectedJob.work_type || '—'} · ${selectedJob.repairs || '—'}`} />
                         <KV label="Rozsah" value={`${selectedJob.custom_area || '—'} m2 · ${selectedJob.property_type || '—'}`} />
-                        <KV label="Poznamka" value={selectedJob.booking_note || selectedJob.client_note || 'Bez poznamky'} />
+                        <KV label="Poznámka" value={selectedJob.booking_note || selectedJob.client_note || 'Bez poznámky'} />
                       </Panel>
 
-                      <Panel title="Zpracovani">
+                      <Panel title="Zpracování">
                         <div style={{ display: 'grid', gap: 10 }}>
-                          <textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Duvod pro doplneni udaju" style={{ ...inputStyle(), minHeight: 78, resize: 'vertical' }} />
-                          <button style={ghostButton()} disabled={busyAction === 'request_completion'} onClick={() => doAction('request_completion', { reason: form.reason })}>Vyžadat doplneni</button>
+                          <textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Důvod pro doplnění údajů" style={{ ...inputStyle(), minHeight: 78, resize: 'vertical' }} />
+                          <button style={ghostButton()} disabled={busyAction === 'request_completion'} onClick={() => doAction('request_completion', { reason: form.reason })}>Vyžádat doplnění</button>
 
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                            <input value={form.confirmedPrice} onChange={(e) => setForm({ ...form, confirmedPrice: e.target.value })} placeholder="Potvrzena cena klientovi" style={inputStyle()} />
-                            <input value={form.painterPayout} onChange={(e) => setForm({ ...form, painterPayout: e.target.value })} placeholder="Odmena maliri" style={inputStyle()} />
+                            <input value={form.confirmedPrice} onChange={(e) => setForm({ ...form, confirmedPrice: e.target.value })} placeholder="Potvrzená cena klientovi" style={inputStyle()} />
+                            <input value={form.painterPayout} onChange={(e) => setForm({ ...form, painterPayout: e.target.value })} placeholder="Odměna malíři" style={inputStyle()} />
                           </div>
-                          <button style={primaryButton()} disabled={busyAction === 'prepare_job'} onClick={() => doAction('prepare_job', { confirmedPrice: form.confirmedPrice, painterPayout: form.painterPayout })}>Pripravit k nabidnuti</button>
+                          <button style={primaryButton()} disabled={busyAction === 'prepare_job'} onClick={() => doAction('prepare_job', { confirmedPrice: form.confirmedPrice, painterPayout: form.painterPayout })}>Připravit k nabídnutí</button>
 
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
                             <select value={form.painterId} onChange={(e) => setForm({ ...form, painterId: e.target.value })} style={inputStyle()}>
-                              <option value="">Vyberte malire</option>
+                              <option value="">Vyberte malíře</option>
                               {(calendar?.selected_day?.painters?.length ? calendar.selected_day.painters : detail?.recommendedPainters?.length ? detail.recommendedPainters : painters).map((painter) => (
                                 <option key={painter.id} value={painter.id}>{painter.name} · {painter.display_status || painter.role}</option>
                               ))}
                             </select>
-                            <button style={primaryButton()} disabled={!form.painterId || busyAction === 'send_offer'} onClick={() => doAction('send_offer', { painterId: form.painterId })}>Poslat nabidku</button>
+                            <button style={primaryButton()} disabled={!form.painterId || busyAction === 'send_offer'} onClick={() => doAction('send_offer', { painterId: form.painterId })}>Poslat nabídku</button>
                           </div>
 
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                            <button style={ghostButton()} disabled={busyAction === 'confirm_assignment'} onClick={() => doAction('confirm_assignment')}>Finalne potvrdit</button>
-                            <button style={ghostButton()} disabled={busyAction === 'return_to_dispatch'} onClick={() => doAction('return_to_dispatch')}>Vratit do dispecinku</button>
-                            <button style={ghostButton()} disabled={busyAction === 'mark_in_progress'} onClick={() => doAction('mark_in_progress')}>V reseni</button>
-                            <button style={ghostButton()} disabled={busyAction === 'mark_done'} onClick={() => doAction('mark_done')}>Dokonceno</button>
-                            <button style={{ ...ghostButton(), color: UI.danger, borderColor: 'rgba(181,77,67,0.28)' }} disabled={busyAction === 'cancel_job'} onClick={() => doAction('cancel_job')}>Zrusit</button>
-                          </div>
-                          {message ? <div style={{ fontSize: 13, color: message.startsWith('Nabidka') || message.includes('ulozena') ? UI.accent : UI.textMid }}>{message}</div> : null}
+                          {(() => {
+                            const status = selectedJob.status
+                            const showConfirm = status === 'painter_accepted'
+                            const showReturnDispatch = ['painter_accepted', 'offered_to_painter', 'confirmed_to_client'].includes(status)
+                            const showInProgress = status === 'confirmed_to_client'
+                            const showDone = status === 'in_progress'
+                            const showCancel = !['completed', 'cancelled'].includes(status)
+                            return (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {showConfirm ? <button style={ghostButton()} disabled={busyAction === 'confirm_assignment'} onClick={() => doAction('confirm_assignment')}>Finálně potvrdit</button> : null}
+                                {showReturnDispatch ? <button style={ghostButton()} disabled={busyAction === 'return_to_dispatch'} onClick={() => doAction('return_to_dispatch')}>Vrátit do dispečinku</button> : null}
+                                {showInProgress ? <button style={ghostButton()} disabled={busyAction === 'mark_in_progress'} onClick={() => doAction('mark_in_progress')}>V řešení</button> : null}
+                                {showDone ? <button style={ghostButton()} disabled={busyAction === 'mark_done'} onClick={() => doAction('mark_done')}>Dokončeno</button> : null}
+                                {showCancel ? <button style={{ ...ghostButton(), color: UI.danger, borderColor: 'rgba(181,77,67,0.28)' }} disabled={busyAction === 'cancel_job'} onClick={() => doAction('cancel_job')}>Zrušit</button> : null}
+                              </div>
+                            )
+                          })()}
+                          {message ? (
+                            message.startsWith('Nabidka') ? (
+                              <div style={{ fontSize: 13, color: UI.accent, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                                <span>{message.split(': ')[0]}:</span>
+                                <span style={{ wordBreak: 'break-all' }}>{message.split(': ')[1]}</span>
+                                <button
+                                  style={ghostButton()}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(message.split(': ')[1])
+                                    setCopied(true)
+                                    setTimeout(() => setCopied(false), 2000)
+                                  }}
+                                >
+                                  {copied ? 'Zkopírováno ✓' : 'Kopírovat odkaz'}
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 13, color: message.includes('uložena') || message === 'Uloženo.' ? UI.accent : UI.textMid }}>{message}</div>
+                            )
+                          ) : null}
                         </div>
                       </Panel>
 
-                      <Panel title="Kalendar kapacity tymu">
+                      <Panel title="Kalendář kapacity týmu">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
                           <div>
-                            <div style={{ fontSize: 14, color: UI.text }}>{selectedJob.preferred_date_label || 'Vyberte den v kalendari'}</div>
-                            <div style={{ fontSize: 12, color: UI.textMid }}>Jeden mesic, prepinani sipkami.</div>
+                            <div style={{ fontSize: 14, color: UI.text }}>{selectedJob.preferred_date_label || 'Vyberte den v kalendáři'}</div>
+                            <div style={{ fontSize: 12, color: UI.textMid }}>Jeden měsíc, přepínání šipkami.</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <button type="button" onClick={() => setCalendarMonth((prev) => addMonths(prev, -1))} style={iconButton()}>‹</button>
@@ -511,11 +547,11 @@ function App() {
                               <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Detail dne</div>
                               <div style={{ fontSize: 18, color: UI.text, letterSpacing: '-0.04em', marginTop: 4 }}>{dayLabel(calendar?.selected_day?.date || calendarDate)}</div>
                             </div>
-                            {calendarBusy ? <div style={{ fontSize: 12, color: UI.textMid }}>Nacitam…</div> : null}
+                            {calendarBusy ? <div style={{ fontSize: 12, color: UI.textMid }}>Načítám…</div> : null}
                           </div>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-                            <Tag label={`${calendar?.selected_day?.available_count || 0} dostupni`} tone="good" />
-                            <Tag label={`${calendar?.selected_day?.limited_count || 0} omezeni`} tone="warn" />
+                            <Tag label={`${calendar?.selected_day?.available_count || 0} dostupní`} tone="good" />
+                            <Tag label={`${calendar?.selected_day?.limited_count || 0} omezení`} tone="warn" />
                             <Tag label={`${calendar?.selected_day?.blocked_count || 0} blokace`} tone="muted" />
                             <Tag label={`${calendar?.selected_day?.available_slots || 0} volna kapacita`} tone="light" />
                           </div>
@@ -546,8 +582,8 @@ function App() {
 
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                                       {painter.accepts_express ? <Tag label="Bere expres" tone="good" /> : null}
-                                      {painter.job_fit?.locality_match ? <Tag label="Sedi lokalita" tone="good" /> : <Tag label="Mimo lokalitu" tone="muted" />}
-                                      {painter.job_fit?.work_type_match ? <Tag label="Sedi typ prace" tone="good" /> : null}
+                                      {painter.job_fit?.locality_match ? <Tag label="Sedí lokalita" tone="good" /> : <Tag label="Mimo lokalitu" tone="muted" />}
+                                      {painter.job_fit?.work_type_match ? <Tag label="Sedí typ práce" tone="good" /> : null}
                                       {painter.block_count ? <Tag label={`${painter.block_count} blokace`} tone="warn" /> : null}
                                     </div>
 
@@ -583,7 +619,7 @@ function App() {
 
                                         <div style={{ display: 'grid', gridTemplateColumns: '92px 1fr auto', gap: 8, marginTop: 8 }}>
                                           <input type="number" min="0" defaultValue={painter.capacity} onBlur={(e) => updatePainterDay(painter, { capacity: e.target.value })} style={inputStyle()} />
-                                          <input defaultValue={painter.note || ''} onBlur={(e) => updatePainterDay(painter, { note: e.target.value })} placeholder="Poznamka k tomuto dni" style={inputStyle()} />
+                                          <input defaultValue={painter.note || ''} onBlur={(e) => updatePainterDay(painter, { note: e.target.value })} placeholder="Poznámka k tomuto dni" style={inputStyle()} />
                                           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, color: UI.textMid }}>
                                             <input type="checkbox" defaultChecked={Boolean(painter.accepts_express)} onChange={(e) => updatePainterDay(painter, { accepts_express: e.target.checked })} />
                                             Expres
@@ -593,22 +629,22 @@ function App() {
                                     ) : null}
 
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-                                      <button style={ghostButton()} onClick={() => { setForm((prev) => ({ ...prev, painterId: painter.id })); setExpandedPainterId(painter.id) }}>Vybrat do nabidky</button>
-                                      {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendar malire</a> : null}
+                                      <button style={ghostButton()} onClick={() => { setForm((prev) => ({ ...prev, painterId: painter.id })); setExpandedPainterId(painter.id) }}>Vybrat do nabídky</button>
+                                      {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendář malíře</a> : null}
                                     </div>
                                   </div>
                                 )
                               })}
                             </div>
-                          ) : <div style={{ color: UI.textMid, fontSize: 13 }}>Pro tento den zatim nemame detail dostupnosti.</div>}
+                          ) : <div style={{ color: UI.textMid, fontSize: 13 }}>Pro tento den zatím nemáme detail dostupnosti.</div>}
                         </div>
                       </Panel>
                     </div>
 
                     <div style={{ display: 'grid', gap: 10, alignSelf: 'start', position: 'sticky', top: 12 }}>
                       <AccordionPanel
-                        title="Nabidky malirum"
-                        subtitle={(detail?.offers || []).length ? `${detail.offers.length} zaznamu` : 'Zatim bez nabidek.'}
+                        title="Nabídky malířům"
+                        subtitle={(detail?.offers || []).length ? `${detail.offers.length} záznamů` : 'Zatím bez nabídek.'}
                         open={openSidePanel === 'offers'}
                         onToggle={() => setOpenSidePanel((prev) => prev === 'offers' ? '' : 'offers')}
                       >
@@ -619,14 +655,14 @@ function App() {
                               <span style={{ fontSize: 12, color: UI.textMid }}>{offerStatusLabel(offer.status)}</span>
                             </div>
                             <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{dt(offer.created_at)} · exp. {dt(offer.expires_at)}</div>
-                            {offer.status === 'pending' ? <button style={{ ...ghostButton(), marginTop: 8 }} onClick={() => doAction('withdraw_offer', { offerId: offer.id })}>Stahnout nabidku</button> : null}
+                            {offer.status === 'pending' ? <button style={{ ...ghostButton(), marginTop: 8 }} onClick={() => doAction('withdraw_offer', { offerId: offer.id })}>Stáhnout nabídku</button> : null}
                           </div>
-                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Zatim bez nabidek.</div>}
+                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Zatím bez nabídek.</div>}
                       </AccordionPanel>
 
                       <AccordionPanel
-                        title="Vhodni maliri"
-                        subtitle={(detail?.recommendedPainters || []).length ? `${detail.recommendedPainters.length} doporuceni` : 'Bez doporuceni'}
+                        title="Vhodní malíři"
+                        subtitle={(detail?.recommendedPainters || []).length ? `${detail.recommendedPainters.length} doporučení` : 'Bez doporučení'}
                         open={openSidePanel === 'recommended'}
                         onToggle={() => setOpenSidePanel((prev) => prev === 'recommended' ? '' : 'recommended')}
                       >
@@ -638,16 +674,16 @@ function App() {
                             </div>
                             <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{painter.display_status}</div>
                             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button style={ghostButton()} onClick={() => setForm((prev) => ({ ...prev, painterId: painter.id }))}>Vybrat do nabidky</button>
-                              {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendar malire</a> : null}
+                              <button style={ghostButton()} onClick={() => setForm((prev) => ({ ...prev, painterId: painter.id }))}>Vybrat do nabídky</button>
+                              {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendář malíře</a> : null}
                             </div>
                           </div>
-                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Doporuceni se objevi po zadani preferovaneho dne.</div>}
+                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Doporučení se objeví po zadání preferovaného dne.</div>}
                       </AccordionPanel>
 
                       <AccordionPanel
                         title="Historie"
-                        subtitle={(detail?.events || []).length ? `${detail.events.length} udalosti` : 'Historie je zatim prazdna.'}
+                        subtitle={(detail?.events || []).length ? `${detail.events.length} událostí` : 'Historie je zatím prázdná.'}
                         open={openSidePanel === 'history'}
                         onToggle={() => setOpenSidePanel((prev) => prev === 'history' ? '' : 'history')}
                       >
@@ -659,7 +695,7 @@ function App() {
                             </div>
                             <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{event.actor_label}</div>
                           </div>
-                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Historie je zatim prazdna.</div>}
+                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Historie je zatím prázdná.</div>}
                       </AccordionPanel>
                     </div>
                   </div>
