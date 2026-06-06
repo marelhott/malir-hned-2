@@ -1,33 +1,44 @@
 const { useEffect, useMemo, useState, useCallback } = React
 
-// ── COLORS ────────────────────────────────────────────────────
+// ── DESIGN TOKENS ─────────────────────────────────────────────
+const LINE  = '1px solid #f0f0f0'
+const LINE2 = '1px solid #e5e7eb'
+
 const C = {
-  bg: '#f0ece6', surface: '#ffffff', soft: '#f7f3ee',
-  border: 'rgba(175,165,148,0.28)', borderMid: 'rgba(175,165,148,0.5)',
-  text: '#18170f', mid: '#7a7268', light: '#b8b0a4',
-  accent: '#2a7a4e', accentSoft: '#e6f3ec',
-  warn: '#b89236', warnSoft: '#f7eed8',
-  danger: '#b54d43', dangerSoft: '#faeae9',
-  muted: '#8b8173', mutedSoft: '#efe9e0',
-  shadow: '0 1px 4px rgba(20,14,6,0.06), 0 8px 24px rgba(20,14,6,0.08)',
-  heavy: '0 4px 16px rgba(20,14,6,0.1), 0 32px 80px rgba(20,14,6,0.18)',
+  bg:         '#ffffff',
+  surface:    '#ffffff',
+  soft:       '#f9fafb',
+  text:       '#111827',
+  mid:        '#6b7280',
+  light:      '#9ca3af',
+  accent:     '#16a34a',
+  accentSoft: '#dcfce7',
+  accentText: '#14532d',
+  warn:       '#d97706',
+  warnSoft:   '#fef9c3',
+  warnText:   '#78350f',
+  danger:     '#dc2626',
+  dangerSoft: '#fee2e2',
+  dangerText: '#7f1d1d',
+  border:     '#f0f0f0',
+  borderMid:  '#e5e7eb',
 }
 
 const JOB_STATUS = {
-  waiting_for_review:         { label: 'Čeká na kontrolu',    dot: C.warn },
-  waiting_for_client_details: { label: 'Čeká na klienta',     dot: C.muted },
-  ready_to_offer:             { label: 'Připravena',           dot: C.accent },
-  offered_to_painter:         { label: 'Nabídnuto malíři',    dot: C.warn },
-  painter_accepted:           { label: 'Malíř přijal',        dot: C.accent },
-  confirmed_to_client:        { label: 'Potvrzeno klientovi', dot: C.accent },
-  in_progress:                { label: 'Probíhá',             dot: C.accent },
-  completed:                  { label: 'Dokončeno',            dot: C.muted },
-  cancelled:                  { label: 'Zrušeno',              dot: C.danger },
+  waiting_for_review:         { label: 'Čeká na kontrolu',    dot: C.warn,   pill: C.warnSoft,   text: C.warnText   },
+  waiting_for_client_details: { label: 'Čeká na klienta',     dot: C.light,  pill: '#f3f4f6',    text: C.mid        },
+  ready_to_offer:             { label: 'Připravena',           dot: C.accent, pill: C.accentSoft, text: C.accentText },
+  offered_to_painter:         { label: 'Nabídnuto malíři',    dot: C.warn,   pill: C.warnSoft,   text: C.warnText   },
+  painter_accepted:           { label: 'Malíř přijal',        dot: C.accent, pill: C.accentSoft, text: C.accentText },
+  confirmed_to_client:        { label: 'Potvrzeno klientovi', dot: C.accent, pill: C.accentSoft, text: C.accentText },
+  in_progress:                { label: 'Probíhá',             dot: C.accent, pill: C.accentSoft, text: C.accentText },
+  completed:                  { label: 'Dokončeno',            dot: C.light,  pill: '#f3f4f6',    text: C.mid        },
+  cancelled:                  { label: 'Zrušeno',              dot: C.danger, pill: C.dangerSoft, text: C.dangerText },
 }
 
-const AVAIL_COLOR = { available: C.accent, limited: C.warn, unavailable: C.danger }
-const AVAIL_BG    = { available: C.accentSoft, limited: C.warnSoft, unavailable: C.dangerSoft }
-const AVAIL_LABEL = { available: 'Volný', limited: 'Omezený', unavailable: 'Obsazený' }
+const AVAIL_COLOR = { available: C.accent,     limited: C.warn,      unavailable: C.danger }
+const AVAIL_BG    = { available: C.accentSoft,  limited: C.warnSoft,  unavailable: C.dangerSoft }
+const AVAIL_LABEL = { available: 'Volný',        limited: 'Omezený',   unavailable: 'Obsazený' }
 
 // ── HELPERS ───────────────────────────────────────────────────
 const today = new Date().toISOString().slice(0, 10)
@@ -72,20 +83,29 @@ function firstDow(m) { return (new Date(m + 'T12:00:00Z').getUTCDay() + 6) % 7 }
 
 // ── STYLE HELPERS ─────────────────────────────────────────────
 const btn = (bg, color = '#fff', border = 'transparent') => ({
-  padding: '9px 16px', borderRadius: 10, border: `1px solid ${border}`,
+  padding: '8px 16px', borderRadius: 8, border: `1px solid ${border}`,
   background: bg, color, fontSize: 13, fontWeight: 500,
   cursor: 'pointer', fontFamily: "'Outfit', sans-serif", whiteSpace: 'nowrap',
 })
-const ghostBtn = () => btn(C.surface, C.mid, C.border)
+const ghostBtn = () => btn('#fff', C.mid, LINE2.replace('1px solid ',''))
 const primaryBtn = () => btn(C.accent)
 const inp = (extra = {}) => ({
-  width: '100%', padding: '9px 12px', borderRadius: 10,
-  border: `1px solid ${C.border}`, fontSize: 13,
+  width: '100%', padding: '8px 12px', borderRadius: 8,
+  border: LINE2, fontSize: 13,
   fontFamily: "'Outfit', sans-serif", outline: 'none',
-  boxSizing: 'border-box', background: C.surface, ...extra,
+  boxSizing: 'border-box', background: '#fff', color: C.text, ...extra,
 })
 function ColHeader({ children }) {
-  return <div style={{ padding: '11px 16px', borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 700, color: C.mid, textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>{children}</div>
+  return <div style={{ padding: '12px 16px', borderBottom: LINE, fontSize: 11, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', flexShrink: 0 }}>{children}</div>
+}
+function StatusPill({ status }) {
+  const s = JOB_STATUS[status] || { label: status, pill: '#f3f4f6', text: C.mid, dot: C.light }
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background: s.pill, color: s.text, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 500 }}>
+      <span style={{ width:5, height:5, borderRadius:99, background:s.dot, display:'inline-block' }} />
+      {s.label}
+    </span>
+  )
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────
@@ -93,15 +113,15 @@ function Login({ onLogin, loading, error }) {
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: C.bg }}>
-      <div style={{ width: 380, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, boxShadow: C.shadow }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Malíř Hned · Admin</div>
-        <h1 style={{ fontSize: 24, fontWeight: 400, color: C.text, letterSpacing: '-0.04em', margin: '0 0 18px' }}>Přihlášení</h1>
-        <div style={{ display: 'grid', gap: 8 }}>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f9fafb' }}>
+      <div style={{ width: 360, background: '#fff', border: LINE2, borderRadius: 12, padding: 32, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Malíř Hned · Admin</div>
+        <h1 style={{ fontSize: 22, fontWeight: 600, color: C.text, letterSpacing: '-0.02em', margin: '0 0 20px' }}>Přihlášení</h1>
+        <div style={{ display: 'grid', gap: 10 }}>
           <input value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail" style={inp()} />
           <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Heslo" style={inp()} onKeyDown={e => e.key === 'Enter' && onLogin({ email, password: pw })} />
           {error && <div style={{ fontSize: 12, color: C.danger }}>{error}</div>}
-          <button onClick={() => onLogin({ email, password: pw })} disabled={loading} style={primaryBtn()}>{loading ? 'Přihlašuji…' : 'Přihlásit'}</button>
+          <button onClick={() => onLogin({ email, password: pw })} disabled={loading} style={{ ...primaryBtn(), width:'100%', padding:'10px' }}>{loading ? 'Přihlašuji…' : 'Přihlásit'}</button>
         </div>
       </div>
     </div>
@@ -139,53 +159,64 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
     const detail = details[job.id]
     const f = form[job.id] || {}
     const isActive = activeJobId === job.id
-    const s = JOB_STATUS[job.status] || { dot: C.light, label: job.status }
+    const s = JOB_STATUS[job.status] || { dot: C.light, label: job.status, pill: '#f3f4f6', text: C.mid }
 
     return (
-      <div key={job.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+      <div key={job.id} style={{ borderBottom: LINE }}>
         <button onClick={() => toggle(job.id)} style={{
-          width: '100%', textAlign: 'left', border: 'none', padding: '12px 16px',
-          background: isActive ? C.accentSoft : exp ? C.soft : C.surface,
+          width: '100%', textAlign: 'left', border: 'none', padding: '14px 16px',
+          background: isActive ? '#f0fdf4' : '#fff',
           cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+          borderLeft: `3px solid ${isActive ? C.accent : 'transparent'}`,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot, display: 'inline-block', flexShrink: 0 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: C.text, flex: 1 }}>{job.client_name || 'Klient'}</span>
-            <span style={{ fontSize: 11, color: C.light }}>{ago(job.created_at)}</span>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C.text, lineHeight: 1.2 }}>{job.client_name || 'Klient'}</span>
+            <span style={{ fontSize: 11, color: C.light, flexShrink: 0, marginTop: 1 }}>{ago(job.created_at)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 16 }}>
-            <span style={{ fontSize: 12, color: C.mid }}>{fmtShort(job.preferred_date)}</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{fmt(job.estimated_client_price_max || job.estimated_price_high)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <StatusPill status={job.status} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{fmt(job.estimated_client_price_max || job.estimated_price_high)}</span>
           </div>
+          {job.preferred_date && (
+            <div style={{ fontSize: 12, color: C.light, marginTop: 5 }}>{fmtShort(job.preferred_date)}</div>
+          )}
         </button>
 
         {exp && (
-          <div style={{ padding: '12px 16px 14px', background: C.soft, borderTop: `1px solid ${C.border}` }}>
+          <div style={{ padding: '14px 16px 16px', background: C.soft, borderTop: LINE }}>
             {!detail
               ? <div style={{ fontSize: 12, color: C.light }}>Načítám…</div>
               : <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 14px', fontSize: 12, marginBottom: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 12, marginBottom: 12 }}>
                     {[['Tel', detail.client_phone], ['Mail', detail.client_email],
                       ['Adresa', detail.client_address || detail.locality],
-                      ['Práce', detail.work_type], ['Plocha', detail.custom_area ? detail.custom_area+' m²' : null],
-                      ['Opravy', detail.repairs], ['Stav', s.label]]
+                      ['Práce', detail.work_type],
+                      ['Plocha', detail.custom_area ? detail.custom_area+' m²' : null],
+                      ['Opravy', detail.repairs]]
                       .filter(([,v]) => v).map(([k,v]) => (
-                        <div key={k}><div style={{ color: C.light, fontSize: 11 }}>{k}</div><div style={{ color: C.text }}>{v}</div></div>
+                        <div key={k}>
+                          <div style={{ color: C.light, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>{k}</div>
+                          <div style={{ color: C.text }}>{v}</div>
+                        </div>
                       ))}
                   </div>
-                  {detail.booking_note && <div style={{ fontSize: 12, color: C.mid, marginBottom: 10, lineHeight: 1.5 }}>{detail.booking_note}</div>}
-                  <div style={{ fontSize: 12, color: C.mid, background: C.surface, borderRadius: 8, padding: '7px 10px', marginBottom: 10 }}>
-                    Provize: <strong style={{ color: C.text }}>{commission(detail.confirmed_client_price || detail.estimated_client_price_max)}</strong>
+                  {detail.booking_note && (
+                    <div style={{ fontSize: 12, color: C.mid, marginBottom: 12, lineHeight: 1.6, padding: '8px 10px', background: '#fff', borderRadius: 8, border: LINE }}>
+                      {detail.booking_note}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: C.mid, marginBottom: 12, padding: '7px 10px', background: '#fff', borderRadius: 8, border: LINE }}>
+                    Provize: <strong style={{ color: C.accent }}>{commission(detail.confirmed_client_price || detail.estimated_client_price_max)}</strong>
                   </div>
                   {!['completed','cancelled'].includes(job.status) && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
                       <input value={f.confirmedPrice||''} onChange={e => setForm(p=>({...p,[job.id]:{...p[job.id],confirmedPrice:e.target.value}}))} placeholder="Cena klientovi" style={inp()} />
                       <input value={f.painterPayout||''} onChange={e => setForm(p=>({...p,[job.id]:{...p[job.id],painterPayout:e.target.value}}))} placeholder="Odměna malíři" style={inp()} />
                     </div>
                   )}
                   {job.preferred_date && !['completed','cancelled'].includes(job.status) && (
                     <button onClick={() => { onSelectJob(job.id, f.confirmedPrice, f.painterPayout); onSetCalDate(job.preferred_date) }}
-                      style={{ ...primaryBtn(), width: '100%', padding: '10px' }}>
+                      style={{ ...primaryBtn(), width: '100%', padding: '10px', fontSize: 13 }}>
                       Vybrat malíře na {fmtShort(job.preferred_date)} →
                     </button>
                   )}
@@ -201,10 +232,10 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ColHeader>Zakázky · {active.length} aktivních</ColHeader>
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {active.length === 0 && <div style={{ padding: 20, fontSize: 12, color: C.light, textAlign: 'center' }}>Žádné aktivní zakázky</div>}
+        {active.length === 0 && <div style={{ padding: 32, fontSize: 13, color: C.light, textAlign: 'center' }}>Žádné aktivní zakázky</div>}
         {active.map(renderJob)}
         {closed.length > 0 && <>
-          <div style={{ padding: '7px 14px', fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.08em', background: C.soft }}>Uzavřené ({closed.length})</div>
+          <div style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', background: C.soft, borderTop: LINE, borderBottom: LINE }}>Uzavřené ({closed.length})</div>
           {closed.map(renderJob)}
         </>}
       </div>
@@ -387,8 +418,8 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
   if (!selectedDay) return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ColHeader>Malíři</ColHeader>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: 12, color: C.light }}>← Vyberte den</span>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <span style={{ fontSize: 13, color: C.light, textAlign: 'center' }}>← Klikněte na den v kalendáři</span>
       </div>
     </div>
   )
@@ -399,14 +430,14 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ColHeader>Malíři · {fmtShort(selectedDay)}</ColHeader>
-      <div style={{ flex: 1, overflow: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         {isMatchDay && activeJob && (
-          <div style={{ background: C.warnSoft, borderRadius: 9, padding: '7px 10px', fontSize: 11, color: C.warn, marginBottom: 2 }}>
-            Preferovaný termín zakázky: <strong>{activeJob.client_name}</strong>
+          <div style={{ padding: '10px 16px', background: C.warnSoft, borderBottom: LINE, fontSize: 12, color: C.warnText }}>
+            Preferovaný termín: <strong>{activeJob.client_name}</strong>
           </div>
         )}
-        {!data && <div style={{ fontSize: 11, color: C.light, padding: '10px 0' }}>Načítám…</div>}
-        {painters.map(p => {
+        {!data && <div style={{ fontSize: 12, color: C.light, padding: '24px 16px', textAlign: 'center' }}>Načítám…</div>}
+        {painters.map((p, pi) => {
           const ac = AVAIL_COLOR[p.availability_status] || C.light
           const ab = AVAIL_BG[p.availability_status] || C.soft
           const isSelected = selectedPainterId === p.id
@@ -414,34 +445,30 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
 
           return (
             <button key={p.id} onClick={() => onSelectPainter(p)} style={{
-              width: '100%', textAlign: 'left', padding: '10px 11px', borderRadius: 10,
-              border: `1.5px solid ${isSelected ? C.accent : C.border}`,
-              background: isSelected ? C.accentSoft : C.surface,
+              width: '100%', textAlign: 'left', padding: '12px 16px',
+              border: 'none', borderBottom: LINE,
+              borderLeft: `3px solid ${isSelected ? C.accent : 'transparent'}`,
+              background: isSelected ? '#f0fdf4' : '#fff',
               cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                <div style={{ width: 9, height: 9, borderRadius: 99, background: ac, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 500, color: C.text, flex: 1 }}>{p.name}</span>
-                <span style={{ padding: '2px 7px', borderRadius: 99, background: ab, color: ac, fontSize: 10, fontWeight: 500 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 99, background: ac, flexShrink: 0, display:'inline-block' }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: C.text, flex: 1 }}>{p.name}</span>
+                <span style={{ padding: '2px 8px', borderRadius: 99, background: ab, color: ac, fontSize: 11, fontWeight: 500 }}>
                   {AVAIL_LABEL[p.availability_status] || '—'}
                 </span>
               </div>
-              <div style={{ paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <div style={{ fontSize: 10, color: C.light }}>
+              <div style={{ paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ fontSize: 11, color: C.light }}>
                   Kapacita: <span style={{ color: C.text }}>{p.remaining_capacity ?? p.capacity ?? '—'}</span>
                   {' · '}
-                  {p.accepts_express ? <span style={{ color: C.accent }}>bere expres</span> : <span style={{ color: C.light }}>ne expres</span>}
+                  {p.accepts_express
+                    ? <span style={{ color: C.accent }}>expres ✓</span>
+                    : <span style={{ color: C.light }}>bez expresu</span>}
                 </div>
-                {hasOverlap && (
-                  <div style={{ fontSize: 10, color: C.danger }}>⚠ {p.block_count} blokace v tomto dni</div>
-                )}
-                {p.job_fit?.locality_match === false && (
-                  <div style={{ fontSize: 10, color: C.warn }}>Mimo lokalitu zakázky</div>
-                )}
-                {p.note && <div style={{ fontSize: 10, color: C.mid, lineHeight: 1.4 }}>{p.note}</div>}
-                {p.service_areas?.length > 0 && (
-                  <div style={{ fontSize: 10, color: C.light }}>{p.service_areas.join(', ')}</div>
-                )}
+                {hasOverlap && <div style={{ fontSize: 11, color: C.danger }}>⚠ {p.block_count} blokace tento den</div>}
+                {p.job_fit?.locality_match === false && <div style={{ fontSize: 11, color: C.warn }}>Mimo lokalitu zakázky</div>}
+                {p.note && <div style={{ fontSize: 11, color: C.mid, lineHeight: 1.4 }}>{p.note}</div>}
               </div>
             </button>
           )
@@ -464,55 +491,57 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
   if (!activeJob && !selectedPainter) return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ColHeader>Detail &amp; odeslání</ColHeader>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: 12, color: C.light, textAlign: 'center', padding: 20 }}>Vyberte zakázku a malíře</span>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <span style={{ fontSize: 13, color: C.light, textAlign: 'center', lineHeight: 1.6 }}>Vyberte zakázku<br/>a malíře</span>
       </div>
     </div>
   )
 
+  const isError = msg && (msg.includes('fail') || msg.includes('Chyba'))
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ColHeader>Detail &amp; odeslání</ColHeader>
-      <div style={{ flex: 1, overflow: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
 
         {/* Job summary */}
         {activeJob && (
-          <div style={{ background: C.soft, borderRadius: 11, padding: '10px 12px' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 6 }}>Zakázka</div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: C.text, marginBottom: 4 }}>{activeJob.client_name}</div>
-            <div style={{ display: 'grid', gap: '3px 0', fontSize: 11, color: C.mid }}>
-              <div>{activeJob.client_phone} · {activeJob.client_email}</div>
+          <div style={{ padding: '14px 16px', borderBottom: LINE }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Zakázka</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 6 }}>{activeJob.client_name}</div>
+            <div style={{ fontSize: 12, color: C.mid, lineHeight: 1.7 }}>
+              <div>{activeJob.client_phone}{activeJob.client_email ? ' · ' + activeJob.client_email : ''}</div>
               <div>{activeJob.client_address || activeJob.locality || '—'}</div>
-              <div>{activeJob.work_type} {activeJob.custom_area ? '· '+activeJob.custom_area+' m²' : ''}</div>
+              <div>{activeJob.work_type}{activeJob.custom_area ? ' · ' + activeJob.custom_area + ' m²' : ''}</div>
             </div>
           </div>
         )}
 
         {/* Painter summary */}
         {selectedPainter && (
-          <div style={{ background: C.soft, borderRadius: 11, padding: '10px 12px' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 6 }}>Malíř</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-              <div style={{ width: 9, height: 9, borderRadius: 99, background: AVAIL_COLOR[selectedPainter.availability_status] || C.light }} />
-              <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{selectedPainter.name}</span>
+          <div style={{ padding: '14px 16px', borderBottom: LINE }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Malíř</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: AVAIL_COLOR[selectedPainter.availability_status] || C.light, display:'inline-block' }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{selectedPainter.name}</span>
               <span style={{ fontSize: 11, color: C.mid }}>{AVAIL_LABEL[selectedPainter.availability_status]}</span>
             </div>
-            <div style={{ fontSize: 11, color: C.mid }}>Termín: <strong style={{ color: C.text }}>{fmtLong(selectedDay)}</strong></div>
+            <div style={{ fontSize: 12, color: C.mid }}>Termín: <strong style={{ color: C.text }}>{fmtLong(selectedDay)}</strong></div>
           </div>
         )}
 
         {/* Financial summary */}
         {activeJob && (
-          <div style={{ background: C.soft, borderRadius: 11, padding: '10px 12px' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>Financování</div>
+          <div style={{ padding: '14px 16px', borderBottom: LINE }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Finance</div>
             {[
               ['Cena klientovi', fmt(price)],
               ['Odměna malíři',  fmt(payout)],
-              ['Provize dispečera', fmt(comm) + ' (15 %)'],
+              ['Provize (15 %)', fmt(comm)],
             ].map(([k,v]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
                 <span style={{ color: C.mid }}>{k}</span>
-                <span style={{ color: C.text, fontWeight: 500 }}>{v}</span>
+                <span style={{ color: C.text, fontWeight: 600 }}>{v}</span>
               </div>
             ))}
           </div>
@@ -520,20 +549,20 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
 
         {/* Duration */}
         {selectedPainter && selectedDay && (
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 7 }}>Délka zakázky</div>
+          <div style={{ padding: '14px 16px', borderBottom: LINE }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Délka zakázky</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
               {[['1 den',1],['2 dny',2],['3+ dny',3]].map(([label,val]) => (
                 <button key={val} onClick={() => setDuration(val)} style={{
-                  padding: '8px 4px', borderRadius: 9, fontFamily: "'Outfit', sans-serif", fontSize: 11,
-                  border: `1.5px solid ${duration===val ? C.accent : C.border}`,
-                  background: duration===val ? C.accentSoft : C.surface,
-                  color: duration===val ? C.accent : C.mid, cursor: 'pointer',
+                  padding: '9px 4px', borderRadius: 8, fontFamily: "'Outfit', sans-serif", fontSize: 12,
+                  border: duration===val ? `1.5px solid ${C.accent}` : LINE2,
+                  background: duration===val ? C.accentSoft : '#fff',
+                  color: duration===val ? C.accent : C.mid, cursor: 'pointer', fontWeight: duration===val ? 600 : 400,
                 }}>{label}</button>
               ))}
             </div>
             {duration > 1 && (
-              <div style={{ fontSize: 10, color: C.mid, marginTop: 6 }}>
+              <div style={{ fontSize: 11, color: C.light, marginTop: 8 }}>
                 Obsadí: {Array.from({length:duration},(_,i)=>fmtShort(addDays(selectedDay,i))).join(', ')}
               </div>
             )}
@@ -542,26 +571,26 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
 
         {/* Message */}
         {msg && (
-          <div style={{ background: msg.includes('fail') || msg.includes('Chyba') ? C.dangerSoft : C.accentSoft, borderRadius: 9, padding: '8px 11px', fontSize: 11, color: msg.includes('fail') || msg.includes('Chyba') ? C.danger : C.accent }}>
+          <div style={{ margin: '12px 16px', padding: '10px 12px', borderRadius: 8, fontSize: 12,
+            background: isError ? C.dangerSoft : C.accentSoft,
+            color: isError ? C.danger : C.accentText }}>
             {msg}
           </div>
         )}
 
-        {/* Action buttons */}
+        {/* Action */}
         {activeJob && selectedPainter && selectedDay && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-            <div style={{ background: C.accentSoft, borderRadius: 9, padding: '8px 11px', fontSize: 11, color: C.accent }}>
-              📱 Nabídka odejde malíři {selectedPainter.name} do telefonu
-            </div>
-            <div style={{ background: C.warnSoft, borderRadius: 9, padding: '8px 11px', fontSize: 11, color: C.warn }}>
-              ✉️ Po přijetí malířem bude klient ({activeJob.client_email}) automaticky informován e-mailem
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 12, color: C.mid, lineHeight: 1.6, padding: '10px 12px', background: C.soft, borderRadius: 8, border: LINE }}>
+              📱 Nabídka odejde malíři <strong>{selectedPainter.name}</strong> do telefonu.<br/>
+              ✉️ Po přijetí bude <strong>{activeJob.client_email}</strong> informován e-mailem.
             </div>
             <button
               disabled={busy}
               onClick={() => onAssign(selectedPainter, duration)}
-              style={{ ...primaryBtn(), padding: '12px', fontSize: 13, borderRadius: 11, marginTop: 2 }}
+              style={{ ...primaryBtn(), width: '100%', padding: '12px', fontSize: 13, borderRadius: 8 }}
             >
-              {busy ? 'Odesílám…' : `Potvrdit a odeslat nabídku malíři ${selectedPainter.name}`}
+              {busy ? 'Odesílám…' : `Odeslat nabídku → ${selectedPainter.name}`}
             </button>
           </div>
         )}
@@ -589,84 +618,84 @@ function OpsCalendar({ jobs }) {
   })
 
   return (
-    <div style={{ padding: '14px 20px 32px', overflowY: 'auto', height: 'calc(100vh - 82px)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <button onClick={() => setMonth(m => addMonths(m, -1))} style={ghostBtn()}>‹</button>
-        <span style={{ fontSize: 16, fontWeight: 500, color: C.text, textTransform: 'capitalize', flex: 1, textAlign: 'center' }}>{monthLabel}</span>
-        <button onClick={() => setMonth(m => addMonths(m, 1))} style={ghostBtn()}>›</button>
-        <button onClick={() => setMonth(monthOf(today))} style={{ ...ghostBtn(), fontSize: 11 }}>Dnes</button>
+    <div style={{ overflowY: 'auto', height: 'calc(100vh - 56px)', background: '#fff' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: LINE }}>
+        <button onClick={() => setMonth(m => addMonths(m, -1))} style={{ background:'none', border:LINE2, borderRadius:8, width:32, height:32, cursor:'pointer', fontSize:16, color:C.mid, display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
+        <span style={{ fontSize: 16, fontWeight: 600, color: C.text, textTransform: 'capitalize', flex: 1, textAlign: 'center', letterSpacing:'-0.01em' }}>{monthLabel}</span>
+        <button onClick={() => setMonth(m => addMonths(m, 1))} style={{ background:'none', border:LINE2, borderRadius:8, width:32, height:32, cursor:'pointer', fontSize:16, color:C.mid, display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
+        <button onClick={() => setMonth(monthOf(today))} style={{ background:'none', border:LINE2, borderRadius:8, padding:'5px 12px', cursor:'pointer', fontSize:12, color:C.mid, fontFamily:"'Outfit',sans-serif", fontWeight:500 }}>Dnes</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
-        {['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'].map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 4 }}>{d}</div>
+      {/* Day headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: LINE }}>
+        {['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'].map((d,i) => (
+          <div key={d} style={{ padding: '8px 12px', fontSize: 11, fontWeight: 600, color: i>=5?'#94a3b8':'#9ca3af', textTransform:'uppercase', letterSpacing:'0.07em', borderRight: i<6?LINE:'none' }}>{d}</div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-        {Array.from({length:leading},(_,i) => <div key={`l${i}`} style={{ minHeight: 140 }} />)}
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+        {Array.from({length:leading},(_,i) => (
+          <div key={`l${i}`} style={{ borderRight:LINE, borderBottom:LINE, minHeight:140, background:'#fafafa' }} />
+        ))}
         {Array.from({length:days},(_,i) => {
           const num = i + 1
           const date = `${month.slice(0,7)}-${String(num).padStart(2,'0')}`
           const dayJobs = jobMap[date] || []
           const isToday = date === today
           const isPast = date < today
+          const colIndex = (leading + i) % 7
+          const isWeekend = colIndex >= 5
+          const isLastCol = colIndex === 6
 
           return (
             <div key={date} style={{
               minHeight: 140,
-              borderRadius: 10,
-              padding: '8px 9px',
-              background: isToday ? '#fff' : isPast ? '#faf8f5' : '#fff',
-              border: `1px solid ${isToday ? C.borderMid : C.border}`,
+              padding: '8px 10px',
+              borderRight: isLastCol ? 'none' : LINE,
+              borderBottom: LINE,
+              background: isWeekend ? '#fafafa' : '#fff',
+              boxShadow: isToday ? `inset 0 0 0 2px ${C.accent}` : 'none',
             }}>
-              {/* Day number */}
-              <div style={{
-                fontSize: 13, fontWeight: isToday ? 700 : 400,
-                color: isToday ? C.accent : isPast ? C.light : C.text,
-                marginBottom: 6,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span>{num}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{
+                  fontSize: 13, fontWeight: isToday ? 700 : 400,
+                  color: isToday ? '#fff' : isPast ? C.light : isWeekend ? '#94a3b8' : C.text,
+                  background: isToday ? C.accent : 'transparent',
+                  borderRadius: 99, width: isToday ? 26 : 'auto', height: isToday ? 26 : 'auto',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{num}</span>
                 {dayJobs.length > 0 && (
-                  <span style={{ fontSize: 10, color: C.light, fontWeight: 400 }}>{dayJobs.length} zak.</span>
+                  <span style={{ fontSize: 10, color: C.light }}>{dayJobs.length} zak.</span>
                 )}
               </div>
-
-              {/* Job cards in this day */}
               {dayJobs.map(j => {
-                const s = JOB_STATUS[j.status] || { dot: C.light, label: j.status }
+                const s = JOB_STATUS[j.status] || { dot: C.light, label: j.status, pill:'#f3f4f6', text: C.mid }
                 const price = j.confirmed_client_price || j.estimated_client_price_max
                 return (
                   <button key={j.id} onClick={() => setPopup(j)} style={{
-                    width: '100%', textAlign: 'left', padding: '7px 8px', borderRadius: 8,
-                    marginBottom: 4, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
-                    background: C.soft, border: `1px solid ${C.border}`,
+                    width: '100%', textAlign: 'left', padding: '6px 8px 7px',
+                    borderRadius: 6, marginBottom: 3,
+                    cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+                    background: '#fff', border: LINE,
                     borderLeft: `3px solid ${s.dot}`,
                     display: 'block',
                   }}>
-                    {/* Client name */}
-                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom: 2 }}>
                       {j.client_name || 'Klient'}
                     </div>
-                    {/* Painter */}
                     {j.assigned_painter_name && (
-                      <div style={{ fontSize: 10, color: C.accent, marginBottom: 2 }}>
-                        👷 {j.assigned_painter_name}
-                      </div>
+                      <div style={{ fontSize: 11, color: C.mid, marginBottom: 2 }}>{j.assigned_painter_name}</div>
                     )}
-                    {/* Price + work type */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
-                      <span style={{ fontSize: 10, color: C.mid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                      <span style={{ fontSize: 10, color: C.light, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {j.work_type || j.locality || '—'}
                       </span>
-                      {price ? <span style={{ fontSize: 10, fontWeight: 600, color: C.text, whiteSpace: 'nowrap' }}>{fmt(price)}</span> : null}
+                      {price && <span style={{ fontSize: 11, fontWeight: 600, color: C.text, whiteSpace:'nowrap' }}>{fmt(price)}</span>}
                     </div>
-                    {/* Status chip */}
                     <div style={{ marginTop: 4 }}>
-                      <span style={{ fontSize: 9, fontWeight: 600, color: s.dot, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        {s.label}
-                      </span>
+                      <StatusPill status={j.status} />
                     </div>
                   </button>
                 )
@@ -674,22 +703,30 @@ function OpsCalendar({ jobs }) {
             </div>
           )
         })}
+        {(() => {
+          const total = leading + days
+          const rem = total % 7 === 0 ? 0 : 7 - (total % 7)
+          return Array.from({length:rem},(_,i)=>(
+            <div key={`t${i}`} style={{ borderRight: i<rem-1?LINE:'none', borderBottom:LINE, minHeight:140, background:'#fafafa' }} />
+          ))
+        })()}
       </div>
 
+      {/* Popup */}
       {popup && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'grid', placeItems: 'center', padding: 20 }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(24,23,15,0.4)', backdropFilter: 'blur(5px)' }} onClick={() => setPopup(null)} />
-          <div style={{ position: 'relative', width: '100%', maxWidth: 420, background: C.surface, borderRadius: 20, padding: 24, boxShadow: C.heavy }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div style={{ position:'fixed', inset:0, zIndex:200, display:'grid', placeItems:'center', padding:20 }}>
+          <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.25)', backdropFilter:'blur(4px)' }} onClick={() => setPopup(null)} />
+          <div style={{ position:'relative', width:'100%', maxWidth:440, background:'#fff', borderRadius:12, padding:28, boxShadow:'0 8px 32px rgba(0,0,0,0.12)', border: LINE2 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{popup.reference}</div>
-                <h3 style={{ fontSize: 20, fontWeight: 500, color: C.text, margin: '4px 0 0', letterSpacing: '-0.04em' }}>{popup.client_name}</h3>
+                {popup.reference && <div style={{ fontSize:11, color:C.light, marginBottom:4 }}>{popup.reference}</div>}
+                <h3 style={{ fontSize:20, fontWeight:700, color:C.text, margin:0, letterSpacing:'-0.02em' }}>{popup.client_name}</h3>
               </div>
-              <button onClick={() => setPopup(null)} style={{ ...ghostBtn(), padding: '4px 9px', fontSize: 16 }}>×</button>
+              <button onClick={() => setPopup(null)} style={{ background:'none', border:LINE2, borderRadius:8, width:32, height:32, cursor:'pointer', fontSize:18, color:C.mid, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
             </div>
-            <div style={{ display: 'grid', gap: '8px 16px', gridTemplateColumns: '1fr 1fr', fontSize: 12 }}>
+            <div style={{ marginBottom:14 }}><StatusPill status={popup.status} /></div>
+            <div style={{ display:'grid', gap:'10px 16px', gridTemplateColumns:'1fr 1fr', fontSize:13, marginBottom:14 }}>
               {[
-                ['Stav', JOB_STATUS[popup.status]?.label],
                 ['Termín', fmtShort(popup.preferred_date)],
                 ['Malíř', popup.assigned_painter_name],
                 ['Lokalita', popup.locality || popup.client_address],
@@ -700,18 +737,16 @@ function OpsCalendar({ jobs }) {
                 ['Opravy', popup.repairs],
                 ['Cena klientovi', fmt(popup.confirmed_client_price || popup.estimated_client_price_max)],
                 ['Odměna malíři', fmt(popup.painter_reward)],
-                ['Provize dispečera', commission(popup.confirmed_client_price || popup.estimated_client_price_max)],
+                ['Provize (15 %)', commission(popup.confirmed_client_price || popup.estimated_client_price_max)],
               ].filter(([,v])=>v).map(([k,v]) => (
                 <div key={k}>
-                  <div style={{ color: C.light, marginBottom: 2, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{k}</div>
-                  <div style={{ color: C.text, fontWeight: 400 }}>{v}</div>
+                  <div style={{ color:C.light, fontSize:10, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:2 }}>{k}</div>
+                  <div style={{ color:C.text }}>{v}</div>
                 </div>
               ))}
             </div>
             {popup.booking_note && (
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}`, fontSize: 12, color: C.mid, lineHeight: 1.6 }}>
-                {popup.booking_note}
-              </div>
+              <div style={{ paddingTop:12, borderTop:LINE, fontSize:12, color:C.mid, lineHeight:1.6 }}>{popup.booking_note}</div>
             )}
           </div>
         </div>
@@ -869,23 +904,24 @@ function App() {
   const activeCount = jobs.filter(j => !['completed','cancelled'].includes(j.status)).length
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Outfit', sans-serif", display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Outfit', sans-serif", display: 'flex', flexDirection: 'column' }}>
       {/* Topbar */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(240,236,230,0.93)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 46 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Malíř Hned · Dispečink</span>
-          <button onClick={logout} style={{ ...ghostBtn(), fontSize: 11, padding: '5px 10px' }}>Odhlásit</button>
-        </div>
-        <div style={{ display: 'flex', borderTop: `1px solid ${C.border}` }}>
-          {[['dispatch', `Dispečink${activeCount ? ` (${activeCount})` : ''}`], ['ops', 'Přehled zakázek']].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)} style={{
-              padding: '8px 20px', border: 'none', background: 'transparent',
-              fontFamily: "'Outfit', sans-serif", fontSize: 12, cursor: 'pointer',
-              color: tab === key ? C.accent : C.mid, fontWeight: tab === key ? 500 : 300,
-              borderBottom: `2px solid ${tab === key ? C.accent : 'transparent'}`, marginBottom: -1,
-            }}>{label}</button>
-          ))}
-          {assignMsg && <span style={{ fontSize: 11, color: C.accent, display: 'flex', alignItems: 'center', paddingLeft: 16 }}>{assignMsg}</span>}
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: LINE }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 56 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.text, letterSpacing: '-0.01em' }}>Malíř Hned</span>
+            <div style={{ display: 'flex', gap: 2 }}>
+              {[['dispatch', `Dispečink${activeCount ? ` (${activeCount})` : ''}`], ['ops', 'Přehled zakázek']].map(([key, label]) => (
+                <button key={key} onClick={() => setTab(key)} style={{
+                  padding: '6px 14px', border: 'none', background: tab===key ? C.soft : 'transparent',
+                  borderRadius: 8,
+                  fontFamily: "'Outfit', sans-serif", fontSize: 13, cursor: 'pointer',
+                  color: tab === key ? C.text : C.mid, fontWeight: tab === key ? 600 : 400,
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
+          <button onClick={logout} style={{ ...ghostBtn(), fontSize: 12, padding: '6px 12px' }}>Odhlásit</button>
         </div>
       </div>
 
@@ -895,59 +931,37 @@ function App() {
           flex: 1,
           display: 'grid',
           gridTemplateColumns: '300px 1fr 240px 300px',
-          height: 'calc(100vh - 82px)',
+          height: 'calc(100vh - 56px)',
           overflow: 'hidden',
         }}>
-          {/* Col 1 */}
-          <div style={{ borderRight: `1px solid ${C.border}`, background: C.surface, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <JobList
-              jobs={jobs}
-              activeJobId={activeJobId}
-              onSelectJob={handleSelectJob}
-              onSetCalDate={handleSetCalDate}
-            />
+          <div style={{ borderRight: LINE, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <JobList jobs={jobs} activeJobId={activeJobId} onSelectJob={handleSelectJob} onSetCalDate={handleSetCalDate} />
           </div>
-
-          {/* Col 2 — monthly calendar */}
-          <div style={{ borderRight: `1px solid ${C.border}`, background: C.surface, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ borderRight: LINE, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <MonthCalendar
               selectedDay={selectedDay}
               onSelectDay={date => { setSelectedDay(date); setSelectedPainter(null) }}
-              monthBase={monthBase}
-              setMonthBase={setMonthBase}
-              monthData={monthData}
-              painters={painters}
-              activeJob={activeJob}
+              monthBase={monthBase} setMonthBase={setMonthBase}
+              monthData={monthData} painters={painters} activeJob={activeJob}
             />
           </div>
-
-          {/* Col 3 — painter availability */}
-          <div style={{ borderRight: `1px solid ${C.border}`, background: C.surface, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ borderRight: LINE, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <PainterAvail
-              selectedDay={selectedDay}
-              dayCache={dayCache}
-              activeJob={activeJob}
+              selectedDay={selectedDay} dayCache={dayCache} activeJob={activeJob}
               onSelectPainter={p => { setSelectedPainter(p); setAssignMsg('') }}
               selectedPainterId={selectedPainter?.id}
             />
           </div>
-
-          {/* Col 4 — detail + confirm */}
-          <div style={{ background: C.surface, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <AssignDetail
-              activeJob={activeJob}
-              activeJobForm={activeJobForm}
-              selectedPainter={selectedPainter}
-              selectedDay={selectedDay}
-              onAssign={handleAssign}
-              busy={assignBusy}
-              msg={assignMsg}
+              activeJob={activeJob} activeJobForm={activeJobForm}
+              selectedPainter={selectedPainter} selectedDay={selectedDay}
+              onAssign={handleAssign} busy={assignBusy} msg={assignMsg}
             />
           </div>
         </div>
       )}
 
-      {/* Ops calendar */}
       {tab === 'ops' && <OpsCalendar jobs={jobs} />}
     </div>
   )
