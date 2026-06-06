@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1220" viewBox="0 0 2400 1220">
+  <defs>
+    <style>
+      .bg { fill: #f0ece6; }
+      .title { font: 600 42px 'Arial', sans-serif; fill: #18170f; }
+      .subtitle { font: 400 20px 'Arial', sans-serif; fill: #7a7268; }
+      .lane-title { font: 700 18px 'Arial', sans-serif; letter-spacing: 2px; fill: #2a7a4e; }
+      .lane-line { stroke: #d9d2c8; stroke-width: 2; }
+      .card { fill: #ffffff; stroke: #d2c9bc; stroke-width: 2; rx: 18; }
+      .card-green { fill: #e6f3ec; stroke: #8fc5a7; stroke-width: 2; rx: 18; }
+      .card-yellow { fill: #fef8e0; stroke: #dbc77f; stroke-width: 2; rx: 18; }
+      .card-red { fill: #f8e8e4; stroke: #d7a79c; stroke-width: 2; rx: 18; }
+      .card-muted { fill: #eee9e2; stroke: #c8beb1; stroke-width: 2; rx: 18; }
+      .node-title { font: 600 19px 'Arial', sans-serif; fill: #18170f; text-anchor: middle; }
+      .node-sub { font: 400 15px 'Arial', sans-serif; fill: #7a7268; text-anchor: middle; }
+      .decision { fill: #ffffff; stroke: #2a7a4e; stroke-width: 3; }
+      .decision-text { font: 600 18px 'Arial', sans-serif; fill: #18170f; text-anchor: middle; }
+      .arrow { fill: none; stroke: #877e73; stroke-width: 3; marker-end: url(#arrowhead); }
+      .arrow-green { fill: none; stroke: #2a7a4e; stroke-width: 3; marker-end: url(#arrowhead-green); }
+      .arrow-red { fill: none; stroke: #a75f50; stroke-width: 3; marker-end: url(#arrowhead-red); }
+      .label { font: 700 15px 'Arial', sans-serif; fill: #2a7a4e; }
+      .label-red { font: 700 15px 'Arial', sans-serif; fill: #a75f50; }
+      .note { fill: #ffffff; stroke: #d2c9bc; stroke-width: 2; rx: 18; }
+      .note-title { font: 700 17px 'Arial', sans-serif; fill: #18170f; }
+      .note-text { font: 400 15px 'Arial', sans-serif; fill: #7a7268; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#877e73"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2a7a4e"/>
+    </marker>
+    <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#a75f50"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="2400" height="1220"/>
+
+  <text class="title" x="100" y="80">Malíř Hned — provozní flow dispečinku zakázek</text>
+  <text class="subtitle" x="100" y="118">Veřejný web vytváří zakázku. Skutečné přiřazení vzniká až po kontrole, přijetí malířem a finálním potvrzení.</text>
+
+  <text class="lane-title" x="100" y="190">KLIENT</text>
+  <line class="lane-line" x1="100" y1="212" x2="2300" y2="212"/>
+  <text class="lane-title" x="100" y="465">ADMIN / DISPEČINK</text>
+  <line class="lane-line" x1="100" y1="487" x2="2300" y2="487"/>
+  <text class="lane-title" x="100" y="810">MALÍŘ</text>
+  <line class="lane-line" x1="100" y1="832" x2="2300" y2="832"/>
+
+  <!-- Client lane -->
+  <rect class="card" x="100" y="250" width="250" height="110"/>
+  <text class="node-title" x="225" y="295">Klient odešle</text>
+  <text class="node-title" x="225" y="320">zakázku</text>
+  <text class="node-sub" x="225" y="345">Preferovaný termín, rozsah, kontakt</text>
+
+  <rect class="card-yellow" x="590" y="250" width="280" height="110"/>
+  <text class="node-title" x="730" y="295">Klient doplní</text>
+  <text class="node-title" x="730" y="320">chybějící údaje</text>
+  <text class="node-sub" x="730" y="345">Fotky, metry, adresa nebo termín</text>
+
+  <rect class="card-green" x="1970" y="250" width="330" height="110"/>
+  <text class="node-title" x="2135" y="295">Klient dostane info</text>
+  <text class="node-title" x="2135" y="320">o potvrzeném malíři</text>
+  <text class="node-sub" x="2135" y="345">Očekává telefon od malíře</text>
+
+  <!-- Admin lane -->
+  <rect class="card" x="390" y="535" width="250" height="110"/>
+  <text class="node-title" x="515" y="580">Nová zakázka</text>
+  <text class="node-title" x="515" y="605">vznikne v adminu</text>
+  <text class="node-sub" x="515" y="630">Začne běžet čas zpracování</text>
+
+  <rect class="card" x="700" y="535" width="250" height="110"/>
+  <text class="node-title" x="825" y="580">Ty zakázku</text>
+  <text class="node-title" x="825" y="605">zkontroluješ</text>
+  <text class="node-sub" x="825" y="630">Rozsah, termín, cena, kvalita dat</text>
+
+  <polygon class="decision" points="1080,520 1205,590 1080,660 955,590"/>
+  <text class="decision-text" x="1080" y="582">Je zakázka</text>
+  <text class="decision-text" x="1080" y="607">kompletní?</text>
+
+  <rect class="card-yellow" x="970" y="700" width="250" height="110"/>
+  <text class="node-title" x="1095" y="745">Vyžádáš doplnění</text>
+  <text class="node-title" x="1095" y="770">od klienta</text>
+  <text class="node-sub" x="1095" y="795">Zakázka čeká na klienta</text>
+
+  <rect class="card" x="1280" y="535" width="270" height="110"/>
+  <text class="node-title" x="1415" y="580">Nastavíš cenu klientovi</text>
+  <text class="node-title" x="1415" y="605">a odměnu malíře</text>
+  <text class="node-sub" x="1415" y="630">Dvě oddělené hodnoty</text>
+
+  <rect class="card" x="1610" y="535" width="230" height="110"/>
+  <text class="node-title" x="1725" y="580">Vybereš</text>
+  <text class="node-title" x="1725" y="605">malíře</text>
+  <text class="node-sub" x="1725" y="630">Finální rozhodnutí je tvoje</text>
+
+  <rect class="card" x="1900" y="535" width="260" height="110"/>
+  <text class="node-title" x="2030" y="580">Pošleš nabídku</text>
+  <text class="node-title" x="2030" y="605">malíři</text>
+  <text class="node-sub" x="2030" y="630">SMS / odkaz s časovým limitem</text>
+
+  <rect class="card-green" x="1700" y="690" width="300" height="110"/>
+  <text class="node-title" x="1850" y="735">Zakázka čeká na</text>
+  <text class="node-title" x="1850" y="760">finální potvrzení</text>
+  <text class="node-sub" x="1850" y="785">Malíř přijal, klient ještě neví</text>
+
+  <rect class="card-green" x="2050" y="690" width="250" height="110"/>
+  <text class="node-title" x="2175" y="735">Ty potvrdíš</text>
+  <text class="node-title" x="2175" y="760">přiřazení</text>
+  <text class="node-sub" x="2175" y="785">Zakázka je přiřazená</text>
+
+  <rect class="card-red" x="1290" y="700" width="250" height="110"/>
+  <text class="node-title" x="1415" y="745">Zakázka zrušena</text>
+  <text class="node-sub" x="1415" y="775">Klient nereaguje nebo ji zruší</text>
+
+  <!-- Painter lane -->
+  <polygon class="decision" points="2030,875 2170,945 2030,1015 1890,945"/>
+  <text class="decision-text" x="2030" y="937">Malíř reaguje</text>
+  <text class="decision-text" x="2030" y="962">v limitu?</text>
+
+  <rect class="card-red" x="1510" y="880" width="260" height="110"/>
+  <text class="node-title" x="1640" y="925">Nabídka je</text>
+  <text class="node-title" x="1640" y="950">odmítnutá</text>
+  <text class="node-sub" x="1640" y="975">Historie nabídky zůstává</text>
+
+  <rect class="card-muted" x="1510" y="1040" width="260" height="110"/>
+  <text class="node-title" x="1640" y="1085">Nabídka je</text>
+  <text class="node-title" x="1640" y="1110">prošlá</text>
+  <text class="node-sub" x="1640" y="1135">Malíř nereagoval včas</text>
+
+  <rect class="card-green" x="2180" y="880" width="220" height="110"/>
+  <text class="node-title" x="2290" y="925">Nabídka je</text>
+  <text class="node-title" x="2290" y="950">přijatá</text>
+  <text class="node-sub" x="2290" y="975">Kontakt klienta zatím skrytý</text>
+
+  <rect class="card-green" x="2050" y="1040" width="250" height="110"/>
+  <text class="node-title" x="2175" y="1085">Malíř dostane</text>
+  <text class="node-title" x="2175" y="1110">kontakt na klienta</text>
+  <text class="node-sub" x="2175" y="1135">Až po tvém potvrzení</text>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M350 305 C390 305, 390 590, 390 590"/>
+  <path class="arrow" d="M640 590 L700 590"/>
+  <path class="arrow" d="M950 590 L955 590"/>
+  <path class="arrow-green" d="M1205 590 L1280 590"/>
+  <text class="label" x="1235" y="575">ANO</text>
+
+  <path class="arrow-red" d="M1080 660 L1080 700"/>
+  <text class="label-red" x="1095" y="685">NE</text>
+  <path class="arrow" d="M970 755 C820 755, 820 360, 870 305"/>
+  <path class="arrow" d="M730 360 C730 430, 825 430, 825 535"/>
+  <path class="arrow-red" d="M1220 755 L1290 755"/>
+  <text class="label-red" x="1235" y="740">NEREAGUJE / ZRUŠÍ</text>
+
+  <path class="arrow" d="M1550 590 L1610 590"/>
+  <path class="arrow" d="M1840 590 L1900 590"/>
+  <path class="arrow" d="M2030 645 L2030 875"/>
+
+  <path class="arrow-green" d="M2170 945 L2180 945"/>
+  <text class="label" x="2170" y="925">PŘIJME</text>
+  <path class="arrow-red" d="M1890 930 C1835 910, 1810 935, 1770 935"/>
+  <text class="label-red" x="1780" y="910">ODMÍTNE</text>
+  <path class="arrow-red" d="M1980 1010 C1900 1080, 1840 1095, 1770 1095"/>
+  <text class="label-red" x="1800" y="1060">NEREAGUJE</text>
+
+  <path class="arrow" d="M1510 935 C1450 935, 1450 650, 1725 650"/>
+  <path class="arrow" d="M1510 1095 C1380 1095, 1380 650, 1725 650"/>
+
+  <path class="arrow-green" d="M2290 880 C2290 820, 2000 820, 2000 745"/>
+  <path class="arrow-green" d="M2000 745 L2050 745"/>
+  <path class="arrow-green" d="M2175 690 C2175 570, 2135 450, 2135 360"/>
+  <path class="arrow-green" d="M2175 800 L2175 1040"/>
+
+  <!-- Side note -->
+  <rect class="note" x="100" y="900" width="1050" height="230"/>
+  <text class="note-title" x="140" y="945">Pevná pravidla systému</text>
+  <text class="note-text" x="140" y="985">• Veřejný web vytváří zakázku, ne rezervaci.</text>
+  <text class="note-text" x="140" y="1020">• Jedna zakázka může mít více nabídek malířům, ale pouze jedno finální přiřazení.</text>
+  <text class="note-text" x="140" y="1055">• Malíř před přijetím nevidí jméno, telefon ani přesnou adresu klienta.</text>
+  <text class="note-text" x="140" y="1090">• Každé odmítnutí, prošlá nabídka a změna stavu zůstává v historii.</text>
+</svg>
