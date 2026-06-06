@@ -328,26 +328,13 @@ function OrderSection({ selectedSlot, monthIdx, onOrderClick }) {
   return (
     <section id="objednavka" style={{ padding: '0 0 44px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
-        <SectionHead eyebrow="Objednávka" title="Závazná objednávka" />
+        <SectionHead eyebrow="Objednávka" title="Objednávka" />
         <Card style={{ padding: '28px 32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28, marginBottom: 24 }}>
-            {/* Step + painter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-              <div style={{ width: 46, height: 46, borderRadius: 13, background: T.accentSoft, border: `1px solid rgba(42,122,78,0.18)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: T.accent }}>01</div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: T.textLight, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 3 }}>Malíř</div>
-                <div style={{ fontSize: 18, fontWeight: 500, color: T.text, letterSpacing: '-0.04em' }}>{selectedSlot.painter.name}</div>
-              </div>
-            </div>
-            {/* Oddělovač */}
-            <div style={{ width: 1, height: 44, background: T.border, flexShrink: 0 }} />
-            {/* Text */}
-            <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.65, margin: 0, flex: 1 }}>
-              Doplníte kontakt a zakázka odejde do zpracování dispečinku. Jakmile bude vybraný malíř potvrzený, ozve se vám napřímo.
-            </p>
-          </div>
+          <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.7, margin: '0 0 20px' }}>
+            Vyplníte kontaktní údaje a zakázka odejde dispečinku. Obratem vám potvrdíme přijetí a jakmile malíř zakázku přijme, ozve se vám napřímo.
+          </p>
           <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
-            Pokračovat k závazné objednávce
+            Odeslat objednávku
           </button>
           
         </Card>
