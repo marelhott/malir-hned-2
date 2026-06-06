@@ -323,20 +323,35 @@ function PainterSection({ selectedSlot }) {
 }
 
 // ── OBJEDNÁVKA ────────────────────────────────────────────────
-function OrderSection({ selectedSlot, monthIdx, onOrderClick }) {
+function OrderSection({ selectedSlot, monthIdx, priceRange, onOrderClick }) {
   if (!selectedSlot) return null;
+  const items = [
+    ['Datum',            monthIdx != null ? dayLbl(monthIdx, selectedSlot.day) : dayLbl(0, selectedSlot.day)],
+    ['Čas',              selectedSlot.time],
+    ['Orientační cena',  fmtRange(priceRange)],
+    ['Malíř',            selectedSlot.painter.name],
+  ];
   return (
     <section id="objednavka" style={{ padding: '0 0 44px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <SectionHead eyebrow="Objednávka" title="Objednávka" />
-        <Card style={{ padding: '28px 32px' }}>
-          <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.7, margin: '0 0 20px' }}>
-            Vyplníte kontaktní údaje a zakázka odejde dispečinku. Obratem vám potvrdíme přijetí a jakmile malíř zakázku přijme, ozve se vám napřímo.
-          </p>
-          <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
-            Odeslat objednávku
-          </button>
-          
+        <Card style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: `1px solid ${T.border}` }}>
+            {items.map(([lbl, val], i) => (
+              <div key={lbl} style={{ padding: '22px 24px', textAlign: 'center', borderRight: i < items.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: T.textLight, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{lbl}</div>
+                <div style={{ fontSize: 18, fontWeight: 500, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{val}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: '24px 28px' }}>
+            <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.7, margin: '0 0 18px' }}>
+              Vyplníte kontaktní údaje a zakázka odejde dispečinku. Obratem vám potvrdíme přijetí a jakmile malíř zakázku přijme, ozve se vám napřímo.
+            </p>
+            <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
+              Odeslat objednávku
+            </button>
+          </div>
         </Card>
       </div>
     </section>
