@@ -35,13 +35,9 @@ function HeroSection() {
           <p style={{ fontSize: 'clamp(14px, 1.1vw, 17px)', lineHeight: 1.65, color: T.textMid, fontWeight: 300, margin: '20px 0 36px', maxWidth: 400 }}>
             Nejdřív vyberete termín, potom uvidíte cenu a dostupného malíře pro objednávku.
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <a href="#terminy" style={{ display: 'inline-block', padding: '13px 32px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, textDecoration: 'none', boxShadow: `0 12px 28px ${T.accentShadow}`, letterSpacing: '-0.01em' }}>
-              Vybrat termín
-            </a>
-            <a href="#cena" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>Spočítat cenu →</a>
-          </div>
-          <div style={{ fontSize: 13, color: T.textLight, marginTop: 14, fontWeight: 300 }}>Zabere asi 30 sekund</div>
+          <a href="#terminy" style={{ display: 'inline-block', padding: '13px 32px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, textDecoration: 'none', boxShadow: `0 12px 28px ${T.accentShadow}`, letterSpacing: '-0.01em' }}>
+            Vybrat termín
+          </a>
         </div>
 
         {/* Vpravo — obrázek malíře */}
