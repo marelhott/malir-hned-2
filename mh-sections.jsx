@@ -242,20 +242,6 @@ function CalcSection({ formData, setFormData, priceRange }) {
               </div>
             </div>
 
-            {/* Typ práce */}
-            <div style={{ padding: '24px 28px', borderBottom: `1px solid ${T.border}` }}>
-              <CalcHead title="Typ práce">
-                <path d="m6 16 4-4m2-6 2 2m-5.5 9.5L5 19l1.5-3.5L15 7l2 2-8.5 8.5Z" />
-              </CalcHead>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['Běžná bílá výmalba', 'Po nájemníkovi', 'Opravy stěn', 'Stropy', 'Barevné stěny'].map(opt => (
-                  <button key={opt} type="button" onClick={() => sf('workType', opt)} style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${formData.workType === opt ? T.accent : T.border}`, background: formData.workType === opt ? T.accentSoft : T.surface, fontSize: 13, fontWeight: formData.workType === opt ? 500 : 300, color: formData.workType === opt ? T.accent : T.textMid, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'all 0.15s' }}>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Rozsah oprav */}
             <div style={{ padding: '24px 28px', borderBottom: `1px solid ${T.border}` }}>
               <CalcHead title="Rozsah oprav">
@@ -278,29 +264,6 @@ function CalcSection({ formData, setFormData, priceRange }) {
                 <ServiceToggle label="Posunutí nábytku?" yesLabel="Ano, potřebuji" noLabel="Ne, vyřeším sám" value={formData.furnitureMoving} onYes={() => sf('furnitureMoving', 'Ano')} onNo={() => sf('furnitureMoving', 'Ne')} />
                 <ServiceToggle label="Zakrývání, oblepování?" yesLabel="Ano, chci" noLabel="Není potřeba" value={formData.covering} onYes={() => sf('covering', 'Ano')} onNo={() => sf('covering', 'Ne')} />
                 <ServiceToggle label="Úklid po práci?" yesLabel="Potřebuji" noLabel="Nepotřebuji" value={formData.cleaning} onYes={() => sf('cleaning', 'Potřebuji')} onNo={() => sf('cleaning', 'Nepotřebuji')} />
-              </div>
-            </div>
-
-            {/* Další údaje */}
-            <div style={{ padding: '24px 28px', borderBottom: `1px solid ${T.border}` }}>
-              <CalcHead title="Další údaje">
-                <path d="M4 6h16M4 11h12M4 16h8" />
-              </CalcHead>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-                <ServiceToggle label="Prázdný prostor?" yesLabel="Ano, prázdný" noLabel="Ne, zařízený" value={formData.emptySpace} onYes={() => sf('emptySpace', 'Ano')} onNo={() => sf('emptySpace', 'Ne')} />
-                <ServiceToggle label="Koberce na podlaze?" yesLabel="Ano, jsou koberce" noLabel="Ne, holá podlaha" value={formData.carpets} onYes={() => sf('carpets', 'Ano')} onNo={() => sf('carpets', 'Ne')} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span style={{ fontSize: 12, color: T.textMid, fontWeight: 300 }}>Počet místností</span>
-                  <input type="number" min="1" placeholder="Např. 3" value={formData.roomCount} onChange={e => sf('roomCount', e.target.value)} style={inp} />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span style={{ fontSize: 12, color: T.textMid, fontWeight: 300 }}>Typ prostoru</span>
-                  <select value={formData.propertyType} onChange={e => sf('propertyType', e.target.value)} style={sel}>
-                    {['Pokoj', 'Byt', '1+kk', '2+kk', '2+1', '3+kk', '3+1', '4+kk', 'Kancelář'].map(o => <option key={o}>{o}</option>)}
-                  </select>
-                </label>
               </div>
             </div>
 
