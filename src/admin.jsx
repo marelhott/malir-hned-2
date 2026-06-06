@@ -213,12 +213,12 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
 }
 
 // ── COL 2: MONTHLY CALENDAR ───────────────────────────────────
-// 3 status colors only — green/yellow/red
+// 3 status styles — elegant, light
 const STATUS_STYLE = {
-  available:   { bg: '#d4eddf', text: '#155a30', bar: '#1e8a4a' },
-  limited:     { bg: '#fdefc8', text: '#7a4e00', bar: '#d4900a' },
-  unavailable: { bg: '#fad5d3', text: '#7a1c18', bar: '#d43b35' },
-  unknown:     { bg: '#ebebeb', text: '#888',    bar: '#bbb' },
+  available:   { pill: 'rgba(30,138,74,0.10)',  text: '#1a6b3a', dot: '#22c55e', strike: false },
+  limited:     { pill: 'rgba(212,144,10,0.10)', text: '#92620a', dot: '#f59e0b', strike: false },
+  unavailable: { pill: 'rgba(212,59,53,0.08)',  text: '#b91c1c', dot: '#ef4444', strike: true  },
+  unknown:     { pill: 'rgba(0,0,0,0.04)',       text: '#aaa',    dot: '#d1d5db', strike: false },
 }
 
 function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, monthData, painters, activeJob }) {
@@ -237,33 +237,48 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
     const limited = info.limited_count     || 0
     const blocked = info.blocked_count     || 0
     return painters.map((_, i) => {
-      if (i < avail)                       return 'available'
-      if (i < avail + limited)             return 'limited'
-      if (i < avail + limited + blocked)   return 'unavailable'
+      if (i < avail)                     return 'available'
+      if (i < avail + limited)           return 'limited'
+      if (i < avail + limited + blocked) return 'unavailable'
       return 'unknown'
     })
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <button onClick={() => setMonthBase(m => addMonths(m, -1))} style={{ ...ghostBtn(), padding: '5px 14px', fontSize: 18 }}>‹</button>
-        <span style={{ flex: 1, textAlign: 'center', fontSize: 15, fontWeight: 600, color: C.text, textTransform: 'capitalize' }}>{monthLabel}</span>
-        <button onClick={() => setMonthBase(m => addMonths(m, 1))} style={{ ...ghostBtn(), padding: '5px 14px', fontSize: 18 }}>›</button>
-        <button onClick={() => setMonthBase(monthOf(today))} style={{ ...ghostBtn(), fontSize: 12 }}>Dnes</button>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
+      {/* Header */}
+      <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={() => setMonthBase(m => addMonths(m, -1))} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 16, color: C.mid, display:'flex',alignItems:'center',justifyContent:'center' }}>‹</button>
+        <span style={{ flex: 1, textAlign: 'center', fontSize: 16, fontWeight: 600, color: C.text, textTransform: 'capitalize', letterSpacing: '-0.01em' }}>{monthLabel}</span>
+        <button onClick={() => setMonthBase(m => addMonths(m, 1))} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 16, color: C.mid, display:'flex',alignItems:'center',justifyContent:'center' }}>›</button>
+        <button onClick={() => setMonthBase(monthOf(today))} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 12, color: C.mid, fontFamily:"'Outfit',sans-serif", fontWeight:500 }}>Dnes</button>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '10px 12px' }}>
-        {/* Day headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 5 }}>
-          {['Po','Út','St','Čt','Pá','So','Ne'].map(d => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: C.mid, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '4px 0' }}>{d}</div>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* Day-of-week header row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: `1px solid ${C.border}` }}>
+          {['Pon','Úte','Stř','Čtv','Pát','Sob','Ned'].map((d, i) => (
+            <div key={d} style={{
+              padding: '8px 0',
+              textAlign: 'center',
+              fontSize: 11, fontWeight: 600,
+              color: i >= 5 ? '#94a3b8' : '#64748b',
+              textTransform: 'uppercase', letterSpacing: '0.06em',
+              borderRight: i < 6 ? `1px solid ${C.border}` : 'none',
+            }}>{d}</div>
           ))}
         </div>
 
-        {/* Day cells */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
-          {Array.from({ length: leading }, (_, i) => <div key={`l${i}`} />)}
+        {/* Calendar grid — no gaps, full-bleed cells with dividers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          {Array.from({ length: leading }, (_, i) => (
+            <div key={`l${i}`} style={{
+              borderRight: `1px solid ${C.border}`,
+              borderBottom: `1px solid ${C.border}`,
+              minHeight: 110,
+              background: '#fafafa',
+            }} />
+          ))}
           {Array.from({ length: days }, (_, i) => {
             const num = i + 1
             const date = `${monthBase.slice(0, 7)}-${String(num).padStart(2, '0')}`
@@ -272,63 +287,78 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
             const isSelected = date === selectedDay
             const isJobDay = date === jobDate
             const isPast = date < today
-            const isWeekend = ((leading + i) % 7) >= 5
+            const colIndex = (leading + i) % 7
+            const isWeekend = colIndex >= 5
+            const isLastCol = colIndex === 6
             const painterStatuses = getPainterStatuses(info)
-
-            let borderColor = C.border
-            let bgColor = isWeekend ? '#f5f2ee' : '#fff'
-            if (isSelected) { borderColor = C.accent; bgColor = '#dff0e8' }
-            else if (isJobDay) { borderColor = C.warn; bgColor = C.warnSoft }
-            else if (isToday) { borderColor = C.accent }
 
             return (
               <button key={date} onClick={() => onSelectDay(date)} style={{
-                padding: '7px 8px 9px',
-                borderRadius: 10,
-                border: `2px solid ${borderColor}`,
-                background: bgColor,
+                padding: '8px 10px 10px',
+                borderRight: isLastCol ? 'none' : `1px solid ${C.border}`,
+                borderBottom: `1px solid ${C.border}`,
+                background: isSelected ? '#f0faf5'
+                  : isJobDay ? '#fffbeb'
+                  : isWeekend ? '#fafafa'
+                  : '#fff',
                 cursor: 'pointer',
                 fontFamily: "'Outfit', sans-serif",
                 textAlign: 'left',
-                opacity: isPast && !isSelected && !isToday ? 0.45 : 1,
-                display: 'flex', flexDirection: 'column', gap: 4,
-                minHeight: 100,
-                transition: 'border-color 0.12s, background 0.12s',
+                opacity: isPast && !isSelected && !isToday ? 0.5 : 1,
+                display: 'flex', flexDirection: 'column', gap: 5,
+                minHeight: 110,
+                outline: isSelected ? `2px solid ${C.accent}` : isJobDay ? `2px solid ${C.warn}` : 'none',
+                outlineOffset: '-2px',
+                transition: 'background 0.1s',
               }}>
                 {/* Date number */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 1 }}>
                   <span style={{
-                    fontSize: 14, fontWeight: isToday ? 700 : 500,
-                    color: isToday ? '#fff' : isSelected ? C.accent : isJobDay ? C.warn : isWeekend ? C.muted : C.text,
+                    fontSize: 13,
+                    fontWeight: isToday ? 700 : 400,
+                    color: isToday ? '#fff'
+                      : isSelected ? C.accent
+                      : isJobDay ? C.warn
+                      : isWeekend ? '#94a3b8'
+                      : '#374151',
                     background: isToday ? C.accent : 'transparent',
-                    borderRadius: 99, width: isToday ? 24 : 'auto', height: isToday ? 24 : 'auto',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    borderRadius: 99,
+                    width: isToday ? 26 : 'auto',
+                    height: isToday ? 26 : 'auto',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                    lineHeight: 1,
                   }}>{num}</span>
-                  {isJobDay && !isSelected && (
-                    <span style={{ fontSize: 9, background: C.warn, color: '#fff', borderRadius: 4, padding: '1px 5px', fontWeight: 700 }}>▶</span>
+                  {isJobDay && (
+                    <span style={{ fontSize: 9, color: C.warn, fontWeight: 700, letterSpacing: '0.03em' }}>TERMÍN</span>
                   )}
                 </div>
 
-                {/* Painter rows — 3 colors only */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
+                {/* Painter pills */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
                   {painters.map((p, pi) => {
                     const status = painterStatuses[pi]
                     const s = STATUS_STYLE[status] || STATUS_STYLE.unknown
                     const firstName = (p.name || p.email || '?').split(' ')[0]
                     return (
                       <div key={pi} style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        background: s.bg,
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        background: s.pill,
                         borderRadius: 5,
-                        padding: '2px 6px 2px 4px',
+                        padding: '3px 7px',
                       }}>
-                        <div style={{ width: 4, height: 14, borderRadius: 3, flexShrink: 0, background: s.bar }} />
                         <span style={{
-                          fontSize: 12, fontWeight: 600,
+                          width: 7, height: 7, borderRadius: 99,
+                          background: s.dot, flexShrink: 0,
+                          display: 'inline-block',
+                        }} />
+                        <span style={{
+                          fontSize: 12, fontWeight: 500,
                           color: s.text,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           flex: 1, minWidth: 0,
-                          textDecoration: status === 'unavailable' ? 'line-through' : 'none',
+                          textDecoration: s.strike ? 'line-through' : 'none',
+                          opacity: s.strike ? 0.6 : 1,
                         }}>{firstName}</span>
                       </div>
                     )
@@ -337,16 +367,29 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
               </button>
             )
           })}
+          {/* Fill remaining cells in last row */}
+          {(() => {
+            const total = leading + days
+            const remainder = total % 7 === 0 ? 0 : 7 - (total % 7)
+            return Array.from({ length: remainder }, (_, i) => (
+              <div key={`t${i}`} style={{
+                borderRight: i < remainder - 1 ? `1px solid ${C.border}` : 'none',
+                borderBottom: `1px solid ${C.border}`,
+                minHeight: 110,
+                background: '#fafafa',
+              }} />
+            ))
+          })()}
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 14, marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.border}`, alignItems: 'center' }}>
-          {[['available','Volný'],['limited','Nevím jistě'],['unavailable','Obsazený'],['unknown','Neznámo']].map(([k,l]) => {
+        <div style={{ display: 'flex', gap: 16, padding: '10px 16px', alignItems: 'center', borderTop: `1px solid ${C.border}` }}>
+          {[['available','Volný'],['limited','Nevím jistě'],['unavailable','Obsazený']].map(([k,l]) => {
             const s = STATUS_STYLE[k]
             return (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 4, height: 14, borderRadius: 3, background: s.bar }} />
-                <span style={{ fontSize: 11, color: C.mid, fontWeight: 500 }}>{l}</span>
+                <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot, display: 'inline-block' }} />
+                <span style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>{l}</span>
               </div>
             )
           })}
