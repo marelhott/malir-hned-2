@@ -299,7 +299,7 @@ function PainterSection({ selectedSlot }) {
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <SectionHead eyebrow="Malíř" title="Přiřazení malíře" />
         <Card style={{ padding: '28px 32px' }}>
-          <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: '0 0 24px', lineHeight: 1.65 }}>
+          <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: '0 0 24px', lineHeight: 1.65, textAlign: 'center' }}>
             Dispečink vybere nejvhodnějšího malíře podle termínu, lokality a rozsahu práce. Potvrdíme vám ho po přijetí zakázky.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
