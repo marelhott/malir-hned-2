@@ -81,8 +81,8 @@ function StepsSection() {
                 onClick={() => setActive(step.num)}
                 style={{ textDecoration: 'none', display: 'block', padding: '22px 24px', borderRadius: T.cr, border: `1px solid ${on ? 'rgba(42,122,78,0.35)' : T.border}`, background: on ? T.accentSoft : T.surface, boxShadow: T.cardShadow, transition: 'all 0.18s' }}
               >
-                <div style={{ fontSize: 28, fontWeight: 200, color: on ? T.accent : T.textLight, letterSpacing: '-0.04em', marginBottom: 12, lineHeight: 1 }}>{step.num}</div>
-                <h3 style={{ fontSize: 15, fontWeight: 500, color: on ? T.accent : T.text, letterSpacing: '-0.03em', lineHeight: 1.25, margin: '0 0 8px' }}>{step.title}</h3>
+                <div style={{ fontSize: 28, fontWeight: 200, color: on ? T.accent : T.textLight, letterSpacing: '-0.04em', marginBottom: 12, lineHeight: 1 }}>{Number(step.num)}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 500, color: on ? T.accent : T.text, letterSpacing: '-0.03em', lineHeight: 1.25, margin: '0 0 8px' }}>{step.title}</h3>
                 <p style={{ fontSize: 13, fontWeight: 300, color: on ? T.accent : T.textMid, margin: 0, lineHeight: 1.6 }}>{step.text}</p>
               </a>
             );
