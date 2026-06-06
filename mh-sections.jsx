@@ -67,17 +67,26 @@ const STEPS = [
 ];
 
 function StepsSection() {
+  const [active, setActive] = React.useState('');
   return (
     <section id="jak-to-funguje" style={{ padding: '48px 0 0' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-          {STEPS.map(step => (
-            <a key={step.num} href={step.href} style={{ textDecoration: 'none', display: 'block', padding: '22px 24px', borderRadius: T.cr, border: `1px solid ${T.border}`, background: T.surface, boxShadow: T.cardShadow, transition: 'all 0.18s' }}>
-              <div style={{ fontSize: 28, fontWeight: 200, color: T.textLight, letterSpacing: '-0.04em', marginBottom: 12, lineHeight: 1 }}>{step.num}</div>
-              <h3 style={{ fontSize: 15, fontWeight: 500, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.25, margin: '0 0 8px' }}>{step.title}</h3>
-              <p style={{ fontSize: 13, fontWeight: 300, color: T.textMid, margin: 0, lineHeight: 1.6 }}>{step.text}</p>
-            </a>
-          ))}
+          {STEPS.map(step => {
+            const on = active === step.num;
+            return (
+              <a
+                key={step.num}
+                href={step.href}
+                onClick={() => setActive(step.num)}
+                style={{ textDecoration: 'none', display: 'block', padding: '22px 24px', borderRadius: T.cr, border: `1px solid ${on ? 'rgba(42,122,78,0.35)' : T.border}`, background: on ? T.accentSoft : T.surface, boxShadow: T.cardShadow, transition: 'all 0.18s' }}
+              >
+                <div style={{ fontSize: 28, fontWeight: 200, color: on ? T.accent : T.textLight, letterSpacing: '-0.04em', marginBottom: 12, lineHeight: 1 }}>{step.num}</div>
+                <h3 style={{ fontSize: 15, fontWeight: 500, color: on ? T.accent : T.text, letterSpacing: '-0.03em', lineHeight: 1.25, margin: '0 0 8px' }}>{step.title}</h3>
+                <p style={{ fontSize: 13, fontWeight: 300, color: on ? T.accent : T.textMid, margin: 0, lineHeight: 1.6 }}>{step.text}</p>
+              </a>
+            );
+          })}
         </div>
       </div>
     </section>
