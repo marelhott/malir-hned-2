@@ -346,7 +346,7 @@ function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 28, flexWrap: 'wrap' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(72px, 88px))', gap: 14, flex: '1 1 560px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(64px, 80px))', gap: 12, flex: '1 1 auto' }}>
                 {painters.map((p) => (
                   <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
                     <div style={{ width: '100%', maxWidth: 76, aspectRatio: '1', borderRadius: 16, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: T.cardShadow }}>
