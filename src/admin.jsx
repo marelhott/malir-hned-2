@@ -505,54 +505,93 @@ function OpsCalendar({ jobs }) {
 
   const jobMap = {}
   jobs.forEach(j => {
-    if (j.preferred_date?.startsWith(month.slice(0,7))) {
-      if (!jobMap[j.preferred_date]) jobMap[j.preferred_date] = []
-      jobMap[j.preferred_date].push(j)
+    const date = j.preferred_date
+    if (date) {
+      if (!jobMap[date]) jobMap[date] = []
+      jobMap[date].push(j)
     }
   })
 
   return (
-    <div style={{ padding: '16px 24px', maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+    <div style={{ padding: '14px 20px 32px', overflowY: 'auto', height: 'calc(100vh - 82px)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <button onClick={() => setMonth(m => addMonths(m, -1))} style={ghostBtn()}>‹</button>
-        <span style={{ fontSize: 17, fontWeight: 500, color: C.text, textTransform: 'capitalize', flex: 1, textAlign: 'center' }}>{monthLabel}</span>
+        <span style={{ fontSize: 16, fontWeight: 500, color: C.text, textTransform: 'capitalize', flex: 1, textAlign: 'center' }}>{monthLabel}</span>
         <button onClick={() => setMonth(m => addMonths(m, 1))} style={ghostBtn()}>›</button>
         <button onClick={() => setMonth(monthOf(today))} style={{ ...ghostBtn(), fontSize: 11 }}>Dnes</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 4 }}>
-        {['Po','Út','St','Čt','Pá','So','Ne'].map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.07em', paddingBottom: 4 }}>{d}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+        {['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'].map(d => (
+          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 4 }}>{d}</div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-        {Array.from({length:leading},(_,i) => <div key={`l${i}`} style={{ minHeight: 90 }} />)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+        {Array.from({length:leading},(_,i) => <div key={`l${i}`} style={{ minHeight: 140 }} />)}
         {Array.from({length:days},(_,i) => {
-          const num = i+1
+          const num = i + 1
           const date = `${month.slice(0,7)}-${String(num).padStart(2,'0')}`
           const dayJobs = jobMap[date] || []
           const isToday = date === today
           const isPast = date < today
+
           return (
             <div key={date} style={{
-              minHeight: 90, borderRadius: 9, padding: '6px 7px',
-              background: isToday ? '#fff' : isPast ? C.soft : '#fff',
+              minHeight: 140,
+              borderRadius: 10,
+              padding: '8px 9px',
+              background: isToday ? '#fff' : isPast ? '#faf8f5' : '#fff',
               border: `1px solid ${isToday ? C.borderMid : C.border}`,
-              opacity: isPast ? 0.75 : 1,
             }}>
-              <div style={{ fontSize: 12, fontWeight: isToday ? 600 : 400, color: isToday ? C.accent : C.text, marginBottom: 4 }}>{num}</div>
+              {/* Day number */}
+              <div style={{
+                fontSize: 13, fontWeight: isToday ? 700 : 400,
+                color: isToday ? C.accent : isPast ? C.light : C.text,
+                marginBottom: 6,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span>{num}</span>
+                {dayJobs.length > 0 && (
+                  <span style={{ fontSize: 10, color: C.light, fontWeight: 400 }}>{dayJobs.length} zak.</span>
+                )}
+              </div>
+
+              {/* Job cards in this day */}
               {dayJobs.map(j => {
-                const s = JOB_STATUS[j.status] || { dot: C.light }
+                const s = JOB_STATUS[j.status] || { dot: C.light, label: j.status }
+                const price = j.confirmed_client_price || j.estimated_client_price_max
                 return (
                   <button key={j.id} onClick={() => setPopup(j)} style={{
-                    width: '100%', textAlign: 'left', padding: '3px 6px', borderRadius: 5, marginBottom: 2,
-                    background: `${s.dot}1a`, border: `1px solid ${s.dot}40`,
-                    fontSize: 10, color: C.text, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    width: '100%', textAlign: 'left', padding: '7px 8px', borderRadius: 8,
+                    marginBottom: 4, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+                    background: C.soft, border: `1px solid ${C.border}`,
+                    borderLeft: `3px solid ${s.dot}`,
+                    display: 'block',
                   }}>
-                    <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: 99, background: s.dot, marginRight: 4 }} />
-                    {j.client_name || j.reference}
+                    {/* Client name */}
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {j.client_name || 'Klient'}
+                    </div>
+                    {/* Painter */}
+                    {j.assigned_painter_name && (
+                      <div style={{ fontSize: 10, color: C.accent, marginBottom: 2 }}>
+                        👷 {j.assigned_painter_name}
+                      </div>
+                    )}
+                    {/* Price + work type */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 10, color: C.mid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {j.work_type || j.locality || '—'}
+                      </span>
+                      {price ? <span style={{ fontSize: 10, fontWeight: 600, color: C.text, whiteSpace: 'nowrap' }}>{fmt(price)}</span> : null}
+                    </div>
+                    {/* Status chip */}
+                    <div style={{ marginTop: 4 }}>
+                      <span style={{ fontSize: 9, fontWeight: 600, color: s.dot, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        {s.label}
+                      </span>
+                    </div>
                   </button>
                 )
               })}
@@ -572,16 +611,32 @@ function OpsCalendar({ jobs }) {
               </div>
               <button onClick={() => setPopup(null)} style={{ ...ghostBtn(), padding: '4px 9px', fontSize: 16 }}>×</button>
             </div>
-            <div style={{ display: 'grid', gap: '5px 16px', gridTemplateColumns: '1fr 1fr', fontSize: 12 }}>
-              {[['Stav', JOB_STATUS[popup.status]?.label], ['Termín', fmtShort(popup.preferred_date)],
-                ['Telefon', popup.client_phone], ['E-mail', popup.client_email],
-                ['Lokalita', popup.locality], ['Práce', popup.work_type],
-                ['Cena', fmt(popup.confirmed_client_price || popup.estimated_client_price_max)],
-                ['Provize', commission(popup.confirmed_client_price || popup.estimated_client_price_max)]
+            <div style={{ display: 'grid', gap: '8px 16px', gridTemplateColumns: '1fr 1fr', fontSize: 12 }}>
+              {[
+                ['Stav', JOB_STATUS[popup.status]?.label],
+                ['Termín', fmtShort(popup.preferred_date)],
+                ['Malíř', popup.assigned_painter_name],
+                ['Lokalita', popup.locality || popup.client_address],
+                ['Telefon', popup.client_phone],
+                ['E-mail', popup.client_email],
+                ['Typ práce', popup.work_type],
+                ['Plocha', popup.custom_area ? popup.custom_area + ' m²' : null],
+                ['Opravy', popup.repairs],
+                ['Cena klientovi', fmt(popup.confirmed_client_price || popup.estimated_client_price_max)],
+                ['Odměna malíři', fmt(popup.painter_reward)],
+                ['Provize dispečera', commission(popup.confirmed_client_price || popup.estimated_client_price_max)],
               ].filter(([,v])=>v).map(([k,v]) => (
-                <div key={k}><div style={{ color: C.light, marginBottom: 2 }}>{k}</div><div style={{ color: C.text }}>{v}</div></div>
+                <div key={k}>
+                  <div style={{ color: C.light, marginBottom: 2, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{k}</div>
+                  <div style={{ color: C.text, fontWeight: 400 }}>{v}</div>
+                </div>
               ))}
             </div>
+            {popup.booking_note && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}`, fontSize: 12, color: C.mid, lineHeight: 1.6 }}>
+                {popup.booking_note}
+              </div>
+            )}
           </div>
         </div>
       )}
