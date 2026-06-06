@@ -2,15 +2,15 @@ const { useEffect, useState } = React
 
 function jobStatusLabel(value) {
   return {
-    new: 'Nová',
-    waiting_for_review: 'Čeká na kontrolu',
-    waiting_for_client_details: 'Čeká na doplnění',
-    ready_to_offer: 'Připravená k nabídnutí',
-    offered_to_painter: 'Nabídnuto malíři',
-    painter_accepted: 'Malíř přijal',
-    assigned: 'Přiřazeno',
-    confirmed_to_client: 'Potvrzeno klientovi',
-    in_progress: 'V řešení',
+    new: 'Přijato ke zpracování',
+    waiting_for_review: 'Přijato ke zpracování',
+    waiting_for_client_details: 'Potřebujeme doplnit údaje',
+    ready_to_offer: 'Hledáme pro vás malíře',
+    offered_to_painter: 'Hledáme pro vás malíře',
+    painter_accepted: 'Malíř byl nalezen — čeká na finální potvrzení',
+    assigned: 'Malíř přiřazen',
+    confirmed_to_client: 'Malíř potvrzen — brzy vás kontaktuje',
+    in_progress: 'Probíhá malování',
     completed: 'Dokončeno',
     cancelled: 'Zrušeno',
   }[value] || value
@@ -82,20 +82,30 @@ function StatusApp() {
           <>
             <h1 style={{ fontSize: 34, fontWeight: 400, color: '#18170f', letterSpacing: '-0.05em', margin: '0 0 12px' }}>{data.job.reference}</h1>
             <p style={{ fontSize: 15, color: '#7a7268', lineHeight: 1.7, margin: '0 0 20px' }}>
-              Zakázku jsme přijali ke zpracování. Ověříme dostupnost vhodného malíře pro vámi preferovaný termín. Jakmile bude malíř potvrzený, pošleme vám jeho jméno a bude vás kontaktovat napřímo.
+              {
+                data.job.status === 'waiting_for_client_details'
+                  ? 'Potřebujeme doplnit pár údajů, abychom mohli najít vhodného malíře. Vyplňte prosím formulář níže.'
+                  : data.job.status === 'confirmed_to_client' || data.job.status === 'painter_accepted'
+                  ? `Malíř ${data.job.selected_painter_name ? data.job.selected_painter_name : ''} byl přiřazen na vaši zakázku a brzy vás kontaktuje napřímo.`.trim()
+                  : data.job.status === 'completed'
+                  ? 'Zakázka byla dokončena. Děkujeme za důvěru!'
+                  : data.job.status === 'cancelled'
+                  ? 'Zakázka byla zrušena.'
+                  : 'Zakázku jsme přijali ke zpracování. Ověříme dostupnost vhodného malíře pro vámi preferovaný termín. Jakmile bude malíř potvrzený, pošleme vám jeho jméno a bude vás kontaktovat napřímo.'
+              }
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
               <Box label="Stav" value={jobStatusLabel(data.job.status)} />
               <Box label="Termín" value={`${data.job.preferred_date_label || '—'} · ${data.job.preferred_time_label || '—'}`} />
               <Box label="Lokalita" value={data.job.client_address || 'Bude doplněna'} />
               <Box label="Orientační cena" value={data.job.estimated_price_high ? `${new Intl.NumberFormat('cs-CZ').format(data.job.estimated_price_high)} Kč` : '—'} />
             </div>
 
-            {mode === 'cancel' ? (
+            {mode === 'cancel' && !['completed', 'cancelled'].includes(data.job.status) ? (
               <button onClick={cancelJob} style={{ padding: '13px 18px', borderRadius: 14, border: '1px solid rgba(181,77,67,0.28)', background: '#fff', color: '#b54d43', cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Zrušit zakázku</button>
             ) : null}
 
-            {data.job.status === 'ceka_na_doplneni' ? (
+            {data.job.status === 'waiting_for_client_details' ? (
               <div style={{ marginTop: 22 }}>
                 <h2 style={{ fontSize: 22, fontWeight: 400, color: '#18170f', letterSpacing: '-0.04em' }}>Doplnění údajů</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
