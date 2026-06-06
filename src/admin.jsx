@@ -1,773 +1,651 @@
-const { useEffect, useMemo, useState } = React
+const { useEffect, useMemo, useState, useCallback } = React
 
-const UI = {
+const C = {
   bg: '#f0ece6',
   surface: '#ffffff',
-  surfaceSoft: '#f7f3ee',
+  soft: '#f7f3ee',
   border: 'rgba(175,165,148,0.28)',
+  borderStrong: 'rgba(175,165,148,0.55)',
   text: '#18170f',
-  textMid: '#7a7268',
-  textLight: '#b8b0a4',
+  mid: '#7a7268',
+  light: '#b8b0a4',
   accent: '#2a7a4e',
   accentSoft: '#e6f3ec',
   warn: '#b89236',
   warnSoft: '#f7eed8',
+  danger: '#b54d43',
+  dangerSoft: '#faeae9',
   muted: '#8b8173',
   mutedSoft: '#efe9e0',
-  danger: '#b54d43',
-  shadow: '0 2px 8px rgba(20,14,6,0.04), 0 24px 64px rgba(20,14,6,0.09)',
+  shadow: '0 1px 3px rgba(20,14,6,0.06), 0 8px 32px rgba(20,14,6,0.08)',
+  shadowHeavy: '0 2px 8px rgba(20,14,6,0.06), 0 24px 64px rgba(20,14,6,0.14)',
 }
 
-const WEEKDAYS = ['Po', 'Ut', 'St', 'Ct', 'Pa', 'So', 'Ne']
-
-const STATUS_META = {
-  available: { label: 'Dostupný', bg: UI.accentSoft, text: UI.accent },
-  limited: { label: 'Omezený', bg: UI.warnSoft, text: UI.warn },
-  unavailable: { label: 'Pryč', bg: UI.mutedSoft, text: UI.muted },
+const STATUS = {
+  waiting_for_review:       { label: 'Čeká na kontrolu', color: C.warn, bg: C.warnSoft },
+  waiting_for_client_details: { label: 'Čeká na klienta', color: C.muted, bg: C.mutedSoft },
+  ready_to_offer:           { label: 'Připravena', color: C.accent, bg: C.accentSoft },
+  offered_to_painter:       { label: 'Nabídnuto', color: C.warn, bg: C.warnSoft },
+  painter_accepted:         { label: 'Malíř přijal', color: C.accent, bg: C.accentSoft },
+  confirmed_to_client:      { label: 'Potvrzeno', color: C.accent, bg: C.accentSoft },
+  in_progress:              { label: 'V realizaci', color: C.accent, bg: C.accentSoft },
+  completed:                { label: 'Dokončeno', color: C.muted, bg: C.mutedSoft },
+  cancelled:                { label: 'Zrušeno', color: C.danger, bg: C.dangerSoft },
 }
 
-function money(value) {
-  if (!Number.isFinite(Number(value))) return '—'
-  return `${new Intl.NumberFormat('cs-CZ').format(Number(value))} Kc`
+const AVAIL = {
+  available:   { label: 'Dostupný',  color: C.accent, bg: C.accentSoft },
+  limited:     { label: 'Omezený',   color: C.warn,   bg: C.warnSoft },
+  unavailable: { label: 'Nepřijede', color: C.danger, bg: C.dangerSoft },
 }
 
-function dt(value) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('cs-CZ', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
+function fmt(v) {
+  if (!Number.isFinite(Number(v))) return '—'
+  return new Intl.NumberFormat('cs-CZ').format(Number(v)) + ' Kč'
+}
+function fmtDate(v) {
+  if (!v) return '—'
+  return new Intl.DateTimeFormat('cs-CZ', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(v + 'T12:00:00Z'))
+}
+function fmtDateLong(v) {
+  if (!v) return '—'
+  return new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(v + 'T12:00:00Z'))
+}
+function fmtDt(v) {
+  if (!v) return '—'
+  return new Intl.DateTimeFormat('cs-CZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(v))
+}
+function ago(v) {
+  const m = Math.round(Math.max(0, Date.now() - new Date(v)) / 60000)
+  if (m < 1) return 'právě teď'
+  if (m < 60) return `${m} min`
+  return `${Math.floor(m / 60)} h ${m % 60} min`
+}
+function isoDate(d) { return d.toISOString().slice(0, 10) }
+function addDays(date, n) {
+  const d = new Date(date + 'T12:00:00Z')
+  d.setUTCDate(d.getUTCDate() + n)
+  return isoDate(d)
+}
+function weekDates(date) {
+  const d = new Date(date + 'T12:00:00Z')
+  const dow = (d.getUTCDay() + 6) % 7
+  return Array.from({ length: 7 }, (_, i) => {
+    const x = new Date(d)
+    x.setUTCDate(d.getUTCDate() - dow + i)
+    return isoDate(x)
+  })
 }
 
-function dayLabel(value) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('cs-CZ', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date(`${value}T12:00:00Z`))
+// ── SHARED STYLES ─────────────────────────────────────────────
+const btn = (bg, color = '#fff', border = 'transparent') => ({
+  padding: '9px 16px', borderRadius: 12, border: `1px solid ${border}`,
+  background: bg, color, fontSize: 13, fontWeight: 400,
+  cursor: 'pointer', fontFamily: "'Outfit', sans-serif", whiteSpace: 'nowrap',
+})
+const ghostBtn = () => btn(C.surface, C.mid, C.border)
+const primaryBtn = () => btn(C.accent)
+const dangerBtn = () => btn(C.dangerSoft, C.danger, 'rgba(181,77,67,0.25)')
+const inp = () => ({
+  width: '100%', padding: '10px 12px', borderRadius: 12,
+  border: `1px solid ${C.border}`, fontSize: 13,
+  fontFamily: "'Outfit', sans-serif", outline: 'none', boxSizing: 'border-box',
+  background: C.surface,
+})
+
+function Pill({ label, color, bg }) {
+  return <span style={{ padding: '3px 9px', borderRadius: 99, background: bg, color, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
 }
 
-function waitLabel(value) {
-  const diff = Math.max(0, Date.now() - new Date(value).getTime())
-  const mins = Math.round(diff / 60000)
-  if (mins < 1) return 'právě teď'
-  if (mins < 60) return `${mins} min`
-  const hours = Math.floor(mins / 60)
-  return `${hours} h ${mins % 60} min`
-}
-
-function jobStatusLabel(value) {
-  return {
-    new: 'Nová',
-    waiting_for_review: 'Čeká na kontrolu',
-    waiting_for_client_details: 'Čeká na doplnění',
-    ready_to_offer: 'Připravena k nabídnutí',
-    offered_to_painter: 'Nabídnuto malíři',
-    painter_accepted: 'Malíř přijal',
-    assigned: 'Přiřazeno',
-    confirmed_to_client: 'Potvrzeno klientovi',
-    in_progress: 'V řešení',
-    completed: 'Dokončeno',
-    cancelled: 'Zrušeno',
-  }[value] || value
-}
-
-function offerStatusLabel(value) {
-  return {
-    pending: 'Ceka na reakci',
-    accepted: 'Prijata',
-    declined: 'Odmítnuta',
-    expired: 'Prosla',
-    withdrawn: 'Stazena',
-  }[value] || value
-}
-
-function availabilityLabel(value) {
-  return STATUS_META[value]?.label || value || '—'
-}
-
-function inputStyle() {
-  return {
-    width: '100%',
-    padding: '12px 13px',
-    borderRadius: 14,
-    border: `1px solid ${UI.border}`,
-    fontSize: 14,
-    fontFamily: "'Outfit', sans-serif",
-    outline: 'none',
-    boxSizing: 'border-box',
-  }
-}
-
-function primaryButton(color = UI.accent) {
-  return {
-    padding: '12px 14px',
-    borderRadius: 14,
-    border: 'none',
-    background: color,
-    color: '#fff',
-    cursor: 'pointer',
-    fontFamily: "'Outfit', sans-serif",
-    fontSize: 14,
-  }
-}
-
-function ghostButton() {
-  return {
-    padding: '10px 13px',
-    borderRadius: 14,
-    border: `1px solid ${UI.border}`,
-    background: '#fff',
-    color: UI.textMid,
-    cursor: 'pointer',
-    fontFamily: "'Outfit', sans-serif",
-    fontSize: 14,
-  }
-}
-
-function monthStart(value) {
-  const date = new Date(`${value}T12:00:00Z`)
-  date.setUTCDate(1)
-  return date.toISOString().slice(0, 10)
-}
-
-function addMonths(value, count) {
-  const date = new Date(`${value}T12:00:00Z`)
-  date.setUTCDate(1)
-  date.setUTCMonth(date.getUTCMonth() + count)
-  return date.toISOString().slice(0, 10)
-}
-
+// ── LOGIN ─────────────────────────────────────────────────────
 function Login({ onLogin, loading, error }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: UI.bg, padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 420, background: UI.surface, border: `1px solid ${UI.border}`, borderRadius: 26, boxShadow: UI.shadow, padding: 32 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Admin / Dispečink</div>
-        <h1 style={{ fontSize: 32, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '0 0 10px' }}>Přihlášení</h1>
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: UI.textMid, margin: '0 0 20px' }}>Interní provozní rozhraní pro zpracování zakázek a práci s kapacitou malířů.</p>
-        <div style={{ display: 'grid', gap: 12 }}>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail admina" style={inputStyle()} />
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Heslo" style={inputStyle()} />
-          {error ? <div style={{ color: UI.danger, fontSize: 13 }}>{error}</div> : null}
-          <button onClick={() => onLogin({ email, password })} disabled={loading} style={primaryButton()}>
-            {loading ? 'Přihlašuji…' : 'Přihlásit'}
-          </button>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: C.bg, padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 400, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, boxShadow: C.shadowHeavy, padding: 32 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Admin / Dispečink</div>
+        <h1 style={{ fontSize: 28, fontWeight: 400, color: C.text, letterSpacing: '-0.05em', margin: '0 0 20px' }}>Přihlášení</h1>
+        <div style={{ display: 'grid', gap: 10 }}>
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail admina" style={inp()} />
+          <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Heslo" style={inp()} onKeyDown={e => e.key === 'Enter' && onLogin({ email, password })} />
+          {error && <div style={{ fontSize: 13, color: C.danger }}>{error}</div>}
+          <button onClick={() => onLogin({ email, password })} disabled={loading} style={primaryBtn()}>{loading ? 'Přihlašuji…' : 'Přihlásit'}</button>
         </div>
       </div>
     </div>
   )
 }
 
-function App() {
-  const [session, setSession] = useState(null)
-  const [loginError, setLoginError] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [jobs, setJobs] = useState([])
-  const [selectedId, setSelectedId] = useState(null)
+// ── JOB CARD ─────────────────────────────────────────────────
+function JobCard({ job, active, onClick }) {
+  const s = STATUS[job.status] || { label: job.status, color: C.mid, bg: C.soft }
+  return (
+    <button onClick={onClick} style={{
+      width: '100%', textAlign: 'left', border: 'none', borderBottom: `1px solid ${C.border}`,
+      background: active ? C.accentSoft : C.surface, padding: '14px 16px',
+      cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'background 0.1s',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+        <div>
+          <span style={{ fontSize: 11, color: C.light, fontWeight: 500 }}>{job.reference} · {ago(job.created_at)}</span>
+          <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginTop: 2 }}>{job.client_name || 'Klient'}</div>
+        </div>
+        <Pill label={s.label} color={s.color} bg={s.bg} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 12, color: C.mid }}>{job.locality || '—'} · {fmtDate(job.preferred_date) || '—'}</div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{fmt(job.estimated_client_price_max || job.estimated_price_high)}</div>
+      </div>
+    </button>
+  )
+}
+
+// ── JOB DETAIL MODAL ──────────────────────────────────────────
+function JobDetailModal({ jobId, painters, onClose, onRefreshJobs }) {
   const [detail, setDetail] = useState(null)
-  const [painters, setPainters] = useState([])
-  const [calendar, setCalendar] = useState(null)
-  const [calendarMonth, setCalendarMonth] = useState(monthStart(new Date().toISOString().slice(0, 10)))
-  const [calendarDate, setCalendarDate] = useState('')
-  const [calendarBusy, setCalendarBusy] = useState(false)
   const [form, setForm] = useState({ reason: '', confirmedPrice: '', painterPayout: '', painterId: '' })
-  const [busyAction, setBusyAction] = useState('')
-  const [message, setMessage] = useState('')
-  const [openSidePanel, setOpenSidePanel] = useState('recommended')
-  const [expandedPainterId, setExpandedPainterId] = useState('')
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const selectedJob = detail?.job || null
-
-  async function fetchSession() {
-    const res = await fetch('/api/admin/session')
-    const data = await res.json()
-    if (data.authenticated) {
-      setSession(data.admin)
-      await Promise.all([fetchJobs(), fetchPainters()])
-    }
-    setLoading(false)
-  }
-
-  async function fetchJobs() {
-    const res = await fetch('/api/admin/jobs')
-    const data = await res.json()
-    if (res.ok) {
-      setJobs(data.jobs)
-      if (!selectedId && data.jobs[0]) setSelectedId(data.jobs[0].id)
-    }
-  }
-
-  async function fetchPainters() {
-    const res = await fetch('/api/admin/painters')
-    const data = await res.json()
-    if (res.ok) setPainters(data.painters)
-  }
-
-  async function fetchDetail(jobId) {
+  useEffect(() => {
     if (!jobId) return
-    const res = await fetch(`/api/admin/job?id=${encodeURIComponent(jobId)}`)
-    const data = await res.json()
-    if (res.ok) {
-      setDetail(data)
-      setForm((prev) => ({
-        ...prev,
-        confirmedPrice: data.job.confirmed_client_price || data.job.estimated_client_price_max || '',
-        painterPayout: data.job.painter_reward || '',
-      }))
-      if (data.job.preferred_date) {
-        setCalendarMonth(monthStart(data.job.preferred_date))
-        setCalendarDate(data.job.preferred_date)
-      }
-    }
+    fetch(`/api/admin/job?id=${encodeURIComponent(jobId)}`)
+      .then(r => r.json()).then(d => {
+        setDetail(d)
+        setForm(f => ({
+          ...f,
+          confirmedPrice: d.job.confirmed_client_price || d.job.estimated_client_price_max || '',
+          painterPayout: d.job.painter_reward || '',
+        }))
+      })
+  }, [jobId])
+
+  async function act(action, extra = {}) {
+    setBusy(action); setMsg('')
+    const r = await fetch('/api/admin/job-action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, action, ...extra }) })
+    const d = await r.json()
+    setBusy('')
+    if (!r.ok) { setMsg(d.error || 'Akce se nepodařila.'); return }
+    if (action === 'send_offer' && d.result?.offerUrl) setMsg('offer:' + d.result.offerUrl)
+    else setMsg('ok')
+    const updated = await fetch(`/api/admin/job?id=${encodeURIComponent(jobId)}`).then(x => x.json())
+    setDetail(updated)
+    onRefreshJobs()
   }
 
-  async function fetchCalendar(jobId, date = calendarDate, month = calendarMonth) {
-    if (!session) return
-    setCalendarBusy(true)
-    const query = new URLSearchParams({
-      from: month,
-      months: '1',
-      ...(jobId ? { jobId } : {}),
-      ...(date ? { date } : {}),
-    })
-    const res = await fetch(`/api/admin/availability?${query.toString()}`)
-    const data = await res.json()
-    setCalendarBusy(false)
-    if (res.ok) {
-      setCalendar(data)
-      if (data.selected_date) setCalendarDate(data.selected_date)
-    }
-  }
+  const job = detail?.job
+  const recPainters = detail?.recommendedPainters || []
+  const s = job ? (STATUS[job.status] || { label: job.status, color: C.mid, bg: C.soft }) : null
 
-  useEffect(() => {
-    fetchSession()
-  }, [])
-
-  useEffect(() => {
-    if (!session) return
-    const id = setInterval(fetchJobs, 30000)
-    return () => clearInterval(id)
-  }, [session])
-
-  useEffect(() => {
-    if (session && selectedId) fetchDetail(selectedId)
-  }, [session, selectedId])
-
-  useEffect(() => {
-    if (session) fetchCalendar(selectedId, calendarDate, calendarMonth)
-  }, [session, selectedId, calendarMonth])
-
-  const orderedJobs = useMemo(() => [...jobs].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)), [jobs])
-
-  async function login(payload) {
-    setLoginError('')
-    setLoading(true)
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      setLoginError(data.error || 'Přihlášení se nepodařilo.')
-      setLoading(false)
-      return
-    }
-    setSession({ email: data.email })
-    await Promise.all([fetchJobs(), fetchPainters()])
-    setLoading(false)
-  }
-
-  async function doAction(action, extra = {}) {
-    if (!selectedJob) return
-    setBusyAction(action)
-    setMessage('')
-    const res = await fetch('/api/admin/job-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobId: selectedJob.id, action, ...extra }),
-    })
-    const data = await res.json()
-    setBusyAction('')
-    if (!res.ok) {
-      setMessage(data.error || 'Akce se nepodařila.')
-      return
-    }
-    setMessage(action === 'send_offer' && data.result.offerUrl ? `Nabidka pripravena: ${data.result.offerUrl}` : 'Uloženo.')
-    await Promise.all([fetchJobs(), fetchDetail(selectedJob.id), fetchCalendar(selectedJob.id, calendarDate, calendarMonth)])
-  }
-
-  async function updatePainterDay(painter, patch) {
-    if (!calendarDate) return
-    setCalendarBusy(true)
-    setMessage('')
-    const res = await fetch('/api/admin/availability', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        painterId: painter.id,
-        jobId: selectedJob?.id || null,
-        from: calendarMonth,
-        months: 1,
-        date: calendarDate,
-        entries: [{
-          date: calendarDate,
-          status: patch.status ?? painter.availability_status,
-          capacity: patch.capacity ?? painter.capacity,
-          accepts_express: patch.accepts_express ?? painter.accepts_express,
-          note: patch.note ?? painter.note,
-        }],
-      }),
-    })
-    const data = await res.json()
-    setCalendarBusy(false)
-    if (!res.ok) {
-      setMessage(data.error || 'Dostupnost se nepodařilo uložit.')
-      return
-    }
-    setCalendar(data)
-    setMessage('Dostupnost malíře uložena.')
-  }
-
-  async function logout() {
-    await fetch('/api/admin/logout', { method: 'POST' })
-    setSession(null)
-    setSelectedId(null)
-    setDetail(null)
-    setCalendar(null)
-    setJobs([])
-  }
-
-  if (loading && !session) return <Login onLogin={login} loading={loading} error={loginError} />
-  if (!session) return <Login onLogin={login} loading={loading} error={loginError} />
+  const primaryAction = job ? {
+    waiting_for_review: null,
+    ready_to_offer: { label: 'Poslat nabídku malíři', action: 'send_offer', extra: () => ({ painterId: form.painterId }), disabled: !form.painterId },
+    painter_accepted: { label: 'Potvrdit přiřazení', action: 'confirm_assignment' },
+    confirmed_to_client: { label: 'Označit jako v realizaci', action: 'mark_in_progress' },
+    in_progress: { label: 'Označit jako dokončeno', action: 'mark_done' },
+  }[job.status] : null
 
   return (
-    <div style={{ minHeight: '100vh', background: UI.bg, padding: 20 }}>
-      <div style={{ maxWidth: 1460, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 16, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Malíř Hned / Dispečink</div>
-            <h1 style={{ fontSize: 34, fontWeight: 400, color: UI.text, letterSpacing: '-0.06em', margin: '6px 0 0' }}>Fronta zakázek</h1>
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color: UI.textMid }}>{session.email}</span>
-            <button style={ghostButton()} onClick={logout}>Odhlásit</button>
-          </div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(24,23,15,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', width: '100%', maxWidth: 680, margin: '0 auto', maxHeight: '92vh', background: C.surface, borderRadius: '24px 24px 0 0', boxShadow: C.shadowHeavy, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Handle */}
+        <div style={{ padding: '12px 0 0', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: C.border }} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 16 }}>
-          <div style={{ background: UI.surface, borderRadius: 24, border: `1px solid ${UI.border}`, boxShadow: UI.shadow, overflow: 'hidden' }}>
-            <div style={{ padding: 16, borderBottom: `1px solid ${UI.border}`, fontSize: 13, color: UI.textMid }}>
-              {orderedJobs.length} zakázek ve frontě
-            </div>
-            <div style={{ maxHeight: '78vh', overflow: 'auto' }}>
-              {orderedJobs.map((job) => (
-                <button
-                  key={job.id}
-                  onClick={() => setSelectedId(job.id)}
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    border: 'none',
-                    borderBottom: `1px solid ${UI.border}`,
-                    background: selectedId === job.id ? UI.accentSoft : '#fff',
-                    padding: 16,
-                    cursor: 'pointer',
-                    fontFamily: "'Outfit', sans-serif",
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 7 }}>
-                    <strong style={{ color: UI.text, fontSize: 15 }}>{job.reference}</strong>
-                    <span style={{ fontSize: 12, color: UI.textMid }}>{waitLabel(job.created_at)}</span>
-                  </div>
-                  <div style={{ fontSize: 14, color: UI.text, marginBottom: 5 }}>{job.locality || job.service_area || 'Bez lokality'} · {job.space_type || job.work_type || 'Zakázka'}</div>
-                  <div style={{ fontSize: 13, color: UI.textMid, lineHeight: 1.45 }}>{job.preferred_date_label || 'Bez termínu'} · {job.preferred_time_label || 'Čas neurčen'}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 8, fontSize: 12, color: UI.textMid }}>
-                    <span>{jobStatusLabel(job.status)}</span>
-                    <span>{money(job.estimated_price_high)}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ background: UI.surface, borderRadius: 24, border: `1px solid ${UI.border}`, boxShadow: UI.shadow, minHeight: 600 }}>
-            {!selectedJob ? (
-              <div style={{ padding: 28, color: UI.textMid }}>Vyberte zakazku.</div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr', height: '100%' }}>
-                <div style={{ padding: 20, borderBottom: `1px solid ${UI.border}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{selectedJob.reference}</div>
-                      <h2 style={{ fontSize: 28, fontWeight: 400, color: UI.text, letterSpacing: '-0.05em', margin: '6px 0 6px' }}>{selectedJob.client_name || 'Klient bez jména'}</h2>
-                      <div style={{ fontSize: 14, color: UI.textMid, lineHeight: 1.6 }}>{selectedJob.client_address || 'Adresa bude doplněna'}</div>
-                    </div>
-                    <div style={{ fontSize: 13, color: UI.textMid }}>
-                      <div>Stav: <strong style={{ color: UI.text }}>{jobStatusLabel(selectedJob.status)}</strong></div>
-                      <div>Čeká: {waitLabel(selectedJob.created_at)}</div>
-                    </div>
-                  </div>
+        {!job ? (
+          <div style={{ padding: 32, color: C.mid, textAlign: 'center' }}>Načítám…</div>
+        ) : (
+          <>
+            {/* Header */}
+            <div style={{ padding: '12px 20px 16px', borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: C.light, fontWeight: 500, marginBottom: 4 }}>{job.reference} · přijato {ago(job.created_at)}</div>
+                  <div style={{ fontSize: 22, fontWeight: 500, color: C.text, letterSpacing: '-0.04em', lineHeight: 1.2 }}>{job.client_name || 'Klient'}</div>
+                  <div style={{ fontSize: 13, color: C.mid, marginTop: 4 }}>{job.client_address || job.locality || '—'}</div>
                 </div>
-
-                <div style={{ padding: 16, overflow: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 330px', gap: 16, alignItems: 'start' }}>
-                    <div style={{ display: 'grid', gap: 12 }}>
-                      <Panel title="Zadání klienta">
-                        <KV label="Kontakt" value={`${selectedJob.client_phone || '—'} · ${selectedJob.client_email || '—'}`} />
-                        <KV label="Preferovaný termín" value={`${selectedJob.preferred_date_label || '—'} · ${selectedJob.preferred_time_label || '—'}`} />
-                        <KV label="Typ práce" value={`${selectedJob.work_type || '—'} · ${selectedJob.repairs || '—'}`} />
-                        <KV label="Rozsah" value={`${selectedJob.custom_area || '—'} m2 · ${selectedJob.property_type || '—'}`} />
-                        <KV label="Poznámka" value={selectedJob.booking_note || selectedJob.client_note || 'Bez poznámky'} />
-                      </Panel>
-
-                      <Panel title="Zpracování">
-                        <div style={{ display: 'grid', gap: 10 }}>
-                          <textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Důvod pro doplnění údajů" style={{ ...inputStyle(), minHeight: 78, resize: 'vertical' }} />
-                          <button style={ghostButton()} disabled={busyAction === 'request_completion'} onClick={() => doAction('request_completion', { reason: form.reason })}>Vyžádat doplnění</button>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                            <input value={form.confirmedPrice} onChange={(e) => setForm({ ...form, confirmedPrice: e.target.value })} placeholder="Potvrzená cena klientovi" style={inputStyle()} />
-                            <input value={form.painterPayout} onChange={(e) => setForm({ ...form, painterPayout: e.target.value })} placeholder="Odměna malíři" style={inputStyle()} />
-                          </div>
-                          <button style={primaryButton()} disabled={busyAction === 'prepare_job'} onClick={() => doAction('prepare_job', { confirmedPrice: form.confirmedPrice, painterPayout: form.painterPayout })}>Připravit k nabídnutí</button>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
-                            <select value={form.painterId} onChange={(e) => setForm({ ...form, painterId: e.target.value })} style={inputStyle()}>
-                              <option value="">Vyberte malíře</option>
-                              {(calendar?.selected_day?.painters?.length ? calendar.selected_day.painters : detail?.recommendedPainters?.length ? detail.recommendedPainters : painters).map((painter) => (
-                                <option key={painter.id} value={painter.id}>{painter.name} · {painter.display_status || painter.role}</option>
-                              ))}
-                            </select>
-                            <button style={primaryButton()} disabled={!form.painterId || busyAction === 'send_offer'} onClick={() => doAction('send_offer', { painterId: form.painterId })}>Poslat nabídku</button>
-                          </div>
-
-                          {(() => {
-                            const status = selectedJob.status
-                            const showConfirm = status === 'painter_accepted'
-                            const showReturnDispatch = ['painter_accepted', 'offered_to_painter', 'confirmed_to_client'].includes(status)
-                            const showInProgress = status === 'confirmed_to_client'
-                            const showDone = status === 'in_progress'
-                            const showCancel = !['completed', 'cancelled'].includes(status)
-                            return (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                {showConfirm ? <button style={ghostButton()} disabled={busyAction === 'confirm_assignment'} onClick={() => doAction('confirm_assignment')}>Finálně potvrdit</button> : null}
-                                {showReturnDispatch ? <button style={ghostButton()} disabled={busyAction === 'return_to_dispatch'} onClick={() => doAction('return_to_dispatch')}>Vrátit do dispečinku</button> : null}
-                                {showInProgress ? <button style={ghostButton()} disabled={busyAction === 'mark_in_progress'} onClick={() => doAction('mark_in_progress')}>V řešení</button> : null}
-                                {showDone ? <button style={ghostButton()} disabled={busyAction === 'mark_done'} onClick={() => doAction('mark_done')}>Dokončeno</button> : null}
-                                {showCancel ? <button style={{ ...ghostButton(), color: UI.danger, borderColor: 'rgba(181,77,67,0.28)' }} disabled={busyAction === 'cancel_job'} onClick={() => doAction('cancel_job')}>Zrušit</button> : null}
-                              </div>
-                            )
-                          })()}
-                          {message ? (
-                            message.startsWith('Nabidka') ? (
-                              <div style={{ fontSize: 13, color: UI.accent, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                                <span>{message.split(': ')[0]}:</span>
-                                <span style={{ wordBreak: 'break-all' }}>{message.split(': ')[1]}</span>
-                                <button
-                                  style={ghostButton()}
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(message.split(': ')[1])
-                                    setCopied(true)
-                                    setTimeout(() => setCopied(false), 2000)
-                                  }}
-                                >
-                                  {copied ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,7 5,10 11,3"/></svg>Zkopírováno</span> : 'Kopírovat odkaz'}
-                                </button>
-                              </div>
-                            ) : (
-                              <div style={{ fontSize: 13, color: message.includes('uložena') || message === 'Uloženo.' ? UI.accent : UI.textMid }}>{message}</div>
-                            )
-                          ) : null}
-                        </div>
-                      </Panel>
-
-                      <Panel title="Kalendář kapacity týmu">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-                          <div>
-                            <div style={{ fontSize: 14, color: UI.text }}>{selectedJob.preferred_date_label || 'Vyberte den v kalendáři'}</div>
-                            <div style={{ fontSize: 12, color: UI.textMid }}>Jeden měsíc, přepínání šipkami.</div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <button type="button" onClick={() => setCalendarMonth((prev) => addMonths(prev, -1))} style={iconButton()}>‹</button>
-                            <button type="button" onClick={() => setCalendarMonth((prev) => addMonths(prev, 1))} style={iconButton()}>›</button>
-                          </div>
-                        </div>
-
-                        {(calendar?.months || []).map((month) => (
-                          <div key={month.key} style={{ border: `1px solid ${UI.border}`, borderRadius: 18, padding: 12, background: UI.surfaceSoft, marginBottom: 12 }}>
-                            <div style={{ fontSize: 15, color: UI.text, marginBottom: 10, textTransform: 'capitalize' }}>{month.label}</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 5, marginBottom: 8 }}>
-                              {WEEKDAYS.map((item) => <div key={item} style={{ textAlign: 'center', fontSize: 11, color: UI.textLight }}>{item}</div>)}
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 5 }}>
-                              {Array.from({ length: month.leading }).map((_, idx) => <div key={`${month.key}-lead-${idx}`} />)}
-                              {month.cal.map((day) => {
-                                const active = calendarDate === day.date
-                                const tone = day.available_slots >= 3 ? UI.accentSoft : day.available_slots >= 1 ? UI.warnSoft : UI.mutedSoft
-                                return (
-                                  <button
-                                    key={day.date}
-                                    type="button"
-                                    onClick={() => {
-                                      setCalendarDate(day.date)
-                                      fetchCalendar(selectedId, day.date, calendarMonth)
-                                    }}
-                                    style={{
-                                      minHeight: 62,
-                                      borderRadius: 12,
-                                      border: `1px solid ${active ? UI.text : UI.border}`,
-                                      background: tone,
-                                      textAlign: 'left',
-                                      padding: '6px 7px',
-                                      cursor: 'pointer',
-                                      fontFamily: "'Outfit', sans-serif",
-                                    }}
-                                  >
-                                    <div style={{ fontSize: 13, color: UI.text, marginBottom: 3 }}>{day.d}</div>
-                                    <div style={{ fontSize: 10, color: UI.textMid, lineHeight: 1.3 }}>{day.available_count} volno</div>
-                                    <div style={{ fontSize: 10, color: UI.textLight, lineHeight: 1.3 }}>{day.blocked_count} blok.</div>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        ))}
-
-                        <div style={{ border: `1px solid ${UI.border}`, borderRadius: 18, padding: 12 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10, flexWrap: 'wrap' }}>
-                            <div>
-                              <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Detail dne</div>
-                              <div style={{ fontSize: 18, color: UI.text, letterSpacing: '-0.04em', marginTop: 4 }}>{dayLabel(calendar?.selected_day?.date || calendarDate)}</div>
-                            </div>
-                            {calendarBusy ? <div style={{ fontSize: 12, color: UI.textMid }}>Načítám…</div> : null}
-                          </div>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-                            <Tag label={`${calendar?.selected_day?.available_count || 0} dostupní`} tone="good" />
-                            <Tag label={`${calendar?.selected_day?.limited_count || 0} omezení`} tone="warn" />
-                            <Tag label={`${calendar?.selected_day?.blocked_count || 0} blokace`} tone="muted" />
-                            <Tag label={`${calendar?.selected_day?.available_slots || 0} volna kapacita`} tone="light" />
-                          </div>
-
-                          {(calendar?.selected_day?.painters || []).length ? (
-                            <div style={{ display: 'grid', gap: 8 }}>
-                              {calendar.selected_day.painters.map((painter) => {
-                                const meta = STATUS_META[painter.availability_status] || STATUS_META.available
-                                const expanded = expandedPainterId === painter.id
-                                return (
-                                  <div key={painter.id} style={{ border: `1px solid ${UI.border}`, borderRadius: 16, padding: 10 }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpandedPainterId((prev) => prev === painter.id ? '' : painter.id)}
-                                      style={{ width: '100%', border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}
-                                    >
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                                        <div>
-                                          <strong style={{ fontSize: 14, color: UI.text }}>{painter.name}</strong>
-                                          <div style={{ fontSize: 12, color: UI.textMid, marginTop: 3 }}>{painter.service_areas?.join(', ') || 'Bez lokality'}</div>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                          <Tag label={`Kap. ${painter.remaining_capacity}`} tone="light" />
-                                          <span style={{ padding: '6px 10px', borderRadius: 999, background: meta.bg, color: meta.text, fontSize: 12 }}>{painter.display_status}</span>
-                                        </div>
-                                      </div>
-                                    </button>
-
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                                      {painter.accepts_express ? <Tag label="Bere expres" tone="good" /> : null}
-                                      {painter.job_fit?.locality_match ? <Tag label="Sedí lokalita" tone="good" /> : <Tag label="Mimo lokalitu" tone="muted" />}
-                                      {painter.job_fit?.work_type_match ? <Tag label="Sedí typ práce" tone="good" /> : null}
-                                      {painter.block_count ? <Tag label={`${painter.block_count} blokace`} tone="warn" /> : null}
-                                    </div>
-
-                                    {expanded ? (
-                                      <>
-                                        {painter.note || painter.painter_note ? (
-                                          <div style={{ fontSize: 12, color: UI.textMid, marginTop: 10, lineHeight: 1.5 }}>
-                                            {painter.note || painter.painter_note}
-                                          </div>
-                                        ) : null}
-
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginTop: 12 }}>
-                                          {['available', 'limited', 'unavailable'].map((value) => (
-                                            <button
-                                              key={value}
-                                              type="button"
-                                              onClick={() => updatePainterDay(painter, { status: value })}
-                                              style={{
-                                                padding: '9px 8px',
-                                                borderRadius: 12,
-                                                border: `1px solid ${painter.availability_status === value ? UI.text : UI.border}`,
-                                                background: painter.availability_status === value ? STATUS_META[value].bg : '#fff',
-                                                color: painter.availability_status === value ? STATUS_META[value].text : UI.textMid,
-                                                fontFamily: "'Outfit', sans-serif",
-                                                fontSize: 12,
-                                                cursor: 'pointer',
-                                              }}
-                                            >
-                                              {availabilityLabel(value)}
-                                            </button>
-                                          ))}
-                                        </div>
-
-                                        <div style={{ display: 'grid', gridTemplateColumns: '92px 1fr auto', gap: 8, marginTop: 8 }}>
-                                          <input type="number" min="0" defaultValue={painter.capacity} onBlur={(e) => updatePainterDay(painter, { capacity: e.target.value })} style={inputStyle()} />
-                                          <input defaultValue={painter.note || ''} onBlur={(e) => updatePainterDay(painter, { note: e.target.value })} placeholder="Poznámka k tomuto dni" style={inputStyle()} />
-                                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, color: UI.textMid }}>
-                                            <input type="checkbox" defaultChecked={Boolean(painter.accepts_express)} onChange={(e) => updatePainterDay(painter, { accepts_express: e.target.checked })} />
-                                            Expres
-                                          </label>
-                                        </div>
-                                      </>
-                                    ) : null}
-
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-                                      <button style={ghostButton()} onClick={() => { setForm((prev) => ({ ...prev, painterId: painter.id })); setExpandedPainterId(painter.id) }}>Vybrat do nabídky</button>
-                                      {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendář malíře</a> : null}
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          ) : <div style={{ color: UI.textMid, fontSize: 13 }}>Pro tento den zatím nemáme detail dostupnosti.</div>}
-                        </div>
-                      </Panel>
-                    </div>
-
-                    <div style={{ display: 'grid', gap: 10, alignSelf: 'start', position: 'sticky', top: 12 }}>
-                      <AccordionPanel
-                        title="Nabídky malířům"
-                        subtitle={(detail?.offers || []).length ? `${detail.offers.length} záznamů` : 'Zatím bez nabídek.'}
-                        open={openSidePanel === 'offers'}
-                        onToggle={() => setOpenSidePanel((prev) => prev === 'offers' ? '' : 'offers')}
-                      >
-                        {(detail?.offers || []).length ? detail.offers.map((offer) => (
-                          <div key={offer.id} style={{ padding: '12px 0', borderBottom: `1px solid ${UI.border}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                              <strong style={{ fontSize: 14, color: UI.text }}>{offer.painter_name}</strong>
-                              <span style={{ fontSize: 12, color: UI.textMid }}>{offerStatusLabel(offer.status)}</span>
-                            </div>
-                            <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{dt(offer.created_at)} · exp. {dt(offer.expires_at)}</div>
-                            {offer.status === 'pending' ? <button style={{ ...ghostButton(), marginTop: 8 }} onClick={() => doAction('withdraw_offer', { offerId: offer.id })}>Stáhnout nabídku</button> : null}
-                          </div>
-                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Zatím bez nabídek.</div>}
-                      </AccordionPanel>
-
-                      <AccordionPanel
-                        title="Vhodní malíři"
-                        subtitle={(detail?.recommendedPainters || []).length ? `${detail.recommendedPainters.length} doporučení` : 'Bez doporučení'}
-                        open={openSidePanel === 'recommended'}
-                        onToggle={() => setOpenSidePanel((prev) => prev === 'recommended' ? '' : 'recommended')}
-                      >
-                        {(detail?.recommendedPainters || []).length ? detail.recommendedPainters.map((painter) => (
-                          <div key={painter.id} style={{ padding: '12px 0', borderBottom: `1px solid ${UI.border}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                              <strong style={{ fontSize: 14, color: UI.text }}>{painter.name}</strong>
-                              <span style={{ fontSize: 12, color: UI.textMid }}>{availabilityLabel(painter.availability_status)}</span>
-                            </div>
-                            <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{painter.display_status}</div>
-                            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button style={ghostButton()} onClick={() => setForm((prev) => ({ ...prev, painterId: painter.id }))}>Vybrat do nabídky</button>
-                              {painter.portal_url ? <a href={painter.portal_url} style={{ ...ghostButton(), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Kalendář malíře</a> : null}
-                            </div>
-                          </div>
-                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Doporučení se objeví po zadání preferovaného dne.</div>}
-                      </AccordionPanel>
-
-                      <AccordionPanel
-                        title="Historie"
-                        subtitle={(detail?.events || []).length ? `${detail.events.length} událostí` : 'Historie je zatím prázdná.'}
-                        open={openSidePanel === 'history'}
-                        onToggle={() => setOpenSidePanel((prev) => prev === 'history' ? '' : 'history')}
-                      >
-                        {(detail?.events || []).length ? detail.events.map((event) => (
-                          <div key={event.id} style={{ padding: '10px 0', borderBottom: `1px solid ${UI.border}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                              <span style={{ fontSize: 13, color: UI.text }}>{event.event_type}</span>
-                              <span style={{ fontSize: 12, color: UI.textMid }}>{dt(event.created_at)}</span>
-                            </div>
-                            <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{event.actor_label}</div>
-                          </div>
-                        )) : <div style={{ color: UI.textMid, fontSize: 13 }}>Historie je zatím prázdná.</div>}
-                      </AccordionPanel>
-                    </div>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Pill label={s.label} color={s.color} bg={s.bg} />
+                  <button onClick={onClose} style={{ ...ghostBtn(), padding: '6px 10px', fontSize: 18, lineHeight: 1 }}>×</button>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+
+            {/* Body scroll */}
+            <div style={{ overflow: 'auto', flex: 1, padding: '16px 20px' }}>
+              {/* Key facts */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+                {[
+                  ['Termín', fmtDate(job.preferred_date)],
+                  ['Cena klientovi', fmt(job.confirmed_client_price || job.estimated_client_price_max)],
+                  ['Odměna malíři', fmt(job.painter_reward)],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ background: C.soft, borderRadius: 14, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 10, color: C.light, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{k}</div>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: C.text }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Contact + job info */}
+              <div style={{ background: C.soft, borderRadius: 14, padding: '12px 14px', marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px' }}>
+                  {[
+                    ['Telefon', job.client_phone],
+                    ['E-mail', job.client_email],
+                    ['Typ práce', job.work_type],
+                    ['Plocha', job.custom_area ? job.custom_area + ' m²' : '—'],
+                    ['Opravy', job.repairs],
+                    ['Lokalita', job.locality || job.service_area],
+                  ].map(([k, v]) => (
+                    <div key={k}>
+                      <div style={{ fontSize: 10, color: C.light, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{k}</div>
+                      <div style={{ fontSize: 13, color: C.text, marginTop: 2 }}>{v || '—'}</div>
+                    </div>
+                  ))}
+                </div>
+                {job.booking_note && <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, fontSize: 13, color: C.mid }}>{job.booking_note}</div>}
+              </div>
+
+              {/* Actions by status */}
+              {job.status === 'waiting_for_review' && (
+                <Section title="Zpracování">
+                  <textarea value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} placeholder="Důvod pro doplnění (nepovinné)" style={{ ...inp(), minHeight: 64, resize: 'vertical' }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+                    <input value={form.confirmedPrice} onChange={e => setForm({ ...form, confirmedPrice: e.target.value })} placeholder="Cena klientovi (Kč)" style={inp()} />
+                    <input value={form.painterPayout} onChange={e => setForm({ ...form, painterPayout: e.target.value })} placeholder="Odměna malíři (Kč)" style={inp()} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <button style={ghostBtn()} disabled={busy === 'request_completion'} onClick={() => act('request_completion', { reason: form.reason })}>Vyžádat doplnění</button>
+                    <button style={primaryBtn()} disabled={busy === 'prepare_job'} onClick={() => act('prepare_job', { confirmedPrice: form.confirmedPrice, painterPayout: form.painterPayout })}>Připravit k nabídnutí →</button>
+                  </div>
+                </Section>
+              )}
+
+              {(job.status === 'ready_to_offer' || job.status === 'offered_to_painter') && (
+                <Section title="Přiřadit malíře">
+                  {recPainters.length > 0 && (
+                    <div style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
+                      {recPainters.map(p => {
+                        const av = AVAIL[p.availability_status] || AVAIL.available
+                        return (
+                          <button key={p.id} onClick={() => setForm(f => ({ ...f, painterId: p.id }))} style={{
+                            textAlign: 'left', padding: '10px 12px', borderRadius: 12, cursor: 'pointer',
+                            border: `1.5px solid ${form.painterId === p.id ? C.accent : C.border}`,
+                            background: form.painterId === p.id ? C.accentSoft : C.surface,
+                            fontFamily: "'Outfit', sans-serif",
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{p.name}</span>
+                              <Pill label={av.label} color={av.color} bg={av.bg} />
+                            </div>
+                            <div style={{ fontSize: 12, color: C.mid, marginTop: 3 }}>{p.service_areas?.join(', ') || p.display_status}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {recPainters.length === 0 && (
+                    <select value={form.painterId} onChange={e => setForm({ ...form, painterId: e.target.value })} style={{ ...inp(), marginBottom: 10 }}>
+                      <option value="">Vyberte malíře</option>
+                      {painters.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  )}
+                  <button style={{ ...primaryBtn(), width: '100%', padding: '12px' }} disabled={!form.painterId || busy === 'send_offer'} onClick={() => act('send_offer', { painterId: form.painterId })}>
+                    {busy === 'send_offer' ? 'Odesílám…' : 'Odeslat nabídku malíři'}
+                  </button>
+                </Section>
+              )}
+
+              {/* Offer URL result */}
+              {msg.startsWith('offer:') && (
+                <div style={{ background: C.accentSoft, borderRadius: 14, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, fontSize: 12, color: C.accent, wordBreak: 'break-all' }}>{msg.slice(6)}</div>
+                  <button style={ghostBtn()} onClick={() => { navigator.clipboard.writeText(msg.slice(6)); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
+                    {copied ? '✓ Zkopírováno' : 'Kopírovat odkaz'}
+                  </button>
+                </div>
+              )}
+              {msg === 'ok' && <div style={{ fontSize: 13, color: C.accent, marginBottom: 12 }}>Uloženo.</div>}
+              {msg && !msg.startsWith('offer:') && msg !== 'ok' && <div style={{ fontSize: 13, color: C.danger, marginBottom: 12 }}>{msg}</div>}
+
+              {/* Offers list */}
+              {(detail?.offers || []).length > 0 && (
+                <Section title={`Nabídky (${detail.offers.length})`}>
+                  {detail.offers.map(o => (
+                    <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${C.border}`, gap: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{o.painter_name}</div>
+                        <div style={{ fontSize: 11, color: C.light, marginTop: 2 }}>{fmtDt(o.created_at)}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Pill label={{ pending: 'Čeká', accepted: 'Přijata', declined: 'Odmítnuta', expired: 'Prošlá', withdrawn: 'Stažena' }[o.status] || o.status} color={o.status === 'accepted' ? C.accent : C.mid} bg={o.status === 'accepted' ? C.accentSoft : C.soft} />
+                        {o.status === 'pending' && <button style={ghostBtn()} onClick={() => act('withdraw_offer', { offerId: o.id })}>Stáhnout</button>}
+                      </div>
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              {/* History */}
+              {(detail?.events || []).length > 0 && (
+                <Section title="Historie">
+                  {detail.events.slice(0, 8).map(e => (
+                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '7px 0', borderBottom: `1px solid ${C.border}` }}>
+                      <span style={{ fontSize: 13, color: C.text }}>{e.event_type}</span>
+                      <span style={{ fontSize: 11, color: C.light }}>{fmtDt(e.created_at)}</span>
+                    </div>
+                  ))}
+                </Section>
+              )}
+            </div>
+
+            {/* Footer actions */}
+            <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 8, flexWrap: 'wrap', background: C.surface }}>
+              {primaryAction && (
+                <button style={{ ...primaryBtn(), flex: 1, padding: '12px' }}
+                  disabled={busy === primaryAction.action || primaryAction.disabled}
+                  onClick={() => act(primaryAction.action, primaryAction.extra?.() || {})}>
+                  {busy === primaryAction.action ? 'Odesílám…' : primaryAction.label}
+                </button>
+              )}
+              {job.status === 'painter_accepted' && (
+                <button style={ghostBtn()} disabled={busy === 'return_to_dispatch'} onClick={() => act('return_to_dispatch')}>Vrátit do dispečinku</button>
+              )}
+              {!['completed', 'cancelled'].includes(job.status) && (
+                <button style={dangerBtn()} disabled={busy === 'cancel_job'} onClick={() => act('cancel_job')}>Zrušit zakázku</button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-function iconButton() {
-  return {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    border: `1px solid ${UI.border}`,
-    background: '#fff',
-    color: UI.text,
-    cursor: 'pointer',
-    fontFamily: "'Outfit', sans-serif",
-    fontSize: 20,
-    lineHeight: 1,
-  }
-}
+// ── TEAM CALENDAR ─────────────────────────────────────────────
+function TeamCalendar({ painters }) {
+  const today = isoDate(new Date())
+  const [selectedDate, setSelectedDate] = useState(today)
+  const [weekBase, setWeekBase] = useState(today)
+  const [dayData, setDayData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [expandedId, setExpandedId] = useState('')
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState('')
 
-function Tag({ label, tone = 'light' }) {
-  const tones = {
-    good: { bg: UI.accentSoft, color: UI.accent },
-    warn: { bg: UI.warnSoft, color: UI.warn },
-    muted: { bg: UI.mutedSoft, color: UI.muted },
-    light: { bg: UI.surfaceSoft, color: UI.textMid },
-  }
-  const meta = tones[tone] || tones.light
-  return <span style={{ padding: '6px 10px', borderRadius: 999, background: meta.bg, color: meta.color, fontSize: 12 }}>{label}</span>
-}
+  const week = useMemo(() => weekDates(weekBase), [weekBase])
 
-function Panel({ title, children }) {
+  useEffect(() => {
+    setLoading(true); setDayData(null)
+    const q = new URLSearchParams({ from: selectedDate.slice(0, 7) + '-01', months: '1', date: selectedDate })
+    fetch(`/api/admin/availability?${q}`)
+      .then(r => r.json()).then(d => { setDayData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [selectedDate])
+
+  async function save(painter, patch) {
+    setBusy(painter.id); setMsg('')
+    const r = await fetch('/api/admin/availability', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        painterId: painter.id, jobId: null,
+        from: selectedDate.slice(0, 7) + '-01', months: 1, date: selectedDate,
+        entries: [{ date: selectedDate, status: patch.status ?? painter.availability_status, capacity: patch.capacity ?? painter.capacity, accepts_express: patch.accepts_express ?? painter.accepts_express, note: patch.note ?? painter.note }],
+      }),
+    })
+    const d = await r.json(); setBusy('')
+    if (!r.ok) { setMsg(d.error || 'Nepodařilo se uložit.'); return }
+    setDayData(d); setMsg('ok')
+  }
+
+  const dayPainters = dayData?.selected_day?.painters || []
+  const stats = dayData?.selected_day
+
   return (
-    <div style={{ border: `1px solid ${UI.border}`, borderRadius: 20, padding: 16 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>{title}</div>
+    <div style={{ padding: '0 0 32px' }}>
+      {/* Week strip */}
+      <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <button onClick={() => setWeekBase(w => addDays(w, -7))} style={{ ...ghostBtn(), padding: '6px 10px' }}>‹</button>
+          <button onClick={() => { setWeekBase(today); setSelectedDate(today) }} style={{ ...ghostBtn(), fontSize: 12 }}>Dnes</button>
+          <button onClick={() => setWeekBase(w => addDays(w, 7))} style={{ ...ghostBtn(), padding: '6px 10px' }}>›</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          {week.map(d => {
+            const isToday = d === today
+            const isSelected = d === selectedDate
+            const day = new Intl.DateTimeFormat('cs-CZ', { weekday: 'short' }).format(new Date(d + 'T12:00:00Z'))
+            const num = new Date(d + 'T12:00:00Z').getUTCDate()
+            return (
+              <button key={d} onClick={() => setSelectedDate(d)} style={{
+                padding: '8px 4px', borderRadius: 12, border: `1.5px solid ${isSelected ? C.accent : isToday ? C.borderStrong : C.border}`,
+                background: isSelected ? C.accent : isToday ? C.soft : C.surface,
+                color: isSelected ? '#fff' : isToday ? C.text : C.mid,
+                fontFamily: "'Outfit', sans-serif", cursor: 'pointer', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{day}</div>
+                <div style={{ fontSize: 18, fontWeight: isSelected || isToday ? 500 : 300, lineHeight: 1.3 }}>{num}</div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Day header */}
+      <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ fontSize: 16, fontWeight: 500, color: C.text, letterSpacing: '-0.03em' }}>{fmtDateLong(selectedDate)}</div>
+        {stats && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <Pill label={`${stats.available_count} dostupní`} color={C.accent} bg={C.accentSoft} />
+            {stats.limited_count > 0 && <Pill label={`${stats.limited_count} omezení`} color={C.warn} bg={C.warnSoft} />}
+            {stats.blocked_count > 0 && <Pill label={`${stats.blocked_count} blokováni`} color={C.muted} bg={C.mutedSoft} />}
+          </div>
+        )}
+      </div>
+
+      {loading && <div style={{ padding: 24, textAlign: 'center', color: C.light, fontSize: 13 }}>Načítám…</div>}
+
+      {!loading && (
+        <div style={{ padding: '8px 12px' }}>
+          {(dayPainters.length ? dayPainters : painters.map(p => ({ ...p, availability_status: 'available', remaining_capacity: 2 }))).map(painter => {
+            const av = AVAIL[painter.availability_status] || AVAIL.available
+            const expanded = expandedId === painter.id
+            return (
+              <div key={painter.id} style={{ marginBottom: 6, background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                <button type="button" onClick={() => setExpandedId(p => p === painter.id ? '' : painter.id)} style={{
+                  width: '100%', border: 'none', background: 'transparent', padding: '12px 14px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                  cursor: 'pointer', fontFamily: "'Outfit', sans-serif", textAlign: 'left',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 99, background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: av.color }}>{painter.name[0]}</span>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{painter.name}</div>
+                      <div style={{ fontSize: 11, color: C.light, marginTop: 1 }}>{painter.service_areas?.join(', ') || 'Praha'}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: C.mid }}>Kap. {painter.remaining_capacity ?? painter.capacity ?? '?'}</span>
+                    <Pill label={av.label} color={av.color} bg={av.bg} />
+                    <span style={{ fontSize: 14, color: C.light }}>{expanded ? '−' : '+'}</span>
+                  </div>
+                </button>
+
+                {expanded && (
+                  <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${C.border}` }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, margin: '12px 0' }}>
+                      {['available', 'limited', 'unavailable'].map(s => {
+                        const m = AVAIL[s]
+                        const active = painter.availability_status === s
+                        return (
+                          <button key={s} disabled={busy === painter.id} onClick={() => save(painter, { status: s })} style={{
+                            padding: '9px 8px', borderRadius: 12, fontFamily: "'Outfit', sans-serif", fontSize: 12,
+                            border: `1.5px solid ${active ? m.color : C.border}`,
+                            background: active ? m.bg : C.surface, color: active ? m.color : C.mid, cursor: 'pointer',
+                          }}>{m.label}</button>
+                        )
+                      })}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 8 }}>
+                      <input type="number" min="0" defaultValue={painter.capacity} onBlur={e => save(painter, { capacity: e.target.value })} style={inp()} placeholder="Kap." />
+                      <input defaultValue={painter.note || ''} onBlur={e => save(painter, { note: e.target.value })} placeholder="Poznámka k tomuto dni" style={inp()} />
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12, color: C.mid, cursor: 'pointer' }}>
+                      <input type="checkbox" defaultChecked={Boolean(painter.accepts_express)} onChange={e => save(painter, { accepts_express: e.target.checked })} />
+                      Bere expres zakázky
+                    </label>
+                    {painter.portal_url && (
+                      <a href={painter.portal_url} target="_blank" style={{ ...ghostBtn(), display: 'inline-flex', marginTop: 10, textDecoration: 'none', fontSize: 12 }}>
+                        Otevřít portál malíře →
+                      </a>
+                    )}
+                    {msg === 'ok' && busy === '' && <div style={{ fontSize: 12, color: C.accent, marginTop: 8 }}>Uloženo.</div>}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{title}</div>
       {children}
     </div>
   )
 }
 
-function AccordionPanel({ title, subtitle, open, onToggle, children }) {
-  return (
-    <div style={{ border: `1px solid ${UI.border}`, borderRadius: 18, background: '#fff', overflow: 'hidden' }}>
-      <button
-        type="button"
-        onClick={onToggle}
-        style={{ width: '100%', padding: '14px 16px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontFamily: "'Outfit', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
-      >
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: UI.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{title}</div>
-          <div style={{ fontSize: 12, color: UI.textMid, marginTop: 4 }}>{subtitle}</div>
-        </div>
-        <div style={{ fontSize: 18, color: UI.textMid }}>{open ? '−' : '+'}</div>
-      </button>
-      {open ? <div style={{ padding: '0 16px 14px' }}>{children}</div> : null}
-    </div>
-  )
-}
+// ── APP ───────────────────────────────────────────────────────
+function App() {
+  const [session, setSession] = useState(null)
+  const [loginError, setLoginError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('queue')
+  const [jobs, setJobs] = useState([])
+  const [painters, setPainters] = useState([])
+  const [selectedId, setSelectedId] = useState(null)
 
-function KV({ label, value }) {
+  useEffect(() => {
+    fetch('/api/admin/session').then(r => r.json()).then(d => {
+      if (d.authenticated) {
+        setSession(d.admin)
+        Promise.all([
+          fetch('/api/admin/jobs').then(r => r.json()).then(d => { if (d.jobs) setJobs(d.jobs) }),
+          fetch('/api/admin/painters').then(r => r.json()).then(d => { if (d.painters) setPainters(d.painters) }),
+        ]).then(() => setLoading(false))
+      } else setLoading(false)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!session) return
+    const id = setInterval(() => {
+      fetch('/api/admin/jobs').then(r => r.json()).then(d => { if (d.jobs) setJobs(d.jobs) })
+    }, 30000)
+    return () => clearInterval(id)
+  }, [session])
+
+  const refreshJobs = useCallback(() => {
+    fetch('/api/admin/jobs').then(r => r.json()).then(d => { if (d.jobs) setJobs(d.jobs) })
+  }, [])
+
+  async function login(payload) {
+    setLoginError(''); setLoading(true)
+    const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    const d = await r.json()
+    if (!r.ok) { setLoginError(d.error || 'Nepodařilo se přihlásit.'); setLoading(false); return }
+    setSession({ email: d.email })
+    await Promise.all([
+      fetch('/api/admin/jobs').then(r => r.json()).then(d => { if (d.jobs) setJobs(d.jobs) }),
+      fetch('/api/admin/painters').then(r => r.json()).then(d => { if (d.painters) setPainters(d.painters) }),
+    ])
+    setLoading(false)
+  }
+
+  async function logout() {
+    await fetch('/api/admin/logout', { method: 'POST' })
+    setSession(null); setJobs([]); setSelectedId(null)
+  }
+
+  if (loading && !session) return <Login onLogin={login} loading={loading} error={loginError} />
+  if (!session) return <Login onLogin={login} loading={loading} error={loginError} />
+
+  const pending = jobs.filter(j => !['completed', 'cancelled'].includes(j.status))
+  const done = jobs.filter(j => ['completed', 'cancelled'].includes(j.status))
+
   return (
-    <div style={{ padding: '8px 0', borderBottom: `1px solid ${UI.border}` }}>
-      <div style={{ fontSize: 12, color: UI.textLight, marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 14, color: UI.text, lineHeight: 1.6 }}>{value}</div>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Outfit', sans-serif", maxWidth: 680, margin: '0 auto' }}>
+      {/* Top bar */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(240,236,230,0.92)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${C.border}`, padding: '0 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 52 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Malíř Hned · Dispečink</div>
+          <button onClick={logout} style={{ ...ghostBtn(), fontSize: 12, padding: '6px 12px' }}>Odhlásit</button>
+        </div>
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 0, borderTop: `1px solid ${C.border}` }}>
+          {[['queue', `Fronta${pending.length ? ` (${pending.length})` : ''}`], ['team', 'Tým & kalendář']].map(([key, label]) => (
+            <button key={key} onClick={() => setTab(key)} style={{
+              flex: 1, padding: '11px 0', border: 'none', background: 'transparent',
+              color: tab === key ? C.accent : C.mid, fontFamily: "'Outfit', sans-serif",
+              fontSize: 13, fontWeight: tab === key ? 500 : 300, cursor: 'pointer',
+              borderBottom: `2px solid ${tab === key ? C.accent : 'transparent'}`,
+              marginBottom: -1, transition: 'all 0.15s',
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Queue tab */}
+      {tab === 'queue' && (
+        <div>
+          {pending.length === 0 && done.length === 0 && (
+            <div style={{ padding: 40, textAlign: 'center', color: C.light, fontSize: 14 }}>Žádné zakázky ve frontě.</div>
+          )}
+          {pending.length > 0 && (
+            <div>
+              <div style={{ padding: '10px 16px 4px', fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Aktivní ({pending.length})</div>
+              {pending.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(j => (
+                <JobCard key={j.id} job={j} active={selectedId === j.id} onClick={() => setSelectedId(j.id)} />
+              ))}
+            </div>
+          )}
+          {done.length > 0 && (
+            <div>
+              <div style={{ padding: '14px 16px 4px', fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Uzavřené ({done.length})</div>
+              {done.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(j => (
+                <JobCard key={j.id} job={j} active={selectedId === j.id} onClick={() => setSelectedId(j.id)} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Team tab */}
+      {tab === 'team' && <TeamCalendar painters={painters} />}
+
+      {/* Job detail modal */}
+      {selectedId && (
+        <JobDetailModal
+          key={selectedId}
+          jobId={selectedId}
+          painters={painters}
+          onClose={() => setSelectedId(null)}
+          onRefreshJobs={refreshJobs}
+        />
+      )}
     </div>
   )
 }
