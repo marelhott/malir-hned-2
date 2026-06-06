@@ -103,7 +103,9 @@ function App() {
     try {
       const savedDraft = localStorage.getItem('mh_booking_draft');
       if (savedDraft) {
-        setFormData(prev => ({ ...prev, ...JSON.parse(savedDraft) }));
+        const parsed = JSON.parse(savedDraft);
+        delete parsed.customArea;
+        setFormData(prev => ({ ...prev, ...parsed }));
       }
 
       const saved = localStorage.getItem('mh_selected_slot');
