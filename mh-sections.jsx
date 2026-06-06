@@ -294,7 +294,7 @@ function CalcSection({ formData, setFormData, priceRange }) {
 }
 
 // ── MALÍŘ ─────────────────────────────────────────────────────
-function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
+function PainterSection({ selectedSlot }) {
   if (!selectedSlot) return null;
   const painters = Object.values(PM);
 
@@ -302,42 +302,19 @@ function PainterSection({ selectedSlot, monthIdx, onDetailClick }) {
     <section id="malir" style={{ padding: '0 0 56px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <SectionHead eyebrow="Malíř" title="Přiřazení malíře" />
-        <Card style={{ padding: '30px 32px' }}>
-          <div style={{ display: 'grid', gap: 20 }}>
-            <div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 13px', borderRadius: 99, background: T.accentSoft, border: `1px solid rgba(42,122,78,0.15)`, fontSize: 12, fontWeight: 400, color: T.accent, marginBottom: 16 }}>
-                <div style={{ width: 6, height: 6, borderRadius: 99, background: T.accent }} />
-                Dispečink vybírá ručně
+        <Card style={{ padding: '28px 32px' }}>
+          <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: '0 0 24px', lineHeight: 1.65 }}>
+            Dispečink vybere nejvhodnějšího malíře podle termínu, lokality a rozsahu práce. Potvrdíme vám ho po přijetí zakázky.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
+            {painters.map((p) => (
+              <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 18, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: T.cardShadow }}>
+                  <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: p.imgPos || 'center top', display: 'block' }} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 400, color: T.text, textAlign: 'center' }}>{p.name.split(' ')[0]}</div>
               </div>
-              <h3 style={{ fontSize: 22, fontWeight: 500, color: T.text, letterSpacing: '-0.045em', lineHeight: 1.2, margin: '0 0 10px' }}>
-                Konkrétního malíře potvrdíme až po zpracování zakázky
-              </h3>
-              <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.72, margin: 0 }}>
-                Pro vybraný den teď vidíme dostupnou kapacitu služby. Dispečink podle termínu, lokality a typu práce vybere nejvhodnějšího malíře a po jeho přijetí vám ho potvrdí.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 28, flexWrap: 'wrap' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(64px, 80px))', gap: 12, flex: '1 1 auto' }}>
-                {painters.map((p) => (
-                  <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
-                    <div style={{ width: '100%', maxWidth: 76, aspectRatio: '1', borderRadius: 16, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: T.cardShadow }}>
-                      <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: p.imgPos || 'center center', display: 'block' }} />
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: 400, color: T.textMid, textAlign: 'center', lineHeight: 1.2 }}>{p.name.split(' ')[0]}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ minWidth: 220, maxWidth: 280, padding: '14px 16px', borderRadius: 18, background: '#f7f4f0', border: `1px solid ${T.border}` }}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: T.textLight, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 6 }}>Vybraný den</div>
-                <div style={{ fontSize: 18, fontWeight: 500, color: T.text, letterSpacing: '-0.04em', marginBottom: 4 }}>{dayLbl(monthIdx, selectedSlot.day)}</div>
-                <div style={{ fontSize: 13, fontWeight: 300, color: T.textMid }}>{selectedSlot.serviceLabel || 'Dostupnost ověřena'}</div>
-                <button type="button" onClick={onDetailClick} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', color: T.accent, fontSize: 13, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-                  Zobrazit detail přiřazení
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </Card>
       </div>
