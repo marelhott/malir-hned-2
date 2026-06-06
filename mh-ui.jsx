@@ -134,8 +134,8 @@ function ServiceToggle({ label, yesLabel, noLabel, value, onYes, onNo }) {
     <div style={{ background: '#f7f4f0', borderRadius: T.cr, border: `1px solid ${T.border}`, padding: '14px 16px' }}>
       <div style={{ fontSize: 13, fontWeight: 400, color: T.text, marginBottom: 10 }}>{label}</div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button type="button" onClick={onYes} style={btn(isYes, true)}><span>✓</span>{yesLabel}</button>
-        <button type="button" onClick={onNo}  style={btn(isNo,  false)}><span>×</span>{noLabel}</button>
+        <button type="button" onClick={onYes} style={btn(isYes, true)}><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,7 5,10 11,3"/></svg>{yesLabel}</button>
+        <button type="button" onClick={onNo}  style={btn(isNo,  false)}><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="3" x2="10" y2="10"/><line x1="10" y1="3" x2="3" y2="10"/></svg>{noLabel}</button>
       </div>
     </div>
   );

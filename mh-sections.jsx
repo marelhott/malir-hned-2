@@ -186,7 +186,7 @@ function CalendarSection({ months, monthIdx, setMonthIdx, selectedDay, setSelect
                     {status.btnLabel && (
                       <button type="button" onClick={() => { const first = slots[0]; if (first) { setSelectedSlotId(first.id); document.getElementById('cena')?.scrollIntoView({ behavior: 'smooth' }); } }}
                         style={{ padding: '11px 16px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 14, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", border: 'none', boxShadow: `0 8px 20px ${T.accentShadow}`, textAlign: 'center' }}>
-                        {selectedSlotId && slots.some(s => s.id === selectedSlotId) ? 'Den vybrán ✓' : status.btnLabel}
+                        {selectedSlotId && slots.some(s => s.id === selectedSlotId) ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,7.5 5.5,11 12,3"/></svg>Den vybrán</span> : status.btnLabel}
                       </button>
                     )}
                   </div>
@@ -405,7 +405,7 @@ function PainterModal({ painter, priceRange, day, monthIdx, time, onClose, onCon
             <h2 style={{ fontSize: 22, fontWeight: 500, color: T.text, letterSpacing: '-0.04em', margin: '0 0 3px' }}>{painter.name}</h2>
             <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: 0 }}>{painter.role}</p>
           </div>
-          <button type="button" onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.border}`, background: '#f7f4f0', fontSize: 18, color: T.textMid, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+          <button type="button" onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.border}`, background: '#f7f4f0', color: T.textMid, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg></button>
         </div>
 
         {/* Body */}

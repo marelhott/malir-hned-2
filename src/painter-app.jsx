@@ -143,7 +143,7 @@ function BulkAvailability({ availabilityMap, onSave, saving }) {
         ))}
       </div>
       <button type="button" onClick={apply} disabled={!from || !to || saving === 'bulk'} style={{ width: '100%', padding: '11px 12px', borderRadius: 12, border: 'none', background: '#2a7a4e', color: '#fff', fontSize: 14, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', opacity: (!from || !to) ? 0.5 : 1 }}>
-        {saving === 'bulk' ? 'Ukládám…' : done ? 'Uloženo ✓' : 'Použít na výběr'}
+        {saving === 'bulk' ? 'Ukládám…' : done ? React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 5 } }, React.createElement('svg', { width: 13, height: 13, viewBox: '0 0 13 13', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('polyline', { points: '2,7 5,10 11,3' })), 'Uloženo') : 'Použít na výběr'}
       </button>
     </div>
   )

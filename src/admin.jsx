@@ -479,7 +479,7 @@ function App() {
                                     setTimeout(() => setCopied(false), 2000)
                                   }}
                                 >
-                                  {copied ? 'Zkopírováno ✓' : 'Kopírovat odkaz'}
+                                  {copied ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,7 5,10 11,3"/></svg>Zkopírováno</span> : 'Kopírovat odkaz'}
                                 </button>
                               </div>
                             ) : (
