@@ -184,7 +184,7 @@ function CalendarSection({ months, monthIdx, setMonthIdx, selectedDay, setSelect
                     </div>
                     <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: 0, lineHeight: 1.6 }}>{status.sub}</p>
                     {status.btnLabel && (
-                      <button type="button" onClick={() => { const first = slots[0]; if (first) setSelectedSlotId(first.id); }}
+                      <button type="button" onClick={() => { const first = slots[0]; if (first) { setSelectedSlotId(first.id); document.getElementById('cena')?.scrollIntoView({ behavior: 'smooth' }); } }}
                         style={{ padding: '11px 16px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 14, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", border: 'none', boxShadow: `0 8px 20px ${T.accentShadow}`, textAlign: 'center' }}>
                         {selectedSlotId && slots.some(s => s.id === selectedSlotId) ? 'Den vybrán ✓' : status.btnLabel}
                       </button>
