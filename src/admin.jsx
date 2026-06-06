@@ -72,20 +72,20 @@ function firstDow(m) { return (new Date(m + 'T12:00:00Z').getUTCDay() + 6) % 7 }
 
 // ── STYLE HELPERS ─────────────────────────────────────────────
 const btn = (bg, color = '#fff', border = 'transparent') => ({
-  padding: '8px 14px', borderRadius: 10, border: `1px solid ${border}`,
-  background: bg, color, fontSize: 12, fontWeight: 400,
+  padding: '9px 16px', borderRadius: 10, border: `1px solid ${border}`,
+  background: bg, color, fontSize: 13, fontWeight: 500,
   cursor: 'pointer', fontFamily: "'Outfit', sans-serif", whiteSpace: 'nowrap',
 })
 const ghostBtn = () => btn(C.surface, C.mid, C.border)
 const primaryBtn = () => btn(C.accent)
 const inp = (extra = {}) => ({
-  width: '100%', padding: '8px 10px', borderRadius: 10,
-  border: `1px solid ${C.border}`, fontSize: 12,
+  width: '100%', padding: '9px 12px', borderRadius: 10,
+  border: `1px solid ${C.border}`, fontSize: 13,
   fontFamily: "'Outfit', sans-serif", outline: 'none',
   boxSizing: 'border-box', background: C.surface, ...extra,
 })
 function ColHeader({ children }) {
-  return <div style={{ padding: '9px 14px', borderBottom: `1px solid ${C.border}`, fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.09em', flexShrink: 0 }}>{children}</div>
+  return <div style={{ padding: '11px 16px', borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 700, color: C.mid, textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>{children}</div>
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────
@@ -144,48 +144,48 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
     return (
       <div key={job.id} style={{ borderBottom: `1px solid ${C.border}` }}>
         <button onClick={() => toggle(job.id)} style={{
-          width: '100%', textAlign: 'left', border: 'none', padding: '10px 14px',
+          width: '100%', textAlign: 'left', border: 'none', padding: '12px 16px',
           background: isActive ? C.accentSoft : exp ? C.soft : C.surface,
           cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, background: s.dot, display: 'inline-block', flexShrink: 0 }} />
-            <span style={{ fontSize: 13, fontWeight: 500, color: C.text, flex: 1 }}>{job.client_name || 'Klient'}</span>
-            <span style={{ fontSize: 10, color: C.light }}>{ago(job.created_at)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 99, background: s.dot, display: 'inline-block', flexShrink: 0 }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: C.text, flex: 1 }}>{job.client_name || 'Klient'}</span>
+            <span style={{ fontSize: 11, color: C.light }}>{ago(job.created_at)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 14 }}>
-            <span style={{ fontSize: 11, color: C.mid }}>{fmtShort(job.preferred_date)}</span>
-            <span style={{ fontSize: 11, fontWeight: 500, color: C.text }}>{fmt(job.estimated_client_price_max || job.estimated_price_high)}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 16 }}>
+            <span style={{ fontSize: 12, color: C.mid }}>{fmtShort(job.preferred_date)}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{fmt(job.estimated_client_price_max || job.estimated_price_high)}</span>
           </div>
         </button>
 
         {exp && (
-          <div style={{ padding: '10px 14px 12px', background: C.soft, borderTop: `1px solid ${C.border}` }}>
+          <div style={{ padding: '12px 16px 14px', background: C.soft, borderTop: `1px solid ${C.border}` }}>
             {!detail
-              ? <div style={{ fontSize: 11, color: C.light }}>Načítám…</div>
+              ? <div style={{ fontSize: 12, color: C.light }}>Načítám…</div>
               : <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', fontSize: 11, marginBottom: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 14px', fontSize: 12, marginBottom: 10 }}>
                     {[['Tel', detail.client_phone], ['Mail', detail.client_email],
                       ['Adresa', detail.client_address || detail.locality],
                       ['Práce', detail.work_type], ['Plocha', detail.custom_area ? detail.custom_area+' m²' : null],
                       ['Opravy', detail.repairs], ['Stav', s.label]]
                       .filter(([,v]) => v).map(([k,v]) => (
-                        <div key={k}><div style={{ color: C.light }}>{k}</div><div style={{ color: C.text }}>{v}</div></div>
+                        <div key={k}><div style={{ color: C.light, fontSize: 11 }}>{k}</div><div style={{ color: C.text }}>{v}</div></div>
                       ))}
                   </div>
-                  {detail.booking_note && <div style={{ fontSize: 11, color: C.mid, marginBottom: 8, lineHeight: 1.5 }}>{detail.booking_note}</div>}
-                  <div style={{ fontSize: 11, color: C.mid, background: C.surface, borderRadius: 8, padding: '6px 9px', marginBottom: 8 }}>
+                  {detail.booking_note && <div style={{ fontSize: 12, color: C.mid, marginBottom: 10, lineHeight: 1.5 }}>{detail.booking_note}</div>}
+                  <div style={{ fontSize: 12, color: C.mid, background: C.surface, borderRadius: 8, padding: '7px 10px', marginBottom: 10 }}>
                     Provize: <strong style={{ color: C.text }}>{commission(detail.confirmed_client_price || detail.estimated_client_price_max)}</strong>
                   </div>
                   {!['completed','cancelled'].includes(job.status) && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
-                      <input value={f.confirmedPrice||''} onChange={e => setForm(p=>({...p,[job.id]:{...p[job.id],confirmedPrice:e.target.value}}))} placeholder="Cena klientovi" style={inp({fontSize:11})} />
-                      <input value={f.painterPayout||''} onChange={e => setForm(p=>({...p,[job.id]:{...p[job.id],painterPayout:e.target.value}}))} placeholder="Odměna malíři" style={inp({fontSize:11})} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 10 }}>
+                      <input value={f.confirmedPrice||''} onChange={e => setForm(p=>({...p,[job.id]:{...p[job.id],confirmedPrice:e.target.value}}))} placeholder="Cena klientovi" style={inp()} />
+                      <input value={f.painterPayout||''} onChange={e => setForm(p=>({...p,[job.id]:{...p[job.id],painterPayout:e.target.value}}))} placeholder="Odměna malíři" style={inp()} />
                     </div>
                   )}
                   {job.preferred_date && !['completed','cancelled'].includes(job.status) && (
                     <button onClick={() => { onSelectJob(job.id, f.confirmedPrice, f.painterPayout); onSetCalDate(job.preferred_date) }}
-                      style={{ ...primaryBtn(), width: '100%', padding: '9px', fontSize: 11 }}>
+                      style={{ ...primaryBtn(), width: '100%', padding: '10px' }}>
                       Vybrat malíře na {fmtShort(job.preferred_date)} →
                     </button>
                   )}
@@ -213,16 +213,13 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
 }
 
 // ── COL 2: MONTHLY CALENDAR ───────────────────────────────────
-// Stable unique colors for each painter (by index)
-const PAINTER_COLORS = [
-  { bg: '#e8f5ee', text: '#1e6e40', bar: '#2a7a4e' }, // green
-  { bg: '#e8edf8', text: '#1e3a7a', bar: '#2a4db8' }, // blue
-  { bg: '#f5e8f0', text: '#7a1e5a', bar: '#b82a8a' }, // purple
-  { bg: '#f5ede8', text: '#7a3a1e', bar: '#b85a2a' }, // orange
-  { bg: '#f0e8f5', text: '#4a1e7a', bar: '#6e2ab8' }, // violet
-  { bg: '#e8f0f5', text: '#1e4a7a', bar: '#2a7ab8' }, // teal
-  { bg: '#f5f0e8', text: '#5a4a1e', bar: '#8a742a' }, // amber
-]
+// 3 status colors only — green/yellow/red
+const STATUS_STYLE = {
+  available:   { bg: '#d4eddf', text: '#155a30', bar: '#1e8a4a' },
+  limited:     { bg: '#fdefc8', text: '#7a4e00', bar: '#d4900a' },
+  unavailable: { bg: '#fad5d3', text: '#7a1c18', bar: '#d43b35' },
+  unknown:     { bg: '#ebebeb', text: '#888',    bar: '#bbb' },
+}
 
 function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, monthData, painters, activeJob }) {
   const days = daysInMonth(monthBase)
@@ -230,55 +227,41 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
   const monthLabel = new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' })
     .format(new Date(monthBase + 'T12:00:00Z'))
 
-  // Build per-day aggregate map
   const calMap = {}
   ;(monthData?.months?.[0]?.cal || []).forEach(d => { calMap[d.date] = d })
 
   const jobDate = activeJob?.preferred_date
 
-  // Availability status color per painter slot
-  function painterStatusColor(statusKey) {
-    if (statusKey === 'available') return { dot: C.accent, label: C.accent }
-    if (statusKey === 'limited')   return { dot: C.warn,   label: C.warn }
-    if (statusKey === 'unavailable') return { dot: C.danger, label: C.danger }
-    return { dot: '#c8c0b4', label: '#c8c0b4' }
-  }
-
-  // For a day cell: assign status to each painter using aggregate counts
-  // Order: available first, then limited, then blocked, then unknown
   function getPainterStatuses(info) {
     const avail   = info.available_count   || 0
     const limited = info.limited_count     || 0
     const blocked = info.blocked_count     || 0
     return painters.map((_, i) => {
-      if (i < avail)                  return 'available'
-      if (i < avail + limited)        return 'limited'
-      if (i < avail + limited + blocked) return 'unavailable'
+      if (i < avail)                       return 'available'
+      if (i < avail + limited)             return 'limited'
+      if (i < avail + limited + blocked)   return 'unavailable'
       return 'unknown'
     })
   }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ padding: '9px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <button onClick={() => setMonthBase(m => addMonths(m, -1))} style={{ ...ghostBtn(), padding: '4px 12px', fontSize: 16 }}>‹</button>
-        <span style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 600, color: C.text, textTransform: 'capitalize' }}>{monthLabel}</span>
-        <button onClick={() => setMonthBase(m => addMonths(m, 1))} style={{ ...ghostBtn(), padding: '4px 12px', fontSize: 16 }}>›</button>
-        <button onClick={() => setMonthBase(monthOf(today))} style={{ ...ghostBtn(), fontSize: 11 }}>Dnes</button>
+      <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <button onClick={() => setMonthBase(m => addMonths(m, -1))} style={{ ...ghostBtn(), padding: '5px 14px', fontSize: 18 }}>‹</button>
+        <span style={{ flex: 1, textAlign: 'center', fontSize: 15, fontWeight: 600, color: C.text, textTransform: 'capitalize' }}>{monthLabel}</span>
+        <button onClick={() => setMonthBase(m => addMonths(m, 1))} style={{ ...ghostBtn(), padding: '5px 14px', fontSize: 18 }}>›</button>
+        <button onClick={() => setMonthBase(monthOf(today))} style={{ ...ghostBtn(), fontSize: 12 }}>Dnes</button>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '10px 12px' }}>
-        {/* Day of week headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
-          {['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'].map(d => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '4px 0' }}>
-              {d.slice(0, 2)}
-            </div>
+        {/* Day headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 5 }}>
+          {['Po','Út','St','Čt','Pá','So','Ne'].map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: C.mid, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '4px 0' }}>{d}</div>
           ))}
         </div>
 
-        {/* Day cells grid */}
+        {/* Day cells */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
           {Array.from({ length: leading }, (_, i) => <div key={`l${i}`} />)}
           {Array.from({ length: days }, (_, i) => {
@@ -290,70 +273,59 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
             const isJobDay = date === jobDate
             const isPast = date < today
             const isWeekend = ((leading + i) % 7) >= 5
-
             const painterStatuses = getPainterStatuses(info)
 
             let borderColor = C.border
-            let bgColor = isWeekend ? '#faf7f4' : '#fff'
-            if (isSelected) { borderColor = C.accent; bgColor = C.accentSoft }
+            let bgColor = isWeekend ? '#f5f2ee' : '#fff'
+            if (isSelected) { borderColor = C.accent; bgColor = '#dff0e8' }
             else if (isJobDay) { borderColor = C.warn; bgColor = C.warnSoft }
-            else if (isToday) { borderColor = C.accent; bgColor = '#fff' }
+            else if (isToday) { borderColor = C.accent }
 
             return (
               <button key={date} onClick={() => onSelectDay(date)} style={{
-                padding: '6px 7px 8px',
+                padding: '7px 8px 9px',
                 borderRadius: 10,
-                border: `1.5px solid ${borderColor}`,
+                border: `2px solid ${borderColor}`,
                 background: bgColor,
                 cursor: 'pointer',
                 fontFamily: "'Outfit', sans-serif",
                 textAlign: 'left',
-                opacity: isPast && !isSelected && !isToday ? 0.5 : 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
-                minHeight: 90,
-                transition: 'border-color 0.1s, background 0.1s',
+                opacity: isPast && !isSelected && !isToday ? 0.45 : 1,
+                display: 'flex', flexDirection: 'column', gap: 4,
+                minHeight: 100,
+                transition: 'border-color 0.12s, background 0.12s',
               }}>
-                {/* Date number row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                {/* Date number */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{
-                    fontSize: 13, fontWeight: isToday ? 700 : 500,
-                    color: isSelected ? C.accent : isToday ? '#fff' : isJobDay ? C.warn : isWeekend ? C.muted : C.text,
+                    fontSize: 14, fontWeight: isToday ? 700 : 500,
+                    color: isToday ? '#fff' : isSelected ? C.accent : isJobDay ? C.warn : isWeekend ? C.muted : C.text,
                     background: isToday ? C.accent : 'transparent',
-                    borderRadius: 99, width: isToday ? 22 : 'auto', height: isToday ? 22 : 'auto',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
+                    borderRadius: 99, width: isToday ? 24 : 'auto', height: isToday ? 24 : 'auto',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   }}>{num}</span>
                   {isJobDay && !isSelected && (
-                    <span style={{ fontSize: 8, background: C.warn, color: '#fff', borderRadius: 4, padding: '1px 4px', fontWeight: 600 }}>▶</span>
+                    <span style={{ fontSize: 9, background: C.warn, color: '#fff', borderRadius: 4, padding: '1px 5px', fontWeight: 700 }}>▶</span>
                   )}
                 </div>
 
-                {/* Painter name rows */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+                {/* Painter rows — 3 colors only */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
                   {painters.map((p, pi) => {
                     const status = painterStatuses[pi]
-                    const statusColor = painterStatusColor(status)
-                    const pColor = PAINTER_COLORS[pi % PAINTER_COLORS.length]
+                    const s = STATUS_STYLE[status] || STATUS_STYLE.unknown
                     const firstName = (p.name || p.email || '?').split(' ')[0]
-
                     return (
                       <div key={pi} style={{
-                        display: 'flex', alignItems: 'center', gap: 3,
-                        background: status === 'unknown' ? 'transparent' : pColor.bg,
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        background: s.bg,
                         borderRadius: 5,
-                        padding: '1px 4px 1px 3px',
-                        opacity: status === 'unavailable' ? 0.6 : 1,
+                        padding: '2px 6px 2px 4px',
                       }}>
-                        {/* Status indicator bar */}
-                        <div style={{
-                          width: 3, height: 12, borderRadius: 2, flexShrink: 0,
-                          background: statusColor.dot,
-                        }} />
+                        <div style={{ width: 4, height: 14, borderRadius: 3, flexShrink: 0, background: s.bar }} />
                         <span style={{
-                          fontSize: 10, fontWeight: 500,
-                          color: status === 'unknown' ? C.light : pColor.text,
+                          fontSize: 12, fontWeight: 600,
+                          color: s.text,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           flex: 1, minWidth: 0,
                           textDecoration: status === 'unavailable' ? 'line-through' : 'none',
@@ -368,14 +340,16 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.border}`, alignItems: 'center' }}>
-          <span style={{ fontSize: 10, color: C.light, marginRight: 2 }}>Status malíře:</span>
-          {[[C.accent,'Volný'],[C.warn,'Omezený'],[C.danger,'Obsazený'],['#c8c0b4','Neznámo']].map(([c,l]) => (
-            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 3, height: 12, borderRadius: 2, background: c }} />
-              <span style={{ fontSize: 10, color: C.mid }}>{l}</span>
-            </div>
-          ))}
+        <div style={{ display: 'flex', gap: 14, marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.border}`, alignItems: 'center' }}>
+          {[['available','Volný'],['limited','Nevím jistě'],['unavailable','Obsazený'],['unknown','Neznámo']].map(([k,l]) => {
+            const s = STATUS_STYLE[k]
+            return (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 4, height: 14, borderRadius: 3, background: s.bar }} />
+                <span style={{ fontSize: 11, color: C.mid, fontWeight: 500 }}>{l}</span>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
