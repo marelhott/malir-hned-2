@@ -289,9 +289,8 @@ function calcPriceRange(form) {
 
   total *= WORK_TYPE_MULTIPLIERS[form.workType] || 1;
 
-  const low   = Math.round((total * 0.94) / 100) * 100;
-  const high  = Math.round((total * 1.06) / 100) * 100;
-  return { low, high, single: false, areaEstimate: area };
+  const exact = Math.round(total / 100) * 100;
+  return { low: exact, high: exact, single: true, areaEstimate: area };
 }
 
 function createOrderPayload(form, slot, customer) {
