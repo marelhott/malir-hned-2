@@ -79,7 +79,7 @@ function StepsSection() {
                 key={step.num}
                 href={step.href}
                 onClick={() => setActive(step.num)}
-                style={{ textDecoration: 'none', display: 'block', padding: '22px 24px', borderRadius: T.cr, border: `1px solid ${on ? 'rgba(42,122,78,0.35)' : T.border}`, background: on ? T.accentSoft : T.surface, boxShadow: T.cardShadow, transition: 'all 0.18s' }}
+                style={{ textDecoration: 'none', display: 'block', padding: '22px 24px', borderRadius: T.cr, border: `1px solid ${on ? 'rgba(42,122,78,0.35)' : T.border}`, background: on ? T.accentSoft : T.surface, boxShadow: T.cardShadow, transition: 'all 0.18s', textAlign: 'center' }}
               >
                 <div style={{ fontSize: 28, fontWeight: 200, color: on ? T.accent : T.textLight, letterSpacing: '-0.04em', marginBottom: 12, lineHeight: 1 }}>{Number(step.num)}</div>
                 <h3 style={{ fontSize: 17, fontWeight: 500, color: on ? T.accent : T.text, letterSpacing: '-0.03em', lineHeight: 1.25, margin: '0 0 8px' }}>{step.title}</h3>
