@@ -264,7 +264,7 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
               fontSize: 11, fontWeight: 600,
               color: i >= 5 ? '#94a3b8' : '#64748b',
               textTransform: 'uppercase', letterSpacing: '0.06em',
-              borderRight: i < 6 ? `1px solid ${C.border}` : 'none',
+              borderRight: i < 6 ? `1px solid rgba(0,0,0,0.06)` : 'none',
             }}>{d}</div>
           ))}
         </div>
@@ -295,8 +295,8 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
             return (
               <button key={date} onClick={() => onSelectDay(date)} style={{
                 padding: '8px 10px 10px',
-                borderRight: isLastCol ? 'none' : `1px solid ${C.border}`,
-                borderBottom: `1px solid ${C.border}`,
+                borderRight: isLastCol ? 'none' : `1px solid rgba(0,0,0,0.06)`,
+                borderBottom: `1px solid rgba(0,0,0,0.06)`,
                 background: isSelected ? '#f0faf5'
                   : isJobDay ? '#fffbeb'
                   : isWeekend ? '#fafafa'
@@ -374,7 +374,7 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
             return Array.from({ length: remainder }, (_, i) => (
               <div key={`t${i}`} style={{
                 borderRight: i < remainder - 1 ? `1px solid ${C.border}` : 'none',
-                borderBottom: `1px solid ${C.border}`,
+                borderBottom: `1px solid rgba(0,0,0,0.06)`,
                 minHeight: 110,
                 background: '#fafafa',
               }} />
