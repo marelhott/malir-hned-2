@@ -222,7 +222,7 @@ function getSlots(months, monthIdx, dayNum, form) {
     monthIdx,
     day: dayNum,
     date: day.date,
-    time: 'Preferovaný den',
+    time: 'obvykle 8.30–9.00',
     painter: {
       name: 'Bude potvrzen po zpracování',
       role: 'Dostupného malíře vybere dispečink podle reálné dostupnosti',
