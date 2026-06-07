@@ -496,10 +496,18 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
                   {p.accepts_express
                     ? <span style={{ color: C.accent }}>expres ✓</span>
                     : <span style={{ color: C.light }}>bez expresu</span>}
+                  {p.reliability_score != null && <span style={{ color: C.mid }}> · ⭐ {p.reliability_score}</span>}
                 </div>
+                {p.service_areas?.length > 0 && (
+                  <div style={{ fontSize: 11, color: C.mid }}>📍 {p.service_areas.join(', ')}</div>
+                )}
+                {p.work_types?.length > 0 && (
+                  <div style={{ fontSize: 11, color: C.mid }}>🖌 {p.work_types.join(', ')}</div>
+                )}
                 {hasOverlap && <div style={{ fontSize: 11, color: C.danger }}>⚠ {p.block_count} blokace tento den</div>}
                 {p.job_fit?.locality_match === false && <div style={{ fontSize: 11, color: C.warn }}>Mimo lokalitu zakázky</div>}
-                {p.note && <div style={{ fontSize: 11, color: C.mid, lineHeight: 1.4 }}>{p.note}</div>}
+                {p.job_fit?.score != null && <div style={{ fontSize: 11, color: C.mid }}>Skóre shody: {p.job_fit.score}</div>}
+                {(p.note || p.painter_note) && <div style={{ fontSize: 11, color: C.mid, lineHeight: 1.4, fontStyle: 'italic' }}>{p.note || p.painter_note}</div>}
               </div>
             </button>
           )
@@ -801,6 +809,89 @@ function OpsCalendar({ jobs }) {
   )
 }
 
+// ── STATS PANEL ──────────────────────────────────────────────
+function StatsPanel({ jobs, painters }) {
+  const now = new Date()
+  const thisMonth = now.toISOString().slice(0, 7)
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7)
+
+  const completed = jobs.filter(j => j.status === 'completed')
+  const cancelled = jobs.filter(j => j.status === 'cancelled')
+  const active    = jobs.filter(j => !['completed','cancelled'].includes(j.status))
+  const thisMonthDone = completed.filter(j => (j.preferred_date||j.created_at||'').startsWith(thisMonth))
+  const lastMonthDone = completed.filter(j => (j.preferred_date||j.created_at||'').startsWith(lastMonth))
+
+  const totalRevenue = completed.reduce((s,j) => s + (Number(j.confirmed_price)||Number(j.estimated_client_price_max)||0), 0)
+  const avgPrice = completed.length ? Math.round(totalRevenue / completed.length) : 0
+
+  const painterStats = painters.map(p => {
+    const done = completed.filter(j => j.assigned_painter_id === p.id).length
+    const canc = cancelled.filter(j => j.assigned_painter_id === p.id).length
+    return { ...p, done, canc }
+  }).sort((a,b) => b.done - a.done)
+
+  const stat = (label, value, sub) => (
+    <div style={{ background: '#fff', border: LINE2, borderRadius: 12, padding: '20px 24px', minWidth: 140 }}>
+      <div style={{ fontSize: 11, color: C.mid, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: C.text, letterSpacing: '-0.02em' }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: C.light, marginTop: 4 }}>{sub}</div>}
+    </div>
+  )
+
+  return (
+    <div style={{ flex: 1, overflow: 'auto', padding: 32, background: C.soft }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 24, letterSpacing: '-0.02em' }}>Statistiky</div>
+
+      {/* KPI row */}
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
+        {stat('Aktivní zakázky', active.length)}
+        {stat('Dokončeno celkem', completed.length, `tento měsíc: ${thisMonthDone.length}, minulý: ${lastMonthDone.length}`)}
+        {stat('Zrušeno', cancelled.length)}
+        {stat('Průměrná cena', avgPrice ? `${avgPrice.toLocaleString('cs')} Kč` : '—')}
+        {stat('Odhadovaný obrat', totalRevenue ? `${Math.round(totalRevenue/1000)}k Kč` : '—', 'z dokončených')}
+      </div>
+
+      {/* Painter table */}
+      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 12 }}>Výkon malířů</div>
+      <div style={{ background: '#fff', border: LINE2, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 100px', padding: '8px 16px', background: C.soft, borderBottom: LINE2 }}>
+          {['Jméno','Dokončeno','Zrušeno','Spolehlivost'].map(h => (
+            <div key={h} style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+          ))}
+        </div>
+        {painterStats.map((p,i) => (
+          <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 100px', padding: '10px 16px', borderBottom: i < painterStats.length-1 ? LINE : 'none', alignItems: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{p.name}</div>
+            <div style={{ fontSize: 13, color: p.done > 0 ? C.accent : C.light, fontWeight: 600 }}>{p.done}</div>
+            <div style={{ fontSize: 13, color: p.canc > 0 ? C.danger : C.light }}>{p.canc}</div>
+            <div style={{ fontSize: 12, color: C.mid }}>
+              {p.reliability_score != null ? `⭐ ${p.reliability_score}` : '—'}
+            </div>
+          </div>
+        ))}
+        {painterStats.length === 0 && (
+          <div style={{ padding: '24px 16px', fontSize: 13, color: C.light, textAlign: 'center' }}>Žádná data</div>
+        )}
+      </div>
+
+      {/* Status breakdown */}
+      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: '28px 0 12px' }}>Stav zakázek</div>
+      <div style={{ background: '#fff', border: LINE2, borderRadius: 12, overflow: 'hidden' }}>
+        {Object.entries(JOB_STATUS).map(([k,v], i, arr) => {
+          const cnt = jobs.filter(j => j.status === k).length
+          return (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: i < arr.length-1 ? LINE : 'none' }}>
+              <span style={{ width: 6, height: 6, borderRadius: 99, background: v.dot, flexShrink: 0, display: 'inline-block' }} />
+              <span style={{ flex: 1, fontSize: 12, color: C.text }}>{v.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: cnt > 0 ? C.text : C.light }}>{cnt}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── APP ───────────────────────────────────────────────────────
 function App() {
   const [session,    setSession]    = useState(null)
@@ -858,11 +949,25 @@ function App() {
     })
   }, [])
 
-  // Auto-refresh jobs
+  const [toast, setToast] = useState(null)
+  const jobsRef = React.useRef(jobs)
+  useEffect(() => { jobsRef.current = jobs }, [jobs])
+
+  // Auto-refresh jobs + toast on new arrivals
   useEffect(() => {
     if (!session) return
-    const id = setInterval(() => {
-      fetch('/api/admin/jobs').then(r => r.json()).then(d => { if (d.jobs) setJobs(d.jobs) })
+    const id = setInterval(async () => {
+      try {
+        const d = await fetch('/api/admin/jobs').then(r => r.json())
+        if (!d.jobs) return
+        const prev = jobsRef.current
+        const newOnes = d.jobs.filter(j => !prev.find(p => p.id === j.id))
+        if (newOnes.length > 0) {
+          setToast(`${newOnes.length} nová zakázka přišla: ${newOnes.map(j=>j.client_name).join(', ')}`)
+          setTimeout(() => setToast(null), 6000)
+        }
+        setJobs(d.jobs)
+      } catch {}
     }, 30000)
     return () => clearInterval(id)
   }, [session])
@@ -1034,7 +1139,7 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: C.text, letterSpacing: '-0.01em' }}>Malíř Hned</span>
             <div style={{ display: 'flex', gap: 2 }}>
-              {[['dispatch', `Dispečink${activeCount ? ` (${activeCount})` : ''}`], ['ops', 'Přehled zakázek']].map(([key, label]) => (
+              {[['dispatch', `Dispečink${activeCount ? ` (${activeCount})` : ''}`], ['ops', 'Přehled zakázek'], ['stats', 'Statistiky']].map(([key, label]) => (
                 <button key={key} onClick={() => setTab(key)} style={{
                   padding: '6px 14px', border: 'none', background: tab===key ? C.soft : 'transparent',
                   borderRadius: 8, fontFamily: "'Outfit', sans-serif", fontSize: 13, cursor: 'pointer',
@@ -1046,6 +1151,20 @@ function App() {
           <button onClick={logout} style={{ ...ghostBtn(), fontSize: 12, padding: '6px 12px' }}>Odhlásit</button>
         </div>
       </div>
+
+      {/* Live notification toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 999, background: C.text, color: '#fff',
+          padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 500,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: 99, background: C.accent, display: 'inline-block', flexShrink: 0 }} />
+          {toast}
+          <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 16, lineHeight: 1, marginLeft: 4 }}>×</button>
+        </div>
+      )}
 
       {/* Dispatch tab — 4 resizable columns */}
       {tab === 'dispatch' && (
@@ -1090,6 +1209,8 @@ function App() {
       )}
 
       {tab === 'ops' && <OpsCalendar jobs={jobs} />}
+
+      {tab === 'stats' && <StatsPanel jobs={jobs} painters={painters} />}
     </div>
   )
 }
