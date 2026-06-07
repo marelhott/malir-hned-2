@@ -518,10 +518,16 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
 }
 
 // ── COL 4: DETAIL + CONFIRM ───────────────────────────────────
-function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, onAssign, busy, msg }) {
+function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, onAssign, busy, msg, onAdminAction }) {
   const [duration, setDuration] = useState(1)
+  const [noteText, setNoteText] = useState('')
+  const [noteMsg, setNoteMsg] = useState('')
+  const [statusMsg, setStatusMsg] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [savingStatus, setSavingStatus] = useState(false)
 
   useEffect(() => setDuration(1), [selectedPainter, selectedDay])
+  useEffect(() => { setNoteText(''); setNoteMsg(''); setStatusMsg('') }, [activeJob?.id])
 
   const price = Number(activeJobForm.confirmedPrice) || Number(activeJob?.estimated_client_price_max) || 0
   const payout = Number(activeJobForm.painterPayout) || Number(activeJob?.painter_reward) || Math.round(price * 0.75)
@@ -552,7 +558,90 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
               <div>{activeJob.client_phone}{activeJob.client_email ? ' · ' + activeJob.client_email : ''}</div>
               <div>{activeJob.client_address || activeJob.locality || '—'}</div>
               <div>{activeJob.work_type}{activeJob.custom_area ? ' · ' + activeJob.custom_area + ' m²' : ''}</div>
+              {activeJob.service_area ? <div>Oblast: {activeJob.service_area}</div> : null}
+              {activeJob.repairs && activeJob.repairs !== 'Žádné' ? <div>Opravy: {activeJob.repairs}</div> : null}
+              {activeJob.client_note ? <div style={{ marginTop: 4, fontStyle: 'italic' }}>Poznámka: {activeJob.client_note}</div> : null}
             </div>
+          </div>
+        )}
+
+        {/* Manual status change */}
+        {activeJob && onAdminAction && (
+          <div style={{ padding: '14px 16px', borderBottom: LINE }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Změna stavu</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <select
+                style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 7, border: LINE2, fontFamily: "'Outfit', sans-serif", color: C.text, background: '#fff' }}
+                defaultValue=""
+                onChange={async (e) => {
+                  const newStatus = e.target.value
+                  if (!newStatus) return
+                  setSavingStatus(true); setStatusMsg('')
+                  try {
+                    await onAdminAction(activeJob.id, 'set_status', { status: newStatus })
+                    setStatusMsg('✓ Stav uložen')
+                  } catch (err) {
+                    setStatusMsg('✗ ' + (err.message || 'Chyba'))
+                  }
+                  setSavingStatus(false)
+                  e.target.value = ''
+                }}
+              >
+                <option value="">Přejít na stav…</option>
+                {Object.entries(JOB_STATUS).map(([v, meta]) => (
+                  <option key={v} value={v}>{meta.label}</option>
+                ))}
+              </select>
+            </div>
+            {statusMsg && <div style={{ fontSize: 11, marginTop: 5, color: statusMsg.startsWith('✓') ? C.accent : C.danger }}>{statusMsg}</div>}
+          </div>
+        )}
+
+        {/* Internal notes */}
+        {activeJob && onAdminAction && (
+          <div style={{ padding: '14px 16px', borderBottom: LINE }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Interní poznámky</div>
+            {(activeJob.internal_notes || []).map((n, i) => (
+              <div key={i} style={{ fontSize: 11, color: C.mid, marginBottom: 5, padding: '6px 8px', background: C.soft, borderRadius: 6 }}>
+                <span style={{ color: C.text }}>{n.text}</span>
+                <span style={{ display: 'block', color: C.light, marginTop: 2 }}>{n.author} · {n.at ? new Date(n.at).toLocaleString('cs-CZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+              <input
+                value={noteText}
+                onChange={e => setNoteText(e.target.value)}
+                placeholder="Přidat interní poznámku…"
+                style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 7, border: LINE2, fontFamily: "'Outfit', sans-serif", color: C.text }}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && noteText.trim()) {
+                    setSavingNote(true)
+                    try {
+                      await onAdminAction(activeJob.id, 'add_note', { note: noteText.trim() })
+                      setNoteText(''); setNoteMsg('✓')
+                    } catch (err) {
+                      setNoteMsg('✗ ' + (err.message || 'Chyba'))
+                    }
+                    setSavingNote(false)
+                  }
+                }}
+              />
+              <button
+                disabled={savingNote || !noteText.trim()}
+                onClick={async () => {
+                  setSavingNote(true)
+                  try {
+                    await onAdminAction(activeJob.id, 'add_note', { note: noteText.trim() })
+                    setNoteText(''); setNoteMsg('✓')
+                  } catch (err) {
+                    setNoteMsg('✗ ' + (err.message || 'Chyba'))
+                  }
+                  setSavingNote(false)
+                }}
+                style={{ padding: '7px 10px', borderRadius: 7, border: 'none', background: C.accent, color: '#fff', fontSize: 12, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', opacity: savingNote || !noteText.trim() ? 0.5 : 1 }}
+              >+</button>
+            </div>
+            {noteMsg && <div style={{ fontSize: 11, marginTop: 4, color: noteMsg.startsWith('✓') ? C.accent : C.danger }}>{noteMsg}</div>}
           </div>
         )}
 
@@ -1049,6 +1138,19 @@ function App() {
     setSelectedDay(date)
   }
 
+  async function handleAdminAction(jobId, action, extra = {}) {
+    const res = await fetch('/api/admin/job-action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId, action, ...extra }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Akci se nepodařilo provést.')
+    // Refresh jobs list
+    const jr = await fetch('/api/admin/jobs').then(r => r.json())
+    if (jr.jobs) setJobs(jr.jobs)
+    return data
+  }
+
   async function handleAssign(painter, duration) {
     if (!activeJobId || !painter || !selectedDay) return
     setAssignBusy(true); setAssignMsg('')
@@ -1248,6 +1350,7 @@ function App() {
               activeJob={activeJob} activeJobForm={activeJobForm}
               selectedPainter={selectedPainter} selectedDay={selectedDay}
               onAssign={handleAssign} busy={assignBusy} msg={assignMsg}
+              onAdminAction={handleAdminAction}
             />
           </div>
         </div>

@@ -37,6 +37,12 @@ export default async function handler(req, res) {
       result = await store.markJobState(jobId, admin.email, JOB_STATUSES.DONE)
     } else if (action === 'cancel_job') {
       result = await store.cancelAdminJob(jobId, admin.email)
+    } else if (action === 'set_status') {
+      if (!body.status) return sendJson(res, 400, { error: 'Chybí status.' })
+      result = await store.setJobStatus(jobId, admin.email, body.status)
+    } else if (action === 'add_note') {
+      if (!body.note) return sendJson(res, 400, { error: 'Chybí poznámka.' })
+      result = await store.addJobNote(jobId, admin.email, body.note)
     } else {
       return sendJson(res, 400, { error: 'Neznámá akce.' })
     }
