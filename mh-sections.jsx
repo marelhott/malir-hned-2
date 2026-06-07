@@ -566,6 +566,14 @@ function ConfirmationModal({ selectedSlot, monthIdx, priceRange, submissionResul
             ))}
           </div>
         )}
+        {submissionResult?.publicUrl && (
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 13, color: T.textMid, marginBottom: 10 }}>Stav zakázky můžete sledovat na odkazu níže (odkaz jsme vám také zaslali e-mailem):</p>
+            <a href={submissionResult.publicUrl} style={{ display: 'inline-block', padding: '10px 24px', borderRadius: T.br, background: T.accentSoft, color: T.accent, fontSize: 14, fontWeight: 500, textDecoration: 'none', wordBreak: 'break-all' }}>
+              Sledovat stav zakázky →
+            </a>
+          </div>
+        )}
         <button type="button" onClick={onClose} style={{ padding: '12px 32px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 14, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", border: 'none', boxShadow: `0 10px 24px ${T.accentShadow}` }}>
           Zavřít
         </button>

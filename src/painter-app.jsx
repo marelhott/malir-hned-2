@@ -158,6 +158,7 @@ function App() {
   const [month, setMonth] = useState(monthStart(new Date().toISOString().slice(0, 10)))
   const [detailDate, setDetailDate] = useState('')
   const [draft, setDraft] = useState(null)
+  const [respondingId, setRespondingId] = useState('')
 
   async function load() {
     const response = await fetch(`/api/painter/portal?token=${encodeURIComponent(token)}`)
@@ -216,6 +217,23 @@ function App() {
     setPainterNote(data.painter?.notes || '')
     setState((prev) => ({ ...prev, error: '', painter: data.painter, availability: data.availability || prev.availability }))
     return true
+  }
+
+  async function respondOffer(offerToken, decision) {
+    setRespondingId(offerToken + decision)
+    const res = await fetch('/api/painter/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: offerToken, decision }),
+    })
+    const data = await res.json()
+    setRespondingId('')
+    if (!res.ok) {
+      setState((prev) => ({ ...prev, error: data.error || 'Reakci se nepodařilo uložit.' }))
+      return
+    }
+    // reload offers
+    load()
   }
 
   async function saveDay() {
@@ -320,13 +338,56 @@ function App() {
             </button>
           </div>
 
-          {offers.length > 0 && (
+          {offers.filter(o => o.status === 'pending').length > 0 && (
             <div style={{ border: `1px solid ${C.border}`, borderRadius: 16, padding: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Moje nabídky</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Nové nabídky</div>
               <div style={{ display: 'grid', gap: 8 }}>
-                {offers.map((offer) => {
+                {offers.filter(o => o.status === 'pending').map((offer) => {
+                  const loc = offer.approx_location || offer.job?.locality || offer.job?.service_area || '—'
+                  const payout = offer.offered_payout || offer.offered_reward
+                  return (
+                    <div key={offer.id} style={{ border: `1px solid ${C.border}`, borderRadius: 14, padding: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                        <div>
+                          <div style={{ fontSize: 14, color: C.text, fontWeight: 500 }}>{loc}</div>
+                          {offer.job?.preferred_date_label ? <div style={{ fontSize: 12, color: C.textMid, marginTop: 3 }}>{offer.job.preferred_date_label}</div> : null}
+                          {payout ? <div style={{ fontSize: 13, color: C.accent, marginTop: 4 }}>{new Intl.NumberFormat('cs-CZ').format(payout)} Kč</div> : null}
+                        </div>
+                        <span style={{ padding: '5px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: C.warnSoft, color: C.warn, whiteSpace: 'nowrap' }}>Čeká na reakci</span>
+                      </div>
+                      {offer.offer_token ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          <button
+                            type="button"
+                            disabled={!!respondingId}
+                            onClick={() => respondOffer(offer.offer_token, 'accepted')}
+                            style={{ padding: '10px 12px', borderRadius: 12, border: 'none', background: C.accent, color: '#fff', fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', opacity: respondingId ? 0.6 : 1 }}
+                          >
+                            {respondingId === offer.offer_token + 'accepted' ? 'Ukládám…' : '✓ Přijmout'}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!!respondingId}
+                            onClick={() => respondOffer(offer.offer_token, 'declined')}
+                            style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.danger, fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', opacity: respondingId ? 0.6 : 1 }}
+                          >
+                            {respondingId === offer.offer_token + 'declined' ? 'Ukládám…' : '✗ Odmítnout'}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {offers.filter(o => o.status !== 'pending').length > 0 && (
+            <div style={{ border: `1px solid ${C.border}`, borderRadius: 16, padding: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.textMid, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Historie nabídek</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {offers.filter(o => o.status !== 'pending').map((offer) => {
                   const statusMeta = {
-                    pending: { label: 'Čeká na reakci', bg: C.warnSoft, color: C.warn },
                     accepted: { label: 'Přijatá', bg: C.accentSoft, color: C.accent },
                     declined: { label: 'Odmítnutá', bg: C.mutedSoft, color: C.muted },
                     expired: { label: 'Prošlá', bg: C.mutedSoft, color: C.muted },
@@ -338,20 +399,12 @@ function App() {
                     <div key={offer.id} style={{ border: `1px solid ${C.border}`, borderRadius: 14, padding: 12 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                         <div>
-                          <div style={{ fontSize: 14, color: C.text, fontWeight: 500 }}>{loc}</div>
-                          {offer.job?.preferred_date_label ? <div style={{ fontSize: 12, color: C.textMid, marginTop: 3 }}>{offer.job.preferred_date_label}</div> : null}
-                          {payout ? <div style={{ fontSize: 13, color: C.accent, marginTop: 4 }}>{new Intl.NumberFormat('cs-CZ').format(payout)} Kč</div> : null}
+                          <div style={{ fontSize: 13, color: C.textMid, fontWeight: 500 }}>{loc}</div>
+                          {offer.job?.preferred_date_label ? <div style={{ fontSize: 12, color: C.textLight, marginTop: 2 }}>{offer.job.preferred_date_label}</div> : null}
+                          {payout ? <div style={{ fontSize: 12, color: C.textMid, marginTop: 3 }}>{new Intl.NumberFormat('cs-CZ').format(payout)} Kč</div> : null}
                         </div>
-                        <span style={{ padding: '5px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: statusMeta.bg, color: statusMeta.color, whiteSpace: 'nowrap' }}>{statusMeta.label}</span>
+                        <span style={{ padding: '4px 9px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: statusMeta.bg, color: statusMeta.color, whiteSpace: 'nowrap' }}>{statusMeta.label}</span>
                       </div>
-                      {offer.status === 'pending' && offer.offer_token ? (
-                        <a
-                          href={`/nabidka?token=${offer.offer_token}`}
-                          style={{ display: 'block', marginTop: 10, padding: '10px 12px', borderRadius: 12, border: 'none', background: C.accent, color: '#fff', fontSize: 13, fontFamily: "'Outfit', sans-serif", textAlign: 'center', textDecoration: 'none' }}
-                        >
-                          Otevřít nabídku
-                        </a>
-                      ) : null}
                     </div>
                   )
                 })}
