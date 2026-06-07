@@ -1022,6 +1022,36 @@ function StatsPanel({ jobs, painters }) {
           )
         })}
       </div>
+
+      {/* Export */}
+      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: '28px 0 12px' }}>Export</div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <button
+          onClick={() => {
+            const cols = ['reference','status','client_name','client_phone','client_email','client_address','work_type','custom_area','preferred_date_label','preferred_time_label','estimated_client_price_max','confirmed_price','painter_reward','created_at']
+            const header = cols.join(';')
+            const rows = jobs.map(j => cols.map(c => {
+              const v = j[c] ?? ''
+              return `"${String(v).replace(/"/g, '""')}"`
+            }).join(';'))
+            const csv = [header, ...rows].join('\n')
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = `zakazky-${new Date().toISOString().slice(0,10)}.csv`
+            a.click()
+          }}
+          style={{ padding: '10px 18px', borderRadius: 9, border: LINE2, background: '#fff', color: C.text, fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', fontWeight: 500 }}
+        >
+          ⬇ Stáhnout CSV (všechny zakázky)
+        </button>
+        <button
+          onClick={() => window.print()}
+          style={{ padding: '10px 18px', borderRadius: 9, border: LINE2, background: '#fff', color: C.text, fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', fontWeight: 500 }}
+        >
+          🖨 Tisknout / uložit PDF
+        </button>
+      </div>
     </div>
   )
 }
