@@ -639,9 +639,21 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
 }
 
 // ── OPS CALENDAR (TAB 2) ──────────────────────────────────────
+function useWindowWidth() {
+  const [w, setW] = useState(window.innerWidth)
+  useEffect(() => {
+    const h = () => setW(window.innerWidth)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return w
+}
+
 function OpsCalendar({ jobs }) {
   const [month, setMonth] = useState(monthOf(today))
   const [popup, setPopup] = useState(null)
+  const winW = useWindowWidth()
+  const isMobile = winW < 700
 
   const monthLabel = new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' }).format(new Date(month + 'T12:00:00Z'))
   const days = daysInMonth(month)
@@ -671,15 +683,48 @@ function OpsCalendar({ jobs }) {
         <button onClick={() => setMonth(monthOf(today))} style={{ background:'none', border:LINE2, borderRadius:8, padding:'5px 12px', cursor:'pointer', fontSize:12, color:C.mid, fontFamily:"'Outfit',sans-serif", fontWeight:500 }}>Dnes</button>
       </div>
 
-      {/* Day headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: LINE }}>
+      {/* Day headers — desktop only */}
+      {!isMobile && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: LINE }}>
         {['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'].map((d,i) => (
           <div key={d} style={{ padding: '8px 12px', fontSize: 11, fontWeight: 600, color: i>=5?'#94a3b8':'#9ca3af', textTransform:'uppercase', letterSpacing:'0.07em', borderRight: i<6?LINE:'none' }}>{d}</div>
         ))}
-      </div>
+      </div>}
 
-      {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+      {/* Mobile: day list */}
+      {isMobile && (
+        <div>
+          {Array.from({length:days},(_,i) => {
+            const num = i + 1
+            const date = `${month.slice(0,7)}-${String(num).padStart(2,'0')}`
+            const dayJobs = (jobMap[date]||[]).filter(j => j._isStart || !j._isCont || true)
+            if (dayJobs.length === 0) return null
+            return (
+              <div key={date} style={{ borderBottom: LINE, padding: '12px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: date===today ? C.accent : C.mid, marginBottom: 8 }}>
+                  {new Intl.DateTimeFormat('cs-CZ',{weekday:'short',day:'numeric',month:'short'}).format(new Date(date+'T12:00'))}
+                </div>
+                {dayJobs.map(j => {
+                  const s = JOB_STATUS[j.status] || {}
+                  return (
+                    <button key={j.id+'_'+j._dayIndex} onClick={() => setPopup(j)} style={{
+                      width:'100%', textAlign:'left', padding:'10px 12px', borderRadius:8, marginBottom:6,
+                      background:'#fff', border: LINE, borderLeft:`3px solid ${s.dot||C.light}`,
+                      cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                    }}>
+                      <div style={{ fontSize:13, fontWeight:600, color:C.text }}>{j.client_name}</div>
+                      {j.assigned_painter_name && <div style={{ fontSize:11, color:C.mid }}>{j.assigned_painter_name}</div>}
+                      <div style={{ marginTop:4 }}><StatusPill status={j.status} /></div>
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Grid — desktop */}
+      {!isMobile && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {Array.from({length:leading},(_,i) => (
           <div key={`l${i}`} style={{ borderRight:LINE, borderBottom:LINE, minHeight:140, background:'#fafafa' }} />
         ))}
@@ -764,7 +809,7 @@ function OpsCalendar({ jobs }) {
             <div key={`t${i}`} style={{ borderRight: i<rem-1?LINE:'none', borderBottom:LINE, minHeight:140, background:'#fafafa' }} />
           ))
         })()}
-      </div>
+      </div>}
 
       {/* Popup */}
       {popup && (
