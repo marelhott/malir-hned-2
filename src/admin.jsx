@@ -899,63 +899,71 @@ function App() {
   }
 
   // ── Resizable columns ─────────────────────────────────────────
-  const [colWidths, setColWidths] = useState([300, null, 240, 300]) // null = flex 1
-  const dragging = React.useRef(null)
+  // Layout: [w0=fixed] | H0 | [flex] | H1 | [w2=fixed] | H2 | [w3=fixed]
+  // H0: drag right → w0 grows   (flex shrinks automatically)
+  // H1: drag right → w2 shrinks (flex grows  automatically) → sign inverted
+  // H2: drag right → w2 grows, w3 shrinks (both fixed → change both)
+  const [colWidths, setColWidths] = useState({ w0: 300, w2: 240, w3: 300 })
 
-  function startResize(e, col) {
-    e.preventDefault()
-    const startX = e.clientX
-    const startW = colWidths[col]
+  function makeResizer(applyFn) {
+    return function(e) {
+      e.preventDefault()
+      const startX = e.clientX
+      const snapshot = { ...colWidths }
 
-    // For col 1 (left neighbour of flex col): resize col 0
-    // For col 2 (right neighbour of flex col): resize col 2
-    // For col 3: resize col 3
-    dragging.current = { col, startX, startW }
-
-    function onMove(e) {
-      const dx = e.clientX - dragging.current.startX
-      setColWidths(prev => {
-        const next = [...prev]
-        const newW = Math.max(160, dragging.current.startW + dx)
-        next[dragging.current.col] = newW
-        return next
-      })
+      function onMove(ev) {
+        const dx = ev.clientX - startX
+        setColWidths(prev => {
+          const next = applyFn({ ...prev }, dx, snapshot)
+          return next
+        })
+      }
+      function onUp() {
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
     }
-    function onUp() {
-      dragging.current = null
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
   }
 
-  const handleStyle = {
-    width: 5, flexShrink: 0, cursor: 'col-resize',
-    background: 'transparent',
-    position: 'relative', zIndex: 10,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-  }
-  const handleInner = (hovering) => ({
-    width: 1, height: '100%', position: 'absolute',
-    background: hovering ? C.accent : LINE.replace('1px solid ',''),
-    transition: 'background 0.15s',
-  })
+  // H0: between col0 (fixed) and flex → w0 changes only
+  const onDragH0 = makeResizer((w, dx, snap) => ({
+    ...w, w0: Math.max(160, snap.w0 + dx)
+  }))
+  // H1: between flex and col2 (fixed) → w2 changes, sign inverted
+  const onDragH1 = makeResizer((w, dx, snap) => ({
+    ...w, w2: Math.max(160, snap.w2 - dx)
+  }))
+  // H2: between col2 (fixed) and col3 (fixed) → both change
+  const onDragH2 = makeResizer((w, dx, snap) => ({
+    ...w,
+    w2: Math.max(160, snap.w2 + dx),
+    w3: Math.max(160, snap.w3 - dx),
+  }))
 
-  function ResizeHandle({ col }) {
+  function ResizeHandle({ onMouseDown }) {
     const [hov, setHov] = useState(false)
     return (
       <div
-        style={handleStyle}
-        onMouseDown={e => startResize(e, col)}
+        onMouseDown={onMouseDown}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
+        style={{ width: 5, flexShrink: 0, cursor: 'col-resize', position: 'relative', zIndex: 10 }}
       >
-        <div style={handleInner(hov)} />
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            width: 1, height: '100%',
+            background: hov ? C.accent : '#e5e7eb',
+            transition: 'background 0.15s',
+          }} />
+        </div>
       </div>
     )
   }
@@ -964,8 +972,7 @@ function App() {
   if (!session)             return <Login onLogin={login} loading={loading} error={loginError} />
 
   const activeCount = jobs.filter(j => !['completed','cancelled'].includes(j.status)).length
-
-  const [w0, , w2, w3] = colWidths
+  const { w0, w2, w3 } = colWidths
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Outfit', sans-serif", display: 'flex', flexDirection: 'column' }}>
@@ -992,12 +999,13 @@ function App() {
       {tab === 'dispatch' && (
         <div style={{ flex: 1, display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
           {/* Col 1 */}
+          {/* Col 1 — fixed */}
           <div style={{ width: w0, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <JobList jobs={jobs} activeJobId={activeJobId} onSelectJob={handleSelectJob} onSetCalDate={handleSetCalDate} />
           </div>
-          <ResizeHandle col={0} />
+          <ResizeHandle onMouseDown={onDragH0} />
 
-          {/* Col 2 — flex */}
+          {/* Col 2 — flex (calendar) */}
           <div style={{ flex: 1, minWidth: 280, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <MonthCalendar
               selectedDay={selectedDay}
@@ -1006,9 +1014,9 @@ function App() {
               monthData={monthData} painters={painters} activeJob={activeJob}
             />
           </div>
-          <ResizeHandle col={2} />
+          <ResizeHandle onMouseDown={onDragH1} />
 
-          {/* Col 3 */}
+          {/* Col 3 — fixed (painters) */}
           <div style={{ width: w2, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <PainterAvail
               selectedDay={selectedDay} dayCache={dayCache} activeJob={activeJob}
@@ -1016,9 +1024,9 @@ function App() {
               selectedPainterId={selectedPainter?.id}
             />
           </div>
-          <ResizeHandle col={3} />
+          <ResizeHandle onMouseDown={onDragH2} />
 
-          {/* Col 4 */}
+          {/* Col 4 — fixed (detail) */}
           <div style={{ width: w3, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <AssignDetail
               activeJob={activeJob} activeJobForm={activeJobForm}
