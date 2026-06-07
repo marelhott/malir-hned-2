@@ -133,6 +133,8 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
   const [expandedId, setExpandedId] = useState(null)
   const [details, setDetails] = useState({})
   const [form, setForm] = useState({})
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState('active')
 
   async function loadDetail(jobId) {
     if (details[jobId]) return
@@ -151,8 +153,18 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
     loadDetail(id)
   }
 
-  const active = jobs.filter(j => !['completed','cancelled'].includes(j.status)).sort((a,b) => new Date(a.created_at)-new Date(b.created_at))
-  const closed = jobs.filter(j => ['completed','cancelled'].includes(j.status)).slice(0, 8)
+  const q = search.toLowerCase()
+  const allFiltered = jobs
+    .filter(j => {
+      if (filterStatus === 'active') return !['completed','cancelled'].includes(j.status)
+      if (filterStatus === 'done')   return ['completed','cancelled'].includes(j.status)
+      return true
+    })
+    .filter(j => !q || (j.client_name||'').toLowerCase().includes(q) || (j.client_email||'').toLowerCase().includes(q) || (j.client_phone||'').includes(q))
+    .sort((a,b) => new Date(a.created_at)-new Date(b.created_at))
+
+  const active = filterStatus === 'active' ? allFiltered : allFiltered.filter(j => !['completed','cancelled'].includes(j.status))
+  const closed  = filterStatus !== 'active' ? allFiltered.filter(j => ['completed','cancelled'].includes(j.status)).slice(0,20) : []
 
   function renderJob(job) {
     const exp = expandedId === job.id
@@ -228,16 +240,35 @@ function JobList({ jobs, activeJobId, onSelectJob, onSetCalDate }) {
     )
   }
 
+  const totalActive = jobs.filter(j => !['completed','cancelled'].includes(j.status)).length
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <ColHeader>Zakázky · {active.length} aktivních</ColHeader>
+      <ColHeader>Zakázky · {totalActive} aktivních</ColHeader>
+
+      {/* Search + filter */}
+      <div style={{ padding: '8px 12px', borderBottom: LINE, display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <input
+          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Hledat jméno, e-mail, tel…"
+          style={{ ...inp(), fontSize: 12, padding: '7px 10px' }}
+        />
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[['active','Aktivní'],['done','Uzavřené'],['all','Vše']].map(([k,l]) => (
+            <button key={k} onClick={() => setFilterStatus(k)} style={{
+              flex: 1, padding: '5px 4px', borderRadius: 7, border: LINE2,
+              background: filterStatus===k ? C.text : '#fff',
+              color: filterStatus===k ? '#fff' : C.mid,
+              fontSize: 11, fontWeight: filterStatus===k ? 600 : 400,
+              cursor: 'pointer', fontFamily: "'Outfit',sans-serif",
+            }}>{l}</button>
+          ))}
+        </div>
+      </div>
+
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {active.length === 0 && <div style={{ padding: 32, fontSize: 13, color: C.light, textAlign: 'center' }}>Žádné aktivní zakázky</div>}
-        {active.map(renderJob)}
-        {closed.length > 0 && <>
-          <div style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', background: C.soft, borderTop: LINE, borderBottom: LINE }}>Uzavřené ({closed.length})</div>
-          {closed.map(renderJob)}
-        </>}
+        {allFiltered.length === 0 && <div style={{ padding: 32, fontSize: 13, color: C.light, textAlign: 'center' }}>{search ? 'Nic nenalezeno' : 'Žádné zakázky'}</div>}
+        {allFiltered.map(renderJob)}
       </div>
     </div>
   )
@@ -608,12 +639,17 @@ function OpsCalendar({ jobs }) {
   const days = daysInMonth(month)
   const leading = firstDow(month)
 
+  // Build job map — spread multi-day jobs across all their dates
   const jobMap = {}
   jobs.forEach(j => {
-    const date = j.preferred_date
-    if (date) {
+    const start = j.preferred_date
+    if (!start) return
+    const dur = j.duration_days || 1
+    for (let i = 0; i < dur; i++) {
+      const date = addDays(start, i)
       if (!jobMap[date]) jobMap[date] = []
-      jobMap[date].push(j)
+      // Mark continuation days so we can show them differently
+      jobMap[date].push({ ...j, _dayIndex: i, _isStart: i === 0, _isCont: i > 0 })
     }
   })
 
@@ -673,30 +709,40 @@ function OpsCalendar({ jobs }) {
               {dayJobs.map(j => {
                 const s = JOB_STATUS[j.status] || { dot: C.light, label: j.status, pill:'#f3f4f6', text: C.mid }
                 const price = j.confirmed_client_price || j.estimated_client_price_max
+                const dur = j.duration_days || 1
                 return (
-                  <button key={j.id} onClick={() => setPopup(j)} style={{
-                    width: '100%', textAlign: 'left', padding: '6px 8px 7px',
+                  <button key={j.id + '_' + j._dayIndex} onClick={() => setPopup(j)} style={{
+                    width: '100%', textAlign: 'left', padding: '5px 8px 6px',
                     borderRadius: 6, marginBottom: 3,
                     cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
-                    background: '#fff', border: LINE,
-                    borderLeft: `3px solid ${s.dot}`,
-                    display: 'block',
+                    background: j._isCont ? '#f9fafb' : '#fff',
+                    border: LINE,
+                    borderLeft: `3px solid ${j._isCont ? '#d1d5db' : s.dot}`,
+                    display: 'block', opacity: j._isCont ? 0.75 : 1,
                   }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom: 2 }}>
-                      {j.client_name || 'Klient'}
-                    </div>
-                    {j.assigned_painter_name && (
-                      <div style={{ fontSize: 11, color: C.mid, marginBottom: 2 }}>{j.assigned_painter_name}</div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                      <span style={{ fontSize: 10, color: C.light, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {j.work_type || j.locality || '—'}
-                      </span>
-                      {price && <span style={{ fontSize: 11, fontWeight: 600, color: C.text, whiteSpace:'nowrap' }}>{fmt(price)}</span>}
-                    </div>
-                    <div style={{ marginTop: 4 }}>
-                      <StatusPill status={j.status} />
-                    </div>
+                    {j._isCont
+                      ? <div style={{ fontSize: 11, color: C.light, fontStyle: 'italic' }}>
+                          ↳ {j.client_name} (den {j._dayIndex + 1}/{dur})
+                        </div>
+                      : <>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom: 2 }}>
+                            {j.client_name || 'Klient'}
+                            {dur > 1 && <span style={{ fontWeight:400, color:C.light, marginLeft:4 }}>{dur} dny</span>}
+                          </div>
+                          {j.assigned_painter_name && (
+                            <div style={{ fontSize: 11, color: C.mid, marginBottom: 2 }}>{j.assigned_painter_name}</div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                            <span style={{ fontSize: 10, color: C.light, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                              {j.work_type || j.locality || '—'}
+                            </span>
+                            {price && <span style={{ fontSize: 11, fontWeight: 600, color: C.text, whiteSpace:'nowrap' }}>{fmt(price)}</span>}
+                          </div>
+                          <div style={{ marginTop: 4 }}>
+                            <StatusPill status={j.status} />
+                          </div>
+                        </>
+                    }
                   </button>
                 )
               })}
@@ -889,9 +935,15 @@ function App() {
       }
 
       setAssignMsg(`✓ Nabídka odeslána malíři ${painter.name}. Po přijetí bude klient informován e-mailem.`)
-      fetch('/api/admin/jobs').then(r => r.json()).then(d => { if (d.jobs) setJobs(d.jobs) })
-      // Refresh month data
-      fetch(`/api/admin/availability?${new URLSearchParams({from:monthBase,months:'1'})}`).then(r=>r.json()).then(setMonthData)
+      // Refresh jobs + month data immediately
+      const [jr] = await Promise.all([
+        fetch('/api/admin/jobs').then(r => r.json()),
+        fetch(`/api/admin/availability?${new URLSearchParams({from:monthBase,months:'1'})}`).then(r=>r.json()).then(setMonthData),
+      ])
+      if (jr.jobs) setJobs(jr.jobs)
+      // Deselect painter + job to show updated state clearly
+      setSelectedPainter(null)
+      setActiveJobId(null)
     } catch {
       setAssignMsg('Chyba při odesílání. Zkuste znovu.')
     }
