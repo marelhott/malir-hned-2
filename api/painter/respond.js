@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJsonBody(req)
-    const result = await getStore().respondToOffer(body.token, body.decision)
+    const result = await getStore().respondToOffer(body.token, body.decision, body.estimatedDays)
     return sendJson(res, 200, { ok: true, result })
   } catch (error) {
     return sendJson(res, 400, { error: error.message || 'Reakci se nepodařilo uložit.' })
