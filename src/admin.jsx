@@ -898,10 +898,74 @@ function App() {
     setAssignBusy(false)
   }
 
+  // ── Resizable columns ─────────────────────────────────────────
+  const [colWidths, setColWidths] = useState([300, null, 240, 300]) // null = flex 1
+  const dragging = React.useRef(null)
+
+  function startResize(e, col) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = colWidths[col]
+
+    // For col 1 (left neighbour of flex col): resize col 0
+    // For col 2 (right neighbour of flex col): resize col 2
+    // For col 3: resize col 3
+    dragging.current = { col, startX, startW }
+
+    function onMove(e) {
+      const dx = e.clientX - dragging.current.startX
+      setColWidths(prev => {
+        const next = [...prev]
+        const newW = Math.max(160, dragging.current.startW + dx)
+        next[dragging.current.col] = newW
+        return next
+      })
+    }
+    function onUp() {
+      dragging.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  const handleStyle = {
+    width: 5, flexShrink: 0, cursor: 'col-resize',
+    background: 'transparent',
+    position: 'relative', zIndex: 10,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  }
+  const handleInner = (hovering) => ({
+    width: 1, height: '100%', position: 'absolute',
+    background: hovering ? C.accent : LINE.replace('1px solid ',''),
+    transition: 'background 0.15s',
+  })
+
+  function ResizeHandle({ col }) {
+    const [hov, setHov] = useState(false)
+    return (
+      <div
+        style={handleStyle}
+        onMouseDown={e => startResize(e, col)}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+      >
+        <div style={handleInner(hov)} />
+      </div>
+    )
+  }
+
   if (loading && !session) return <Login onLogin={login} loading={loading} error={loginError} />
   if (!session)             return <Login onLogin={login} loading={loading} error={loginError} />
 
   const activeCount = jobs.filter(j => !['completed','cancelled'].includes(j.status)).length
+
+  const [w0, , w2, w3] = colWidths
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Outfit', sans-serif", display: 'flex', flexDirection: 'column' }}>
@@ -914,8 +978,7 @@ function App() {
               {[['dispatch', `Dispečink${activeCount ? ` (${activeCount})` : ''}`], ['ops', 'Přehled zakázek']].map(([key, label]) => (
                 <button key={key} onClick={() => setTab(key)} style={{
                   padding: '6px 14px', border: 'none', background: tab===key ? C.soft : 'transparent',
-                  borderRadius: 8,
-                  fontFamily: "'Outfit', sans-serif", fontSize: 13, cursor: 'pointer',
+                  borderRadius: 8, fontFamily: "'Outfit', sans-serif", fontSize: 13, cursor: 'pointer',
                   color: tab === key ? C.text : C.mid, fontWeight: tab === key ? 600 : 400,
                 }}>{label}</button>
               ))}
@@ -925,19 +988,17 @@ function App() {
         </div>
       </div>
 
-      {/* Dispatch tab — 4 columns */}
+      {/* Dispatch tab — 4 resizable columns */}
       {tab === 'dispatch' && (
-        <div style={{
-          flex: 1,
-          display: 'grid',
-          gridTemplateColumns: '300px 1fr 240px 300px',
-          height: 'calc(100vh - 56px)',
-          overflow: 'hidden',
-        }}>
-          <div style={{ borderRight: LINE, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
+          {/* Col 1 */}
+          <div style={{ width: w0, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <JobList jobs={jobs} activeJobId={activeJobId} onSelectJob={handleSelectJob} onSetCalDate={handleSetCalDate} />
           </div>
-          <div style={{ borderRight: LINE, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <ResizeHandle col={0} />
+
+          {/* Col 2 — flex */}
+          <div style={{ flex: 1, minWidth: 280, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <MonthCalendar
               selectedDay={selectedDay}
               onSelectDay={date => { setSelectedDay(date); setSelectedPainter(null) }}
@@ -945,14 +1006,20 @@ function App() {
               monthData={monthData} painters={painters} activeJob={activeJob}
             />
           </div>
-          <div style={{ borderRight: LINE, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <ResizeHandle col={2} />
+
+          {/* Col 3 */}
+          <div style={{ width: w2, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <PainterAvail
               selectedDay={selectedDay} dayCache={dayCache} activeJob={activeJob}
               onSelectPainter={p => { setSelectedPainter(p); setAssignMsg('') }}
               selectedPainterId={selectedPainter?.id}
             />
           </div>
-          <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <ResizeHandle col={3} />
+
+          {/* Col 4 */}
+          <div style={{ width: w3, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <AssignDetail
               activeJob={activeJob} activeJobForm={activeJobForm}
               selectedPainter={selectedPainter} selectedDay={selectedDay}
