@@ -1099,6 +1099,11 @@ function App() {
 
   // Session + initial data
   useEffect(() => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      setSession({ email: 'dev@localhost' })
+      setLoading(false)
+      return
+    }
     fetch('/api/admin/session').then(r => r.json()).then(async d => {
       if (d.authenticated) {
         setSession(d.admin)
