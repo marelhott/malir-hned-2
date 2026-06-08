@@ -26,14 +26,21 @@ const STATUS_META = {
 }
 
 const JOB_STATUS_META = {
-  new:           { label: 'Nová',              bg: C.warnSoft,   color: C.warn },
-  pending_review:{ label: 'Ke zpracování',     bg: C.warnSoft,   color: C.warn },
-  in_dispatch:   { label: 'Dispečink',         bg: C.warnSoft,   color: C.warn },
-  offer_sent:    { label: 'Nabídka odeslána',  bg: C.warnSoft,   color: C.warn },
-  assigned:      { label: 'Přidělena',         bg: C.accentSoft, color: C.accent },
-  in_progress:   { label: 'Probíhá',           bg: C.accentSoft, color: C.accent },
-  done:          { label: 'Dokončena',         bg: C.mutedSoft,  color: C.muted },
-  cancelled:     { label: 'Zrušena',          bg: C.dangerSoft, color: C.danger },
+  new:                    { label: 'Nová',              bg: C.warnSoft,   color: C.warn },
+  pending_review:         { label: 'Ke zpracování',     bg: C.warnSoft,   color: C.warn },
+  waiting_for_review:     { label: 'Ke zpracování',     bg: C.warnSoft,   color: C.warn },
+  waiting_for_client_details: { label: 'Čeká na klienta', bg: C.mutedSoft, color: C.muted },
+  ready_to_offer:         { label: 'Připravena',         bg: C.warnSoft,   color: C.warn },
+  in_dispatch:            { label: 'Dispečink',         bg: C.warnSoft,   color: C.warn },
+  offered_to_painter:     { label: 'Nabídka odeslána',  bg: C.warnSoft,   color: C.warn },
+  offer_sent:             { label: 'Nabídka odeslána',  bg: C.warnSoft,   color: C.warn },
+  painter_accepted:       { label: 'Přijatá',           bg: C.accentSoft, color: C.accent },
+  assigned:               { label: 'Přidělena',         bg: C.accentSoft, color: C.accent },
+  confirmed_to_client:    { label: 'Potvrzena ✓',       bg: C.accentSoft, color: C.accent },
+  in_progress:            { label: 'Probíhá',           bg: C.accentSoft, color: C.accent },
+  completed:              { label: 'Dokončena',         bg: C.mutedSoft,  color: C.muted },
+  done:                   { label: 'Dokončena',         bg: C.mutedSoft,  color: C.muted },
+  cancelled:              { label: 'Zrušena',           bg: C.dangerSoft, color: C.danger },
 }
 
 const WEEKDAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
@@ -225,8 +232,9 @@ function BulkAvailability({ availabilityMap, onSave, saving }) {
 // ── Zakázky screen ────────────────────────────────────────────────────────────
 function ZakazkyScreen({ jobs, onBack }) {
   const [selected, setSelected] = useState(null)
-  const active = jobs.filter(j => j.status === 'assigned' || j.status === 'in_progress')
-  const done = jobs.filter(j => j.status !== 'assigned' && j.status !== 'in_progress')
+  const DONE_STATUSES = ['completed', 'done', 'cancelled']
+  const active = jobs.filter(j => !DONE_STATUSES.includes(j.status))
+  const done = jobs.filter(j => DONE_STATUSES.includes(j.status))
 
   if (selected) return <JobDetail job={selected} onClose={() => setSelected(null)} onBack={onBack} />
 

@@ -518,6 +518,8 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
 }
 
 // ── COL 4: DETAIL + CONFIRM ───────────────────────────────────
+const PROCESSED_STATUSES = ['confirmed_to_client', 'in_progress', 'completed', 'cancelled']
+
 function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, onAssign, busy, msg, onAdminAction }) {
   const [duration, setDuration] = useState(1)
   const [noteText, setNoteText] = useState('')
@@ -525,9 +527,10 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
   const [statusMsg, setStatusMsg] = useState('')
   const [savingNote, setSavingNote] = useState(false)
   const [savingStatus, setSavingStatus] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => setDuration(1), [selectedPainter, selectedDay])
-  useEffect(() => { setNoteText(''); setNoteMsg(''); setStatusMsg('') }, [activeJob?.id])
+  useEffect(() => { setNoteText(''); setNoteMsg(''); setStatusMsg(''); setExpanded(false) }, [activeJob?.id])
 
   const price = Number(activeJobForm.confirmedPrice) || Number(activeJob?.estimated_client_price_max) || 0
   const payout = Number(activeJobForm.painterPayout) || Number(activeJob?.painter_reward) || Math.round(price * 0.75)
@@ -542,11 +545,45 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
     </div>
   )
 
+  // Compact view for processed jobs
+  const isProcessed = activeJob && PROCESSED_STATUSES.includes(activeJob.status)
+  if (isProcessed && !expanded) {
+    const s = JOB_STATUS[activeJob.status] || { label: activeJob.status, pill: '#f3f4f6', text: C.mid }
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <ColHeader>Detail &amp; odeslání</ColHeader>
+        <button onClick={() => setExpanded(true)} style={{
+          margin: 12, padding: '12px 14px', borderRadius: 10, border: `1px solid ${C.border}`,
+          background: C.soft, cursor: 'pointer', textAlign: 'left', fontFamily: "'Outfit', sans-serif",
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+        }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 3 }}>
+              {activeJob.client_name || 'Zakázka'}
+            </div>
+            <div style={{ fontSize: 11, color: C.light }}>{activeJob.reference}</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <span style={{ padding: '3px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600, background: s.pill, color: s.text }}>{s.label}</span>
+            <span style={{ fontSize: 10, color: C.light }}>Rozkliknout →</span>
+          </div>
+        </button>
+      </div>
+    )
+  }
+
   const isError = msg && (msg.includes('fail') || msg.includes('Chyba'))
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ColHeader>Detail &amp; odeslání</ColHeader>
+      {isProcessed && expanded && (
+        <button onClick={() => setExpanded(false)} style={{
+          margin: '8px 12px 0', padding: '6px 10px', borderRadius: 7, border: `1px solid ${C.border}`,
+          background: C.soft, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+          fontSize: 11, color: C.mid, textAlign: 'left',
+        }}>← Sbalit detail</button>
+      )}
       <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
 
         {/* Job summary */}
@@ -1180,8 +1217,11 @@ function App() {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Akci se nepodařilo provést.')
-    // Refresh jobs list
-    const jr = await fetch('/api/admin/jobs').then(r => r.json())
+    // Refresh jobs list + calendar availability (especially after confirm_assignment)
+    const [jr] = await Promise.all([
+      fetch('/api/admin/jobs').then(r => r.json()),
+      fetch(`/api/admin/availability?${new URLSearchParams({ from: monthBase, months: '1' })}`).then(r => r.json()).then(setMonthData).catch(() => {}),
+    ])
     if (jr.jobs) setJobs(jr.jobs)
     return data
   }
@@ -1228,9 +1268,8 @@ function App() {
         fetch(`/api/admin/availability?${new URLSearchParams({from:monthBase,months:'1'})}`).then(r=>r.json()).then(setMonthData),
       ])
       if (jr.jobs) setJobs(jr.jobs)
-      // Deselect painter + job to show updated state clearly
+      // Deselect only painter — job stays selected so admin can track it
       setSelectedPainter(null)
-      setActiveJobId(null)
     } catch {
       setAssignMsg('Chyba při odesílání. Zkuste znovu.')
     }
@@ -1369,23 +1408,23 @@ function App() {
           </div>
           <ResizeHandle onMouseDown={onDragH1} />
 
-          {/* Col 3 — fixed (painters) */}
+          {/* Col 3 — fixed (detail zakázky) */}
           <div style={{ width: w2, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <PainterAvail
-              selectedDay={selectedDay} dayCache={dayCache} activeJob={activeJob}
-              onSelectPainter={p => { setSelectedPainter(p); setAssignMsg('') }}
-              selectedPainterId={selectedPainter?.id}
-            />
-          </div>
-          <ResizeHandle onMouseDown={onDragH2} />
-
-          {/* Col 4 — fixed (detail) */}
-          <div style={{ width: w3, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <AssignDetail
               activeJob={activeJob} activeJobForm={activeJobForm}
               selectedPainter={selectedPainter} selectedDay={selectedDay}
               onAssign={handleAssign} busy={assignBusy} msg={assignMsg}
               onAdminAction={handleAdminAction}
+            />
+          </div>
+          <ResizeHandle onMouseDown={onDragH2} />
+
+          {/* Col 4 — fixed (malíři) */}
+          <div style={{ width: w3, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <PainterAvail
+              selectedDay={selectedDay} dayCache={dayCache} activeJob={activeJob}
+              onSelectPainter={p => { setSelectedPainter(p); setAssignMsg('') }}
+              selectedPainterId={selectedPainter?.id}
             />
           </div>
         </div>
