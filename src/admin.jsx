@@ -1368,23 +1368,23 @@ function App() {
           </div>
           <ResizeHandle onMouseDown={onDragH1} />
 
-          {/* Col 3 — fixed (painters) */}
+          {/* Col 3 — fixed (detail zakázky) */}
           <div style={{ width: w2, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <PainterAvail
-              selectedDay={selectedDay} dayCache={dayCache} activeJob={activeJob}
-              onSelectPainter={p => { setSelectedPainter(p); setAssignMsg('') }}
-              selectedPainterId={selectedPainter?.id}
-            />
-          </div>
-          <ResizeHandle onMouseDown={onDragH2} />
-
-          {/* Col 4 — fixed (detail) */}
-          <div style={{ width: w3, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <AssignDetail
               activeJob={activeJob} activeJobForm={activeJobForm}
               selectedPainter={selectedPainter} selectedDay={selectedDay}
               onAssign={handleAssign} busy={assignBusy} msg={assignMsg}
               onAdminAction={handleAdminAction}
+            />
+          </div>
+          <ResizeHandle onMouseDown={onDragH2} />
+
+          {/* Col 4 — fixed (malíři) */}
+          <div style={{ width: w3, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <PainterAvail
+              selectedDay={selectedDay} dayCache={dayCache} activeJob={activeJob}
+              onSelectPainter={p => { setSelectedPainter(p); setAssignMsg('') }}
+              selectedPainterId={selectedPainter?.id}
             />
           </div>
         </div>
