@@ -1228,9 +1228,8 @@ function App() {
         fetch(`/api/admin/availability?${new URLSearchParams({from:monthBase,months:'1'})}`).then(r=>r.json()).then(setMonthData),
       ])
       if (jr.jobs) setJobs(jr.jobs)
-      // Deselect painter + job to show updated state clearly
+      // Deselect only painter — job stays selected so admin can track it
       setSelectedPainter(null)
-      setActiveJobId(null)
     } catch {
       setAssignMsg('Chyba při odesílání. Zkuste znovu.')
     }
