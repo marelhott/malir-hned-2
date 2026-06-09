@@ -649,7 +649,14 @@ function DaySheet({ detailDate, draft, setDraft, saving, saveDay, onClose }) {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
+  // Support both /maliri/:name (name-based) and /maliri?token=... (token-based)
+  const painterName = useMemo(() => {
+    const parts = location.pathname.split('/').filter(Boolean)
+    const idx = parts.indexOf('maliri')
+    return idx !== -1 && parts[idx + 1] ? parts[idx + 1] : null
+  }, [])
   const token = useMemo(() => new URLSearchParams(location.search).get('token') || '', [])
+
   const [state, setState] = useState({ loading: true, error: '', painter: null, availability: [] })
   const [offers, setOffers] = useState([])
   const [jobs, setJobs] = useState([])
@@ -662,7 +669,10 @@ function App() {
   const [screen, setScreen] = useState('home') // 'home' | 'nabidky' | 'kalendar' | 'zakazky'
 
   async function load() {
-    const r = await fetch(`/api/painter/portal?token=${encodeURIComponent(token)}`)
+    const url = painterName
+      ? `/api/painter/by-name?name=${encodeURIComponent(painterName)}`
+      : `/api/painter/portal?token=${encodeURIComponent(token)}`
+    const r = await fetch(url)
     const d = await r.json()
     if (!r.ok) { setState({ loading: false, error: d.error || 'Portál se nepodařilo načíst.', painter: null, availability: [] }); return }
     setPainterNote(d.painter?.notes || '')
@@ -671,7 +681,7 @@ function App() {
     setState({ loading: false, error: '', painter: d.painter, availability: d.availability || [] })
   }
 
-  useEffect(() => { load() }, [token])
+  useEffect(() => { load() }, [token, painterName])
 
   const availabilityMap = useMemo(() => new Map((state.availability || []).map(r => [r.date, r])), [state.availability])
   const monthCells = useMemo(() => buildMonthCells(month, availabilityMap), [month, availabilityMap])
@@ -684,7 +694,8 @@ function App() {
 
   async function save(payload, savingKey) {
     setSaving(savingKey)
-    const r = await fetch('/api/painter/availability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, ...payload }) })
+    const authParam = painterName ? { painterName } : { token }
+    const r = await fetch('/api/painter/availability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...authParam, ...payload }) })
     const d = await r.json()
     setSaving('')
     if (!r.ok) { setState(p => ({ ...p, error: d.error || 'Uložení se nepodařilo.' })); return false }

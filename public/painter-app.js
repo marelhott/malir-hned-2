@@ -722,6 +722,11 @@ function DaySheet({ detailDate, draft, setDraft, saving, saveDay, onClose }) {
   );
 }
 function App() {
+  const painterName = useMemo(() => {
+    const parts = location.pathname.split("/").filter(Boolean);
+    const idx = parts.indexOf("maliri");
+    return idx !== -1 && parts[idx + 1] ? parts[idx + 1] : null;
+  }, []);
   const token = useMemo(() => new URLSearchParams(location.search).get("token") || "", []);
   const [state, setState] = useState({ loading: true, error: "", painter: null, availability: [] });
   const [offers, setOffers] = useState([]);
@@ -734,7 +739,8 @@ function App() {
   const [respondingId, setRespondingId] = useState("");
   const [screen, setScreen] = useState("home");
   async function load() {
-    const r = await fetch(`/api/painter/portal?token=${encodeURIComponent(token)}`);
+    const url = painterName ? `/api/painter/by-name?name=${encodeURIComponent(painterName)}` : `/api/painter/portal?token=${encodeURIComponent(token)}`;
+    const r = await fetch(url);
     const d = await r.json();
     if (!r.ok) {
       setState({ loading: false, error: d.error || "Port\xE1l se nepoda\u0159ilo na\u010D\xEDst.", painter: null, availability: [] });
@@ -747,7 +753,7 @@ function App() {
   }
   useEffect(() => {
     load();
-  }, [token]);
+  }, [token, painterName]);
   const availabilityMap = useMemo(() => new Map((state.availability || []).map((r) => [r.date, r])), [state.availability]);
   const monthCells = useMemo(() => buildMonthCells(month, availabilityMap), [month, availabilityMap]);
   useEffect(() => {
@@ -757,7 +763,8 @@ function App() {
   }, [detailDate, availabilityMap]);
   async function save(payload, savingKey) {
     setSaving(savingKey);
-    const r = await fetch("/api/painter/availability", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, ...payload }) });
+    const authParam = painterName ? { painterName } : { token };
+    const r = await fetch("/api/painter/availability", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...authParam, ...payload }) });
     const d = await r.json();
     setSaving("");
     if (!r.ok) {

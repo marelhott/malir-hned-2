@@ -6,6 +6,7 @@
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/nabidka", "destination": "/nabidka.html" },
     { "source": "/zakazka", "destination": "/zakazka.html" },
+    { "source": "/maliri/:name", "destination": "/malir.html" },
     { "source": "/maliri", "destination": "/malir.html" },
     { "source": "/malire", "destination": "/Maliri.html" },
     { "source": "/o-nas", "destination": "/O nas.html" }
