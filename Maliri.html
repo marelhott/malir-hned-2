@@ -14,6 +14,45 @@
     html { scroll-behavior: smooth; }
     body { font-family: 'Outfit', sans-serif; background: #f0ece6; color: #18170f; }
     a { text-decoration: none; color: inherit; }
+
+    /* ── MOBILE ─────────────────────────────────────────────── */
+    .mh-nav-links { display: flex; gap: 32px; }
+    .mh-header-row { display: flex; align-items: flex-end; justify-content: space-between; }
+    .mh-filter-row { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 4px; }
+    .mh-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    .mh-cta-inner { display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: center; }
+    .mh-footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 36px; }
+    .mh-nav-pad { padding: 0 64px; }
+    .mh-content-pad { padding: 52px 64px 48px; }
+    .mh-grid-pad { padding: 48px 64px 80px; }
+    .mh-cta-pad { padding: 0 64px 80px; }
+    .mh-footer-pad { padding: 56px 64px 36px; }
+    .mh-cta-block { background: #2a7a4e; border-radius: 32px; padding: 48px 64px; }
+
+    @media (max-width: 768px) {
+      .mh-nav-pad { padding: 0 20px; }
+      .mh-nav-links { gap: 18px; }
+      .mh-nav-links a { font-size: 13px !important; }
+      .mh-content-pad { padding: 32px 20px 28px; }
+      .mh-header-row { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .mh-filter-row { gap: 6px; }
+      .mh-grid-pad { padding: 28px 16px 48px; }
+      .mh-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+      .mh-cta-pad { padding: 0 16px 48px; }
+      .mh-cta-block { padding: 36px 28px; border-radius: 24px; }
+      .mh-cta-inner { grid-template-columns: 1fr; gap: 20px; text-align: center; }
+      .mh-footer-pad { padding: 40px 20px 28px; }
+      .mh-footer-inner { grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 24px; }
+    }
+
+    @media (max-width: 480px) {
+      .mh-nav-links { display: none; }
+      .mh-content-pad { padding: 24px 16px 20px; }
+      .mh-grid { grid-template-columns: 1fr; gap: 16px; }
+      .mh-grid-pad { padding: 20px 16px 40px; }
+      .mh-footer-inner { grid-template-columns: 1fr; gap: 20px; }
+      .mh-footer-pad { padding: 32px 16px 24px; }
+    }
   </style>
 </head>
 <body>
@@ -226,11 +265,11 @@ function App() {
 
       {/* NAV */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(240,236,230,0.88)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.border}` }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="mh-nav-pad" style={{ maxWidth: 1280, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <a href="Malir Hned v2.html">
             <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 54, width: 'auto', display: 'block' }} />
           </a>
-          <nav style={{ display: 'flex', gap: 32 }}>
+          <nav className="mh-nav-links">
             {[['Malir Hned v2.html#jak-to-funguje','Jak to funguje'],['Malir Hned v2.html#terminy','Termíny'],['Malir Hned v2.html#cena','Cena'],['Maliri.html','Malíři'],['O nas.html','O nás']].map(([href, lbl]) => (
               <a key={href} href={href} style={{ fontSize: 15, fontWeight: lbl === 'Malíři' ? 400 : 300, color: lbl === 'Malíři' ? T.text : T.textMid, textDecoration: 'none' }}>{lbl}</a>
             ))}
@@ -239,14 +278,14 @@ function App() {
       </nav>
 
       {/* HEADER */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '52px 64px 48px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', borderBottom: `1px solid ${T.border}` }}>
+      <div className="mh-content-pad mh-header-row" style={{ maxWidth: 1280, margin: '0 auto', borderBottom: `1px solid ${T.border}` }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 10 }}>Tým</div>
-          <h1 style={{ fontSize: 'clamp(36px,3.2vw,52px)', fontWeight: 300, letterSpacing: '-0.055em', lineHeight: 1.0, color: T.text }}>
+          <h1 style={{ fontSize: 'clamp(28px,3.2vw,52px)', fontWeight: 300, letterSpacing: '-0.055em', lineHeight: 1.0, color: T.text }}>
             Ověření malíři<br /><span style={{ color: T.textLight }}>pro Prahu a okolí</span>
           </h1>
         </div>
-        <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
+        <div className="mh-filter-row">
           {filters.map(f => (
             <button key={f} type="button" onClick={() => setFilter(f)}
               style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${f === filter ? 'rgba(42,122,78,0.22)' : T.border}`, background: f === filter ? T.accentSoft : T.surface, fontSize: 13, fontWeight: f === filter ? 400 : 300, color: f === filter ? T.accent : T.textMid, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'all 0.15s' }}>
@@ -257,17 +296,17 @@ function App() {
       </div>
 
       {/* GRID */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 64px 80px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+      <div className="mh-grid-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div className="mh-grid">
           {visible.map(p => <PainterCard key={p.name} painter={p} />)}
         </div>
       </div>
 
       {/* CTA PRUH */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px 80px' }}>
-        <div style={{ background: T.accent, borderRadius: T.r, padding: '48px 64px', display: 'grid', gridTemplateColumns: '1fr auto', gap: 48, alignItems: 'center' }}>
+      <div className="mh-cta-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div className="mh-cta-block mh-cta-inner">
           <div>
-            <div style={{ fontSize: 'clamp(22px,2vw,32px)', fontWeight: 300, letterSpacing: '-0.045em', color: '#fff', marginBottom: 8 }}>Nevíte, koho vybrat?</div>
+            <div style={{ fontSize: 'clamp(20px,2vw,32px)', fontWeight: 300, letterSpacing: '-0.045em', color: '#fff', marginBottom: 8 }}>Nevíte, koho vybrat?</div>
             <div style={{ fontSize: 15, fontWeight: 300, color: 'rgba(255,255,255,0.6)' }}>Vyberte termín a my přiřadíme nejlepšího dostupného malíře pro vaši zakázku.</div>
           </div>
           <a href="Malir Hned v2.html#terminy" style={{ display: 'inline-block', padding: '14px 32px', borderRadius: T.br, background: '#fff', color: T.accent, fontSize: 15, fontWeight: 500, whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(0,0,0,0.14)' }}>Vybrat termín</a>
@@ -275,13 +314,13 @@ function App() {
       </div>
 
       {/* FOOTER */}
-      <footer style={{ background: T.surface, borderTop: `1px solid ${T.border}`, padding: '56px 64px 36px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 36 }}>
+      <footer className="mh-footer-pad" style={{ background: T.surface, borderTop: `1px solid ${T.border}` }}>
+        <div className="mh-footer-inner" style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div>
             <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 44, width: 'auto', display: 'block', marginBottom: 16 }} />
             <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.75, maxWidth: 280 }}>Platforma vznikla z reálné malířské praxe. Staví ji lidé, kteří mají za sebou více než deset let zakázek v bytech, kancelářích a menších domech po Praze a okolí.</p>
           </div>
-          {[['Služby',['Volné termíny','Orientační cena','Dokončit objednávku']],['Společnost',['Jak to funguje','O nás','+420 777 650 320','info@malirhned.cz']],['Kontakt',['K Červenému dvoru 18, 160 00 Praha 6','IČO: 218 45 731','Profily malířů']]].map(([title, items]) => (
+          {[['Služby',['Volné termíny','Orientační cena','Dokončit objednávku']],['Společnost',['Jak to funguje','O nás','+420 732 333 550','info@malirhned.cz']],['Kontakt',['Františka Křížka, Praha 7, 170 00','IČ: 64347532','Profily malířů']]].map(([title, items]) => (
             <div key={title}>
               <div style={{ fontSize: 13, fontWeight: 500, color: T.text, marginBottom: 14 }}>{title}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -296,14 +335,14 @@ function App() {
                   <>
                     <a href="Malir Hned v2.html#jak-to-funguje" style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>Jak to funguje</a>
                     <a href="O nas.html" style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>O nás</a>
-                    <a href="tel:+420777650320" style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>+420 777 650 320</a>
+                    <a href="tel:+420732333550" style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>+420 732 333 550</a>
                     <a href="mailto:info@malirhned.cz" style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>info@malirhned.cz</a>
                   </>
                 )}
                 {title === 'Kontakt' && (
                   <>
-                    <span style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>K Červenému dvoru 18, 160 00 Praha 6</span>
-                    <span style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>IČO: 218 45 731</span>
+                    <span style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>Františka Křížka, Praha 7, 170 00</span>
+                    <span style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>IČ: 64347532</span>
                     <a href="Maliri.html" style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>Profily malířů</a>
                   </>
                 )}
@@ -311,7 +350,7 @@ function App() {
             </div>
           ))}
         </div>
-        <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 20, borderTop: `1px solid ${T.border}`, fontSize: 13, fontWeight: 300, color: T.textLight }}>© 2026 Malíř Hned s.r.o.</div>
+        <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 20, borderTop: `1px solid ${T.border}`, fontSize: 13, fontWeight: 300, color: T.textLight, marginTop: 0 }}>© 2026 Malíř Hned s.r.o.</div>
       </footer>
     </div>
   );

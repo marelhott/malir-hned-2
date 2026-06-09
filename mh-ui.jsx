@@ -6,11 +6,11 @@ const { T } = window;
 function SiteNav() {
   return (
     <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(240,236,230,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.border}` }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <a href="#" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
           <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 54, width: 'auto', display: 'block' }} />
         </a>
-        <nav style={{ display: 'flex', gap: 32 }}>
+        <nav className="mh-nav-links">
           {[['#jak-to-funguje', 'Jak to funguje'], ['#terminy', 'Termíny'], ['#cena', 'Cena'], ['Maliri.html', 'Malíři'], ['O nas.html', 'O nás']].map(([href, lbl]) => (
             <a key={href} href={href} style={{ fontSize: 15, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>{lbl}</a>
           ))}
@@ -23,8 +23,8 @@ function SiteNav() {
 // ── FOOTER ────────────────────────────────────────────────────
 function SiteFooter() {
   return (
-    <footer style={{ background: T.surface, borderTop: `1px solid ${T.border}`, padding: '40px 64px 28px', marginTop: 44 }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 34 }}>
+    <footer className="mh-site-pad" style={{ background: T.surface, borderTop: `1px solid ${T.border}`, paddingTop: 40, paddingBottom: 28, marginTop: 44 }}>
+      <div className="mh-footer-grid" style={{ maxWidth: 1280, margin: '0 auto' }}>
         <div>
           <div style={{ marginBottom: 16 }}>
             <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 44, width: 'auto', display: 'block' }} />
@@ -44,14 +44,14 @@ function SiteFooter() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <a href="#jak-to-funguje" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>Jak to funguje</a>
             <a href="O nas.html" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>O nás</a>
-            <a href="tel:+420777650320" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>+420 777 650 320</a>
+            <a href="tel:+420732333550" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>+420 732 333 550</a>
             <a href="mailto:info@malirhned.cz" style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>info@malirhned.cz</a>
           </div>
         </div>
         <div>
           <div style={{ fontSize: 13, fontWeight: 500, color: T.text, marginBottom: 16 }}>Kontakt</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {['K Červenému dvoru 18, 160 00 Praha 6', 'IČO: 218 45 731', 'Dostupné termíny', 'Výpočet ceny'].map(item => (
+            {['Františka Křížka, Praha 7, 170 00', 'IČ: 64347532', 'Dostupné termíny', 'Výpočet ceny'].map(item => (
               (item === 'Dostupné termíny' || item === 'Výpočet ceny')
                 ? <a key={item} href={item === 'Dostupné termíny' ? '#terminy' : '#cena'} style={{ fontSize: 14, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>{item}</a>
                 : <span key={item} style={{ fontSize: 14, fontWeight: 300, color: T.textMid }}>{item}</span>
@@ -59,7 +59,7 @@ function SiteFooter() {
           </div>
         </div>
       </div>
-      <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 16, borderTop: `1px solid ${T.border}`, marginTop: 0 }}>
         <span style={{ fontSize: 13, fontWeight: 300, color: T.textLight }}>© 2026 Malíř Hned s.r.o.</span>
       </div>
     </footer>

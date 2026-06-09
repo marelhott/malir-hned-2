@@ -7,8 +7,8 @@ const { SectionHead, Card, CalcHead, RadioCard, ServiceToggle, PriceSidebar } = 
 function HeroSection() {
   return (
     <section style={{ padding: '40px 0 0' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
-      <div style={{
+      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
+      <div className="mh-hero-panel" style={{
         borderRadius: T.r,
         border: `1px solid ${T.border}`,
         boxShadow: T.panelShadow,
@@ -19,7 +19,7 @@ function HeroSection() {
         background: '#ffffff',
       }}>
         {/* Vlevo — text, dot textura */}
-        <div style={{
+        <div className="mh-hero-text" style={{
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           padding: '64px 28px 64px 72px',
           background: `radial-gradient(circle, rgba(0,0,0,0.022) 1px, transparent 1px) 0 0 / 18px 18px, #ffffff`,
@@ -28,7 +28,7 @@ function HeroSection() {
             <div style={{ width: 6, height: 6, borderRadius: 99, background: T.accent }} />
             Praha a Středočeský kraj
           </div>
-          <h1 style={{ margin: 0, fontWeight: 300, letterSpacing: '-0.055em', lineHeight: 1.0, fontSize: 'clamp(38px, 3.8vw, 60px)' }}>
+          <h1 style={{ margin: 0, fontWeight: 300, letterSpacing: '-0.055em', lineHeight: 1.0, fontSize: 'clamp(32px, 3.8vw, 60px)' }}>
             <span style={{ display: 'block', color: T.text }}>Malíř, když ho</span>
             <span style={{ display: 'block', color: T.textLight }}>potřebujete hned.</span>
           </h1>
@@ -41,7 +41,7 @@ function HeroSection() {
         </div>
 
         {/* Vpravo — obrázek malíře */}
-        <div style={{ position: 'relative', background: '#ffffff', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
+        <div className="mh-hero-img" style={{ position: 'relative', background: '#ffffff', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
           <img
             src="uploads/hero.png"
             alt="Malíř Hned – jak to funguje"
@@ -66,8 +66,8 @@ function StepsSection() {
   const [active, setActive] = React.useState('');
   return (
     <section id="jak-to-funguje" style={{ padding: '48px 0 0' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div className="mh-steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
           {STEPS.map(step => {
             const on = active === step.num;
             return (
@@ -106,10 +106,10 @@ function CalendarSection({ months, monthIdx, setMonthIdx, selectedDay, setSelect
 
   return (
     <section id="terminy" style={{ padding: '52px 0 56px' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
         <SectionHead eyebrow="Termín" title="Vyberte si termín" />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'flex-start' }}>
+        <div className="mh-cal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'flex-start' }}>
 
           {/* Kalendářový panel */}
           <Card style={{ padding: '28px 28px 24px' }}>
@@ -208,9 +208,9 @@ function CalcSection({ formData, setFormData, priceRange }) {
 
   return (
     <section id="cena" style={{ padding: '0 0 56px' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
         <SectionHead eyebrow="Cena" title="Spočítejte si přibližnou cenu" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 316px', gap: 28, alignItems: 'start' }}>
+        <div className="mh-calc-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 316px', gap: 28, alignItems: 'start' }}>
 
           {/* Formulář */}
           <Card style={{ overflow: 'hidden', padding: 0 }}>
@@ -220,7 +220,7 @@ function CalcSection({ formData, setFormData, priceRange }) {
               <CalcHead title="Typ plochy">
                 <path d="M4 11.5 12 5l8 6.5" /><path d="M6.5 10.5V19h11v-8.5" /><path d="M10 19v-4.5h4V19" />
               </CalcHead>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="mh-area-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <div style={{ fontSize: 12, color: T.textMid, fontWeight: 300, marginBottom: 6 }}>Celková plocha</div>
                   <div style={{ display: 'flex' }}>
@@ -252,7 +252,7 @@ function CalcSection({ formData, setFormData, priceRange }) {
               <CalcHead title="Rozsah oprav">
                 <path d="M12 4 6.5 6v4.8c0 3.4 2.1 6.6 5.5 8.2 3.4-1.6 5.5-4.8 5.5-8.2V6L12 4Z" /><path d="m9.5 11.5 1.8 1.8 3.2-3.3" />
               </CalcHead>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+              <div className="mh-repairs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                 {[{ v: 'Malé', l: ['malé dírky,', 'drobné trhliny'] }, { v: 'Střední', l: ['lokální škrábání,', 'větší trhliny'] }, { v: 'Velké', l: ['rozsáhlejší', 'škrábání a opravy'] }, { v: 'Žádné', l: ['pouze malování,', 'bez oprav'] }].map(o => (
                   <RadioCard key={o.v} label={o.v} lines={o.l} active={formData.repairs === o.v} onClick={() => sf('repairs', o.v)} />
                 ))}
@@ -264,7 +264,7 @@ function CalcSection({ formData, setFormData, priceRange }) {
               <CalcHead title="Služby" sub="ovlivňující cenu">
                 <path d="m12 4 8 4.7-8 4.6-8-4.6L12 4Z" /><path d="m4 12.5 8 4.5 8-4.5" /><path d="m4 16.5 8 4.5 8-4.5" />
               </CalcHead>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="mh-services-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <ServiceToggle label="Barvu zajistí malíř?" yesLabel="Ano, malíř zajistí" noLabel="Ne, mám vlastní" value={formData.material} onYes={() => sf('material', 'Ano')} onNo={() => sf('material', 'Ne')} />
                 <ServiceToggle label="Posunutí nábytku?" yesLabel="Ano, potřebuji" noLabel="Ne, vyřeším sám" value={formData.furnitureMoving} onYes={() => sf('furnitureMoving', 'Ano')} onNo={() => sf('furnitureMoving', 'Ne')} />
                 <ServiceToggle label="Zakrývání, oblepování?" yesLabel="Ano, chci" noLabel="Není potřeba" value={formData.covering} onYes={() => sf('covering', 'Ano')} onNo={() => sf('covering', 'Ne')} />
@@ -282,7 +282,9 @@ function CalcSection({ formData, setFormData, priceRange }) {
           </Card>
 
           {/* Cenový sidebar */}
-          <PriceSidebar priceRange={priceRange} formData={formData} />
+          <div className="mh-calc-sidebar">
+            <PriceSidebar priceRange={priceRange} formData={formData} />
+          </div>
         </div>
       </div>
     </section>
@@ -296,13 +298,13 @@ function PainterSection({ selectedSlot }) {
 
   return (
     <section id="malir" style={{ padding: '0 0 56px' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
         <SectionHead eyebrow="Malíř" title="Přiřazení malíře" />
         <Card style={{ padding: '28px 32px' }}>
           <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: '0 0 24px', lineHeight: 1.65, textAlign: 'center' }}>
             Dispečink vybere nejvhodnějšího malíře podle termínu, lokality a rozsahu práce. Potvrdíme vám ho po přijetí zakázky.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
+          <div className="mh-painter-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
             {painters.map((p) => (
               <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 18, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: T.cardShadow }}>
@@ -329,10 +331,10 @@ function OrderSection({ selectedSlot, monthIdx, priceRange, onOrderClick }) {
   ];
   return (
     <section id="objednavka" style={{ padding: '0 0 44px' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
         <SectionHead eyebrow="Objednávka" title="Objednávka" />
         <Card style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: `1px solid ${T.border}` }}>
+          <div className="mh-order-items" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: `1px solid ${T.border}` }}>
             {items.map(([lbl, val], i) => (
               <div key={lbl} style={{ padding: '22px 24px', textAlign: 'center', borderRight: i < items.length - 1 ? `1px solid ${T.border}` : 'none' }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: T.textLight, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{lbl}</div>
@@ -341,7 +343,7 @@ function OrderSection({ selectedSlot, monthIdx, priceRange, onOrderClick }) {
             ))}
           </div>
           <div style={{ padding: '24px 28px' }}>
-            <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.5, margin: '0 0 22px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+            <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.5, margin: '0 0 22px', textAlign: 'center' }}>
               Vyplníte kontaktní údaje a zakázka odejde dispečinku. Obratem vám potvrdíme přijetí a jakmile malíř zakázku přijme, ozve se vám napřímo.
             </p>
             <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>

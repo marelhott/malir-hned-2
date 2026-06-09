@@ -18,6 +18,83 @@
     input[type=number]::-webkit-outer-spin-button { opacity: 0.4; }
     a:hover { opacity: 0.82; }
     button:hover { opacity: 0.88; }
+
+    /* ── SHARED LAYOUT HELPERS ──────────────────────────────── */
+    .mh-site-pad { padding-left: 64px; padding-right: 64px; }
+    .mh-nav-links { display: flex; gap: 32px; }
+    .mh-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 34px; }
+
+    /* ── MOBILE ─────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      /* Nav */
+      .mh-site-pad { padding-left: 24px; padding-right: 24px; }
+      .mh-nav-links { gap: 16px; }
+      .mh-nav-links a { font-size: 13px !important; }
+
+      /* Footer */
+      .mh-footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
+    }
+
+    @media (max-width: 768px) {
+      /* Hero */
+      .mh-hero-panel {
+        grid-template-columns: 1fr !important;
+        min-height: auto !important;
+      }
+      .mh-hero-img { display: none !important; }
+      .mh-hero-text { padding: 40px 28px !important; }
+
+      /* Steps */
+      .mh-steps-grid { grid-template-columns: 1fr 1fr !important; }
+
+      /* Calendar section */
+      .mh-cal-grid { grid-template-columns: 1fr !important; }
+
+      /* Calc section */
+      .mh-calc-grid { grid-template-columns: 1fr !important; }
+      .mh-calc-sidebar { display: none !important; }
+      .mh-calc-price-bar { display: block !important; }
+
+      /* Calc grids */
+      .mh-repairs-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .mh-services-grid { grid-template-columns: 1fr !important; }
+      .mh-area-grid { grid-template-columns: 1fr !important; }
+
+      /* Painter section */
+      .mh-painter-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+      /* Order section items */
+      .mh-order-items { grid-template-columns: 1fr 1fr !important; }
+
+      /* CTA strip */
+      .mh-strip-inner {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        padding: 36px 28px !important;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .mh-site-pad { padding-left: 16px; padding-right: 16px; }
+      .mh-nav-links { display: none; }
+      .mh-steps-grid { grid-template-columns: 1fr !important; }
+      .mh-footer-grid { grid-template-columns: 1fr; gap: 20px; }
+      .mh-painter-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+      .mh-order-items { grid-template-columns: 1fr 1fr !important; }
+
+      /* mobile price bar shown at top of calc */
+      .mh-calc-price-bar { display: block !important; }
+    }
+
+    /* Mobile sticky price bar */
+    .mh-calc-price-bar {
+      display: none;
+      background: #2a7a4e;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
