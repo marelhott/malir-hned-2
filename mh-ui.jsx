@@ -3,20 +3,48 @@
 const { T } = window;
 
 // ── NAV ───────────────────────────────────────────────────────
+const NAV_LINKS = [['#jak-to-funguje', 'Jak to funguje'], ['#terminy', 'Termíny'], ['#cena', 'Cena'], ['Maliri.html', 'Malíři'], ['O nas.html', 'O nás']];
+
 function SiteNav() {
+  const [open, setOpen] = React.useState(false);
   return (
-    <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(240,236,230,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.border}` }}>
-      <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <a href="#" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 54, width: 'auto', display: 'block' }} />
-        </a>
-        <nav className="mh-nav-links">
-          {[['#jak-to-funguje', 'Jak to funguje'], ['#terminy', 'Termíny'], ['#cena', 'Cena'], ['Maliri.html', 'Malíři'], ['O nas.html', 'O nás']].map(([href, lbl]) => (
-            <a key={href} href={href} style={{ fontSize: 15, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>{lbl}</a>
-          ))}
-        </nav>
+    <>
+      <div style={{ position: 'sticky', top: 0, zIndex: 200, background: 'rgba(240,236,230,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.border}` }}>
+        <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <a href="#" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="uploads/logo.png" alt="Malíř Hned" style={{ height: 54, width: 'auto', display: 'block' }} />
+          </a>
+          {/* Desktop nav */}
+          <nav className="mh-nav-links">
+            {NAV_LINKS.map(([href, lbl]) => (
+              <a key={href} href={href} style={{ fontSize: 15, fontWeight: 300, color: T.textMid, textDecoration: 'none' }}>{lbl}</a>
+            ))}
+          </nav>
+          {/* Burger button — only visible on mobile */}
+          <button
+            className="mh-burger"
+            onClick={() => setOpen(o => !o)}
+            aria-label="Menu"
+            style={{ display: 'none', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 5, width: 44, height: 44, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            <span style={{ display: 'block', width: 22, height: 2, background: open ? 'transparent' : T.text, borderRadius: 2, transition: 'all 0.2s', transform: open ? 'rotate(45deg) translate(5px,5px)' : 'none' }} />
+            <span style={{ display: 'block', width: 22, height: 2, background: T.text, borderRadius: 2, transition: 'all 0.2s', transform: open ? 'rotate(-45deg)' : 'none', marginTop: open ? -7 : 0 }} />
+            {!open && <span style={{ display: 'block', width: 22, height: 2, background: T.text, borderRadius: 2 }} />}
+          </button>
+        </div>
       </div>
-    </div>
+      {/* Mobile dropdown */}
+      {open && (
+        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 199, background: 'rgba(240,236,230,0.98)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.border}`, padding: '12px 0 20px' }}>
+          {NAV_LINKS.map(([href, lbl]) => (
+            <a key={href} href={href} onClick={() => setOpen(false)}
+              style={{ display: 'block', padding: '14px 24px', fontSize: 17, fontWeight: 300, color: T.text, textDecoration: 'none', borderBottom: `1px solid ${T.border}` }}>
+              {lbl}
+            </a>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 

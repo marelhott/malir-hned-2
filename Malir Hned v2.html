@@ -41,8 +41,8 @@
         grid-template-columns: 1fr !important;
         min-height: auto !important;
       }
-      .mh-hero-img { display: none !important; }
-      .mh-hero-text { padding: 40px 28px !important; }
+      .mh-hero-img { display: flex !important; width: 100% !important; min-height: 260px !important; max-height: 340px !important; }
+      .mh-hero-text { padding: 36px 24px !important; }
 
       /* Steps */
       .mh-steps-grid { grid-template-columns: 1fr 1fr !important; }
@@ -77,13 +77,12 @@
 
     @media (max-width: 480px) {
       .mh-site-pad { padding-left: 16px; padding-right: 16px; }
-      .mh-nav-links { display: none; }
+      .mh-nav-links { display: none !important; }
+      .mh-burger { display: flex !important; }
       .mh-steps-grid { grid-template-columns: 1fr !important; }
       .mh-footer-grid { grid-template-columns: 1fr; gap: 20px; }
       .mh-painter-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
       .mh-order-items { grid-template-columns: 1fr 1fr !important; }
-
-      /* mobile price bar shown at top of calc */
       .mh-calc-price-bar { display: block !important; }
     }
 
