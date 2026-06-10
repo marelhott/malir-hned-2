@@ -405,6 +405,13 @@ function JobDetail({ job, onClose, onBack }) {
           <span style={{ padding: '5px 11px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: meta.bg, color: meta.color }}>{meta.label}</span>
         </div>
 
+        {job.contact_locked && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 14, background: C.warnSoft, border: `1px solid ${C.warn}33`, marginBottom: 14 }}>
+            <Icon name="clock" size={15} color={C.warn} />
+            <div style={{ fontSize: 13, color: C.warn }}>Kontakt na klienta se odemkne po potvrzení dispečinkem.</div>
+          </div>
+        )}
+
         {phone && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
             <a href={`tel:${phone}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 12px', borderRadius: 14, background: C.accent, color: '#fff', textDecoration: 'none', fontFamily: "'Outfit', sans-serif", fontSize: 14, fontWeight: 500 }}>
@@ -834,6 +841,14 @@ function App() {
   }
 
   useEffect(() => { load() }, [token, painterName])
+
+  // Auto-refresh: při návratu do appky a každých 60 s na pozadí
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) load() }
+    document.addEventListener('visibilitychange', onVisible)
+    const timer = setInterval(() => { if (!document.hidden) load() }, 60000)
+    return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(timer) }
+  }, [token, painterName])
 
   const availabilityMap = useMemo(() => new Map((state.availability || []).map(r => [r.date, r])), [state.availability])
   const monthCells = useMemo(() => buildMonthCells(month, availabilityMap), [month, availabilityMap])
