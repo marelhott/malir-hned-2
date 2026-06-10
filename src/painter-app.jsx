@@ -120,11 +120,43 @@ function Screen({ title, onBack, children }) {
 }
 
 // ── Kalendář ─────────────────────────────────────────────────────────────────
-function KalendarScreen({ onBack, availabilityMap, monthCells, month, setMonth, save, saving, painterNote, setPainterNote, setDetailDate }) {
+function KalendarScreen({ onBack, availabilityMap, monthCells, month, setMonth, save, saving, painterNote, setPainterNote, onSelectDates }) {
+  // Tažný výběr více dní prstem/myší
+  const dragRef = React.useRef(null)
+  const [dragSel, setDragSel] = useState(null) // Set vybraných dat během tažení
+
+  function dateFromPoint(e) {
+    const el = document.elementFromPoint(e.clientX, e.clientY)
+    const cell = el && el.closest && el.closest('[data-date]')
+    return cell ? cell.getAttribute('data-date') : null
+  }
+  function onPointerDown(e) {
+    const d = dateFromPoint(e)
+    if (!d) return
+    e.preventDefault()
+    dragRef.current = new Set([d])
+    setDragSel(new Set(dragRef.current))
+  }
+  function onPointerMove(e) {
+    if (!dragRef.current) return
+    const d = dateFromPoint(e)
+    if (d && !dragRef.current.has(d)) {
+      dragRef.current.add(d)
+      setDragSel(new Set(dragRef.current))
+    }
+  }
+  function onPointerUp() {
+    if (!dragRef.current) return
+    const dates = [...dragRef.current].sort()
+    dragRef.current = null
+    setDragSel(null)
+    onSelectDates(dates)
+  }
+
   return (
     <Screen title="Kalendář" onBack={onBack}>
       <div style={{ display: 'grid', gap: 14 }}>
-        <div style={{ fontSize: 13, color: C.textMid }}>Zaklikejte dny, kdy můžete pracovat. Detail dne otevřete tapnutím.</div>
+        <div style={{ fontSize: 13, color: C.textMid }}>Přejeďte prstem přes dny, které chcete nastavit — klidně přes více dní najednou. Pak jim vyberete stav.</div>
 
         <div style={{ border: `1px solid ${C.border}`, borderRadius: 18, padding: 12, background: C.surfaceSoft }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
@@ -143,16 +175,24 @@ function KalendarScreen({ onBack, availabilityMap, monthCells, month, setMonth, 
             {WEEKDAYS.map(w => <div key={w} style={{ textAlign: 'center', fontSize: 11, color: C.textLight }}>{w}</div>)}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+          <div
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, touchAction: 'none' }}
+            onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp} onPointerCancel={() => { dragRef.current = null; setDragSel(null) }}>
             {monthCells.map((cell, i) => {
               if (!cell) return <div key={`e-${i}`} />
-              const meta = STATUS_META[cell.row.status] || STATUS_META.available
+              // Dny nenastavené malířem/adminem (source 'system') = šedé „neoznačeno"
+              const isDefault = !cell.row.id || cell.row.source === 'system' || !cell.row.source
+              const meta = isDefault
+                ? { bg: '#fff', text: C.textLight, dot: '#d8d2c8' }
+                : (STATUS_META[cell.row.status] || STATUS_META.available)
+              const selected = dragSel && dragSel.has(cell.date)
               return (
-                <button key={cell.date} type="button" onClick={() => setDetailDate(cell.date)}
-                  style={{ minHeight: 48, borderRadius: 14, border: `1px solid ${C.border}`, background: meta.bg, color: meta.text, display: 'grid', placeItems: 'center', padding: 6, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{cell.day}</div>
-                  <div style={{ width: 5, height: 5, borderRadius: 999, background: meta.dot }} />
-                </button>
+                <div key={cell.date} data-date={cell.date}
+                  style={{ minHeight: 48, borderRadius: 14, border: selected ? `2px solid ${C.accent}` : `1px solid ${C.border}`, background: selected ? C.accentSoft : meta.bg, color: selected ? C.accent : meta.text, display: 'grid', placeItems: 'center', padding: 6, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", userSelect: 'none' }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, pointerEvents: 'none' }}>{cell.day}</div>
+                  <div style={{ width: 5, height: 5, borderRadius: 999, background: selected ? C.accent : meta.dot, pointerEvents: 'none' }} />
+                </div>
               )
             })}
           </div>
@@ -164,6 +204,10 @@ function KalendarScreen({ onBack, availabilityMap, monthCells, month, setMonth, 
                 {m.label}
               </div>
             ))}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 9px', borderRadius: 999, background: '#fff', border: `1px solid ${C.border}`, color: C.textLight, fontSize: 11 }}>
+              <span style={{ width: 5, height: 5, borderRadius: 999, background: '#d8d2c8', display: 'inline-block' }} />
+              Neoznačeno
+            </div>
           </div>
         </div>
 
@@ -729,16 +773,20 @@ function HomeScreen({ painter, offers, jobs, onNav, error, pushState, onPushTogg
   )
 }
 
-// ── Day detail bottom sheet ───────────────────────────────────────────────────
-function DaySheet({ detailDate, draft, setDraft, saving, saveDay, onClose }) {
+// ── Day detail bottom sheet (jeden i více dní najednou) ──────────────────────
+function DaySheet({ dates, draft, setDraft, saving, saveDay, onClose }) {
+  const multi = dates.length > 1
+  const title = multi
+    ? `${dates.length} ${dates.length < 5 ? 'dny' : 'dní'} · ${dayLabel(dates[0])} – ${dayLabel(dates[dates.length - 1])}`
+    : dayLabel(dates[0])
   return (
     <div role="button" tabIndex={0} onClick={onClose} onKeyDown={e => { if (e.key === 'Escape') onClose() }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(20,14,6,0.36)', display: 'grid', alignItems: 'end', padding: 10, zIndex: 200 }}>
       <div onClick={e => e.stopPropagation()}
         style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: 18, boxShadow: C.shadow, maxWidth: 430, width: '100%', margin: '0 auto' }}>
         <div style={{ width: 36, height: 3, borderRadius: 999, background: C.border, margin: '0 auto 16px' }} />
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Detail dne</div>
-        <div style={{ fontSize: 20, color: C.text, letterSpacing: '-0.04em', marginBottom: 16 }}>{dayLabel(detailDate)}</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{multi ? 'Nastavit vybrané dny' : 'Detail dne'}</div>
+        <div style={{ fontSize: multi ? 16 : 20, color: C.text, letterSpacing: '-0.04em', marginBottom: 16 }}>{title}</div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
           {Object.entries(STATUS_META).map(([v, m]) => (
@@ -761,7 +809,7 @@ function DaySheet({ detailDate, draft, setDraft, saving, saveDay, onClose }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
           <button type="button" onClick={onClose} style={{ ...field(), cursor: 'pointer', textAlign: 'center' }}>Zavřít</button>
           <button type="button" onClick={saveDay} style={{ padding: '11px 12px', borderRadius: 12, border: 'none', background: C.accent, color: '#fff', fontSize: 14, fontFamily: "'Outfit', sans-serif", cursor: 'pointer' }}>
-            {saving === draft.date ? 'Ukládám…' : 'Uložit'}
+            {saving === 'days' ? 'Ukládám…' : 'Uložit'}
           </button>
         </div>
       </div>
@@ -784,7 +832,7 @@ function App() {
   const [saving, setSaving] = useState('')
   const [painterNote, setPainterNote] = useState('')
   const [month, setMonth] = useState(monthStart(new Date().toISOString().slice(0, 10)))
-  const [detailDate, setDetailDate] = useState('')
+  const [selDates, setSelDates] = useState([]) // vybrané dny (1 i více, tažením)
   const [draft, setDraft] = useState(null)
   const [respondingId, setRespondingId] = useState('')
   const [screen, setScreen] = useState('home')
@@ -854,10 +902,13 @@ function App() {
   const monthCells = useMemo(() => buildMonthCells(month, availabilityMap), [month, availabilityMap])
 
   useEffect(() => {
-    if (!detailDate) return
-    const base = availabilityMap.get(detailDate) || { date: detailDate, status: 'available', capacity: 1, accepts_express: false, note: '' }
-    setDraft({ date: detailDate, status: base.status || 'available', capacity: base.capacity ?? 1, accepts_express: Boolean(base.accepts_express), note: base.note || '' })
-  }, [detailDate, availabilityMap])
+    if (!selDates.length) return
+    // U jednoho dne předvyplníme jeho hodnoty; u více dní začínáme od "Volno"
+    const base = selDates.length === 1
+      ? (availabilityMap.get(selDates[0]) || { status: 'available', capacity: 1, accepts_express: false, note: '' })
+      : { status: 'available', capacity: 1, accepts_express: false, note: '' }
+    setDraft({ status: base.status || 'available', capacity: base.capacity ?? 1, accepts_express: Boolean(base.accepts_express), note: base.note || '' })
+  }, [selDates, availabilityMap])
 
   async function save(payload, savingKey) {
     setSaving(savingKey)
@@ -881,9 +932,17 @@ function App() {
   }
 
   async function saveDay() {
-    if (!draft?.date) return
-    const ok = await save({ entries: [{ date: draft.date, status: draft.status, capacity: draft.capacity, accepts_express: draft.accepts_express, note: draft.note, source: 'painter' }] }, draft.date)
-    if (ok) setDetailDate('')
+    if (!draft || !selDates.length) return
+    const entries = selDates.map(date => ({
+      date,
+      status: draft.status,
+      capacity: draft.status === 'unavailable' ? 0 : draft.capacity,
+      accepts_express: draft.accepts_express,
+      note: draft.note,
+      source: 'painter',
+    }))
+    const ok = await save({ entries }, 'days')
+    if (ok) setSelDates([])
   }
 
   if (state.loading) {
@@ -905,7 +964,7 @@ function App() {
           month={month} setMonth={setMonth}
           save={save} saving={saving}
           painterNote={painterNote} setPainterNote={setPainterNote}
-          setDetailDate={setDetailDate}
+          onSelectDates={setSelDates}
         />
       )}
       {screen === 'zakazky' && (
@@ -915,8 +974,8 @@ function App() {
         <FinanceScreen jobs={jobs} onBack={() => setScreen('home')} />
       )}
 
-      {detailDate && draft && (
-        <DaySheet detailDate={detailDate} draft={draft} setDraft={setDraft} saving={saving} saveDay={saveDay} onClose={() => setDetailDate('')} />
+      {selDates.length > 0 && draft && (
+        <DaySheet dates={selDates} draft={draft} setDraft={setDraft} saving={saving} saveDay={saveDay} onClose={() => setSelDates([])} />
       )}
     </>
   )
