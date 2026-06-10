@@ -1,0 +1,13 @@
+{
+  "name": "Malíř Hned — Portál",
+  "short_name": "MH Portál",
+  "description": "Portál malíře — zakázky, kalendář, finance",
+  "start_url": "/maliri",
+  "display": "standalone",
+  "background_color": "#f0ece6",
+  "theme_color": "#1a3d2b",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

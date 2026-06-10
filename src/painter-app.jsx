@@ -66,6 +66,8 @@ function Icon({ name, size = 16, color = 'currentColor' }) {
     case 'note':        return <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={s}><rect x="2" y="1.5" width="12" height="13" rx="2"/><line x1="5" y1="5.5" x2="11" y2="5.5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="10.5" x2="8.5" y2="10.5"/></svg>
     case 'send':        return <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={s}><line x1="14" y1="2" x2="1" y2="8"/><line x1="14" y1="2" x2="9" y2="14"/><line x1="14" y1="2" x2="6" y2="9"/></svg>
     case 'coins':       return <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" style={s}><ellipse cx="6" cy="5" rx="4.5" ry="2"/><path d="M1.5 5v3c0 1.1 2 2 4.5 2s4.5-.9 4.5-2V5"/><ellipse cx="10" cy="10" rx="4.5" ry="2"/><path d="M5.5 10v.5c0 1.1 2 2 4.5 2s4.5-.9 4.5-2V10"/></svg>
+    case 'bell':        return <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={s}><path d="M8 1.5a4.5 4.5 0 0 1 4.5 4.5c0 3 1 4 1 4H2.5s1-1 1-4A4.5 4.5 0 0 1 8 1.5z"/><path d="M6.5 10s0 2 1.5 2 1.5-2 1.5-2"/></svg>
+    case 'trending':    return <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={s}><polyline points="1,11 5,7 8,9 14,3"/><polyline points="10,3 14,3 14,7"/></svg>
     default: return null
   }
 }
@@ -226,6 +228,95 @@ function BulkAvailability({ availabilityMap, onSave, saving }) {
         {saving === 'bulk' ? 'Ukládám…' : done ? <><Icon name="check" size={14} color="#fff" />Uloženo</> : 'Použít na výběr'}
       </button>
     </div>
+  )
+}
+
+// ── Expiry countdown ─────────────────────────────────────────────────────────
+function ExpiryCountdown({ expiresAt }) {
+  const [secs, setSecs] = useState(() => Math.max(0, Math.floor((new Date(expiresAt) - Date.now()) / 1000)))
+  useEffect(() => {
+    if (secs <= 0) return
+    const t = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(t)
+  }, [expiresAt])
+  if (secs <= 0) return <span style={{ color: C.danger, fontWeight: 600, fontSize: 12 }}>Nabídka vypršela</span>
+  const m = Math.floor(secs / 60), s = secs % 60
+  const urgent = secs < 120
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 999, background: urgent ? C.dangerSoft : C.warnSoft, color: urgent ? C.danger : C.warn, fontSize: 12, fontWeight: 600 }}>
+      <Icon name="clock" size={12} color={urgent ? C.danger : C.warn} />
+      {m}:{String(s).padStart(2, '0')} zbývá
+    </div>
+  )
+}
+
+// ── Finance screen ────────────────────────────────────────────────────────────
+function FinanceScreen({ jobs, onBack }) {
+  const DONE = ['completed', 'done', 'confirmed_to_client', 'in_progress']
+  const paid = jobs.filter(j => ['completed', 'done'].includes(j.status) && j.painter_reward)
+  const pending = jobs.filter(j => ['confirmed_to_client', 'in_progress'].includes(j.status) && j.painter_reward)
+  const totalPaid = paid.reduce((s, j) => s + (j.painter_reward || 0), 0)
+  const totalPending = pending.reduce((s, j) => s + (j.painter_reward || 0), 0)
+
+  // Monthly breakdown
+  const byMonth = {}
+  for (const j of jobs.filter(j => j.painter_reward)) {
+    const key = (j.assigned_at || j.created_at || '').slice(0, 7)
+    if (!key) continue
+    if (!byMonth[key]) byMonth[key] = { key, total: 0, count: 0 }
+    byMonth[key].total += j.painter_reward
+    byMonth[key].count++
+  }
+  const months = Object.values(byMonth).sort((a, b) => b.key.localeCompare(a.key)).slice(0, 12)
+
+  return (
+    <Screen title="Finance" onBack={onBack}>
+      <div style={{ display: 'grid', gap: 12 }}>
+        {/* Summary cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: '16px 14px' }}>
+            <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Vyplaceno</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: C.accent, letterSpacing: '-0.03em' }}>{fmtCzk(totalPaid)}</div>
+            <div style={{ fontSize: 11, color: C.textLight, marginTop: 4 }}>{paid.length} zakázek</div>
+          </div>
+          <div style={{ background: C.warnSoft, border: `1px solid ${C.warn}22`, borderRadius: 16, padding: '16px 14px' }}>
+            <div style={{ fontSize: 11, color: C.warn, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Čeká na výplatu</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: C.warn, letterSpacing: '-0.03em' }}>{fmtCzk(totalPending)}</div>
+            <div style={{ fontSize: 11, color: C.textLight, marginTop: 4 }}>{pending.length} zakázek</div>
+          </div>
+        </div>
+
+        {/* Monthly breakdown */}
+        {months.length > 0 && (
+          <div style={{ border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '12px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon name="trending" size={15} color={C.accent} />
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Po měsících</div>
+            </div>
+            {months.map(m => {
+              const [y, mo] = m.key.split('-')
+              const label = new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' }).format(new Date(Number(y), Number(mo) - 1, 1))
+              return (
+                <div key={m.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: `1px solid ${C.border}` }}>
+                  <div>
+                    <div style={{ fontSize: 13, color: C.text, fontWeight: 500, textTransform: 'capitalize' }}>{label}</div>
+                    <div style={{ fontSize: 11, color: C.textLight, marginTop: 2 }}>{m.count} {m.count === 1 ? 'zakázka' : m.count < 5 ? 'zakázky' : 'zakázek'}</div>
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.accent }}>{fmtCzk(m.total)}</div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {months.length === 0 && (
+          <div style={{ padding: '48px 0', textAlign: 'center' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: C.textLight }}><Icon name="coins" size={22} /></div>
+            <div style={{ fontSize: 15, color: C.textMid }}>Zatím žádné příjmy</div>
+          </div>
+        )}
+      </div>
+    </Screen>
   )
 }
 
@@ -407,7 +498,10 @@ function NabidkyScreen({ offers, respondingId, respondOffer, onBack }) {
                 <div key={offer.id} style={{ border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden' }}>
                   {/* offer header */}
                   <div style={{ padding: '14px 16px 14px', borderBottom: `1px solid ${C.border}`, background: C.warnSoft }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: C.warn, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Nová nabídka</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: C.warn, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Nová nabídka</div>
+                      {offer.expires_at && <ExpiryCountdown expiresAt={offer.expires_at} />}
+                    </div>
 
                     {/* date — prominent */}
                     {(job.preferred_date_label || job.preferred_time_label) && (
@@ -533,9 +627,11 @@ function NabidkyScreen({ offers, respondingId, respondOffer, onBack }) {
 }
 
 // ── Home screen ───────────────────────────────────────────────────────────────
-function HomeScreen({ painter, offers, jobs, onNav, error }) {
+function HomeScreen({ painter, offers, jobs, onNav, error, pushState, onPushToggle }) {
   const pending = offers.filter(o => o.status === 'pending').length
-  const activeJobs = jobs.filter(j => j.status === 'assigned' || j.status === 'in_progress').length
+  const activeJobs = jobs.filter(j => j.status === 'confirmed_to_client' || j.status === 'in_progress').length
+  const monthTotal = jobs.filter(j => j.painter_reward && ['completed', 'done', 'confirmed_to_client', 'in_progress'].includes(j.status))
+    .reduce((s, j) => s + (j.painter_reward || 0), 0)
 
   const sections = [
     {
@@ -562,6 +658,13 @@ function HomeScreen({ painter, offers, jobs, onNav, error }) {
       badge: activeJobs || null,
       badgeColor: C.accent,
     },
+    {
+      id: 'finance',
+      icon: 'coins',
+      label: 'Finance',
+      sub: monthTotal > 0 ? `Celkem ${fmtCzk(monthTotal)}` : 'Přehled odměn',
+      badge: null,
+    },
   ]
 
   return (
@@ -570,8 +673,20 @@ function HomeScreen({ painter, offers, jobs, onNav, error }) {
 
         {/* header card */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, boxShadow: C.shadow, padding: '22px 20px 20px', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Portál malíře</div>
-          <div style={{ fontSize: 28, fontWeight: 400, color: C.text, letterSpacing: '-0.04em' }}>{painter?.name || 'Malíř'}</div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Portál malíře</div>
+              <div style={{ fontSize: 28, fontWeight: 400, color: C.text, letterSpacing: '-0.04em' }}>{painter?.name || 'Malíř'}</div>
+            </div>
+            {/* Push notification toggle */}
+            {pushState !== 'unsupported' && (
+              <button type="button" onClick={onPushToggle}
+                title={pushState === 'granted' ? 'Notifikace zapnuty' : 'Zapnout notifikace'}
+                style={{ width: 40, height: 40, borderRadius: 12, border: `1px solid ${pushState === 'granted' ? C.accent : C.border}`, background: pushState === 'granted' ? C.accentSoft : C.surfaceSoft, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                <Icon name="bell" size={18} color={pushState === 'granted' ? C.accent : C.textLight} />
+              </button>
+            )}
+          </div>
           {error && <div style={{ fontSize: 12, color: C.danger, marginTop: 8 }}>{error}</div>}
         </div>
 
@@ -649,7 +764,6 @@ function DaySheet({ detailDate, draft, setDraft, saving, saveDay, onClose }) {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
-  // Support both /maliri/:name (name-based) and /maliri?token=... (token-based)
   const painterName = useMemo(() => {
     const parts = location.pathname.split('/').filter(Boolean)
     const idx = parts.indexOf('maliri')
@@ -666,7 +780,20 @@ function App() {
   const [detailDate, setDetailDate] = useState('')
   const [draft, setDraft] = useState(null)
   const [respondingId, setRespondingId] = useState('')
-  const [screen, setScreen] = useState('home') // 'home' | 'nabidky' | 'kalendar' | 'zakazky'
+  const [screen, setScreen] = useState('home')
+  const [pushState, setPushState] = useState('unknown') // 'unknown'|'unsupported'|'default'|'granted'|'denied'
+  const swReg = React.useRef(null)
+
+  // Register service worker + check push permission
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setPushState('unsupported'); return
+    }
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      swReg.current = reg
+      setPushState(Notification.permission)
+    }).catch(() => setPushState('unsupported'))
+  }, [])
 
   async function load() {
     const url = painterName
@@ -679,6 +806,31 @@ function App() {
     setOffers(d.offers || [])
     setJobs(d.jobs || [])
     setState({ loading: false, error: '', painter: d.painter, availability: d.availability || [] })
+  }
+
+  async function handlePushToggle() {
+    if (pushState === 'denied') { alert('Notifikace jsou zakázány v nastavení prohlížeče. Povolte je ručně a obnovte stránku.'); return }
+    if (pushState === 'granted') return // already on
+    if (!swReg.current) return
+    try {
+      const perm = await Notification.requestPermission()
+      setPushState(perm)
+      if (perm !== 'granted') return
+      // Fetch VAPID public key
+      const vr = await fetch('/api/painter/push-vapid-key')
+      if (!vr.ok) return
+      const { publicKey } = await vr.json()
+      const sub = await swReg.current.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: publicKey,
+      })
+      const authParam = painterName ? { painterName } : { token }
+      await fetch('/api/painter/push-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON(), ...authParam }),
+      })
+    } catch (e) { console.error('[push] subscribe failed:', e) }
   }
 
   useEffect(() => { load() }, [token, painterName])
@@ -726,7 +878,7 @@ function App() {
   return (
     <>
       {screen === 'home' && (
-        <HomeScreen painter={state.painter} offers={offers} jobs={jobs} error={state.error} onNav={setScreen} />
+        <HomeScreen painter={state.painter} offers={offers} jobs={jobs} error={state.error} onNav={setScreen} pushState={pushState} onPushToggle={handlePushToggle} />
       )}
       {screen === 'nabidky' && (
         <NabidkyScreen offers={offers} respondingId={respondingId} respondOffer={respondOffer} onBack={() => setScreen('home')} />
@@ -743,6 +895,9 @@ function App() {
       )}
       {screen === 'zakazky' && (
         <ZakazkyScreen jobs={jobs} onBack={() => setScreen('home')} />
+      )}
+      {screen === 'finance' && (
+        <FinanceScreen jobs={jobs} onBack={() => setScreen('home')} />
       )}
 
       {detailDate && draft && (

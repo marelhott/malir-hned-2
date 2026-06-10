@@ -2,6 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": false,
+  "crons": [
+    { "path": "/api/cron/expire-offers", "schedule": "*/5 * * * *" }
+  ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/nabidka", "destination": "/nabidka.html" },

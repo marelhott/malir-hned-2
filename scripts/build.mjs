@@ -101,9 +101,12 @@ async function copyStaticPages() {
   await cp(path.join(rootDir, 'malir.html'), path.join(distDir, 'malir.html'))
   await cp(path.join(rootDir, 'nabidka.html'), path.join(distDir, 'nabidka.html'))
   await cp(path.join(rootDir, 'zakazka.html'), path.join(distDir, 'zakazka.html'))
+  await cp(path.join(rootDir, 'favicon.svg'), path.join(distDir, 'favicon.svg'))
   await cp(path.join(rootDir, 'uploads'), path.join(distDir, 'uploads'), { recursive: true })
   await cp(path.join(rootDir, 'uploads', 'ChatGPT Image 1. 6. 2026 17_27_09 (1).png'), path.join(distDir, 'uploads', 'logo.png'))
   await cp(path.join(rootDir, 'uploads', 'ChatGPT Image 31. 5. 2026 14_45_33.png'), path.join(distDir, 'uploads', 'hero.png'))
+  // Copy public/ files (sw.js, manifest, etc.)
+  await cp(path.join(rootDir, 'public'), distDir, { recursive: true })
 }
 
 async function buildInternalPages() {
