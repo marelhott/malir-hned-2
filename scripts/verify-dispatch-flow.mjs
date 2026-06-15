@@ -211,6 +211,20 @@ async function main() {
       assert((portalDay?.temporary_holds || 0) === 0, `Temporary hold zůstal viset i po potvrzení pro ${date}.`)
     }
 
+    await store.cancelAdminJob(confirmedJob.id, process.env.ADMIN_EMAIL)
+    const cancelledPortal = await store.getPainterPortal(painterToken)
+    const cancelledJob = cancelledPortal.jobs.find((job) => job.id === confirmedJob.id)
+    assert(!cancelledJob, 'Po zrušení potvrzené zakázky zůstala zakázka v seznamu malíře.')
+    const cancelledState = await store.getJob(confirmedJob.id)
+    assert(cancelledState?.job?.status === 'cancelled', 'Po admin zrušení potvrzené zakázky není finální stav cancelled.')
+    assert(cancelledState?.job?.assigned_painter_id == null, 'Po admin zrušení potvrzené zakázky zůstal assigned_painter_id vyplněný.')
+    assert(cancelledState?.job?.selected_painter_id == null, 'Po admin zrušení potvrzené zakázky zůstal selected_painter_id vyplněný.')
+    assert(cancelledState?.job?.selected_offer_id == null, 'Po admin zrušení potvrzené zakázky zůstal selected_offer_id vyplněný.')
+    for (const date of [confirmedStart, addDays(confirmedStart, 1), addDays(confirmedStart, 2)]) {
+      const portalDay = (await store.getPainterPortal(painterToken)).availability.find((row) => row.date === date)
+      assert((portalDay?.confirmed_blocks || 0) === 0, `Po zrušení potvrzené zakázky zůstal confirmed block v portálu pro ${date}.`)
+    }
+
     const declinedStart = await findAvailableStartDate(store, painterToken, usedDates)
     usedDates.add(declinedStart)
     const declinedJob = await createJobViaPublicApi(store, declinedStart, 'Odmítnuta')
