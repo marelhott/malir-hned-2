@@ -30,7 +30,16 @@ export default async function handler(req, res) {
       const job = state.jobs.find((j) => j.id === offer.job_id)
       if (job && job.status === 'offered_to_painter') {
         job.status = 'ready_to_offer'
+        job.assigned_painter_id = null
         job.updated_at = now.toISOString()
+        for (const block of state.painter_capacity_blocks.filter((row) =>
+          row.job_id === job.id &&
+          row.status === 'active' &&
+          row.block_type === 'temporary_hold'
+        )) {
+          block.status = 'released'
+          block.updated_at = now.toISOString()
+        }
         state.job_events.push({
           id: crypto.randomUUID(),
           job_id: job.id,

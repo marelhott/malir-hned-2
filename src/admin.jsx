@@ -573,6 +573,8 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
   }
 
   const isError = msg && (msg.includes('fail') || msg.includes('Chyba'))
+  const canConfirmAssignment = activeJob?.status === 'painter_accepted'
+  const isWaitingForPainter = activeJob?.status === 'offered_to_painter'
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -743,8 +745,37 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
           </div>
         )}
 
+        {activeJob && canConfirmAssignment && (
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 12, color: C.mid, lineHeight: 1.6, padding: '10px 12px', background: C.accentSoft, borderRadius: 8, border: LINE }}>
+              Malíř <strong>{activeJob.selected_painter_name || activeJob.assigned_painter_name || '—'}</strong> nabídku přijal.
+              Teď ji ještě finálně potvrďte, aby se odemkl kontakt na klienta a zakázka se propsala jako potvrzená.
+            </div>
+            <button
+              disabled={busy}
+              onClick={async () => { try { await onAdminAction(activeJob.id, 'confirm_assignment') } catch (err) { console.error(err) } }}
+              style={{ ...primaryBtn(), width: '100%', padding: '12px', fontSize: 13, borderRadius: 8 }}
+            >
+              Potvrdit přiřazení klientovi
+            </button>
+            <button
+              disabled={busy}
+              onClick={async () => { try { await onAdminAction(activeJob.id, 'return_to_dispatch') } catch (err) { console.error(err) } }}
+              style={{ ...ghostBtn(), width: '100%', padding: '12px', fontSize: 13, borderRadius: 8 }}
+            >
+              Vrátit zpět do dispečinku
+            </button>
+          </div>
+        )}
+
+        {activeJob && isWaitingForPainter && (
+          <div style={{ margin: '12px 16px 0', padding: '10px 12px', borderRadius: 8, fontSize: 12, background: C.warnSoft, color: C.warnText }}>
+            Nabídka čeká na reakci malíře. Dokud nepotvrdí, zůstává zakázka jen rozpracovaná.
+          </div>
+        )}
+
         {/* Action */}
-        {activeJob && selectedPainter && selectedDay && (
+        {activeJob && selectedPainter && selectedDay && !canConfirmAssignment && (
           <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 12, color: C.mid, lineHeight: 1.6, padding: '10px 12px', background: C.soft, borderRadius: 8, border: LINE }}>
               📱 Nabídka odejde malíři <strong>{selectedPainter.name}</strong> do telefonu.<br/>
@@ -790,7 +821,7 @@ function OpsCalendar({ jobs }) {
   jobs.forEach(j => {
     const start = j.preferred_date
     if (!start) return
-    const dur = j.duration_days || 1
+    const dur = j.duration_days || j.estimated_days || 1
     for (let i = 0; i < dur; i++) {
       const date = addDays(start, i)
       if (!jobMap[date]) jobMap[date] = []
@@ -888,7 +919,7 @@ function OpsCalendar({ jobs }) {
               {dayJobs.map(j => {
                 const s = JOB_STATUS[j.status] || { dot: C.light, label: j.status, pill:'#f3f4f6', text: C.mid }
                 const price = j.confirmed_client_price || j.estimated_client_price_max
-                const dur = j.duration_days || 1
+                const dur = j.duration_days || j.estimated_days || 1
                 return (
                   <button key={j.id + '_' + j._dayIndex} onClick={() => setPopup(j)} style={{
                     width: '100%', textAlign: 'left', padding: '5px 8px 6px',
@@ -1114,6 +1145,7 @@ function App() {
   const [assignMsg,     setAssignMsg]     = useState('')
 
   const activeJob = jobs.find(j => j.id === activeJobId) || null
+  useEffect(() => { setDayCache({}) }, [activeJobId])
 
   // Fetch month aggregate data
   useEffect(() => {
@@ -1125,12 +1157,13 @@ function App() {
   const fetchDay = useCallback(async (date) => {
     if (!date || dayCache[date]) return
     const q = new URLSearchParams({ from: monthOf(date), months: '1', date })
+    if (activeJobId) q.set('jobId', activeJobId)
     try {
       const r = await fetch(`/api/admin/availability?${q}`)
       const d = await r.json()
       if (d.selected_day) setDayCache(p => ({ ...p, [date]: d.selected_day }))
     } catch {}
-  }, [dayCache])
+  }, [activeJobId, dayCache])
 
   useEffect(() => { fetchDay(selectedDay) }, [selectedDay])
 
@@ -1244,24 +1277,10 @@ function App() {
       // 2. Send offer
       await fetch('/api/admin/job-action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: activeJobId, action: 'send_offer', painterId: painter.id }),
+        body: JSON.stringify({ jobId: activeJobId, action: 'send_offer', painterId: painter.id, durationDays: duration }),
       })
 
-      // 3. Mark painter days as unavailable
-      for (let i = 0; i < duration; i++) {
-        const date = addDays(selectedDay, i)
-        await fetch('/api/admin/availability', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            painterId: painter.id, jobId: activeJobId,
-            from: monthOf(date), months: 1, date,
-            entries: [{ date, status: 'unavailable', capacity: 0, accepts_express: false, note: activeJob?.reference || '' }],
-          }),
-        })
-        setDayCache(p => { const n = {...p}; delete n[date]; return n })
-      }
-
-      setAssignMsg(`✓ Nabídka odeslána malíři ${painter.name}. Po přijetí bude klient informován e-mailem.`)
+      setAssignMsg(`✓ Nabídka odeslána malíři ${painter.name}. Po přijetí ji ještě potvrďte v dispečinku.`)
       // Refresh jobs + month data immediately
       const [jr] = await Promise.all([
         fetch('/api/admin/jobs').then(r => r.json()),

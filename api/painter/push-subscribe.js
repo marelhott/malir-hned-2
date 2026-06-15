@@ -7,18 +7,14 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJsonBody(req)
-    const { subscription, painterName, token } = body
+    const { subscription, token } = body
     if (!subscription?.endpoint) return sendJson(res, 400, { error: 'Chybí subscription.' })
+    if (!token) return sendJson(res, 401, { error: 'Chybí přístupový token malíře.' })
 
     const state = await getStore().readState()
-    let painter
-    if (painterName) {
-      painter = state.painters.find((p) => p.name.toLowerCase() === painterName.toLowerCase())
-    } else if (token) {
-      const crypto = await import('node:crypto')
-      const hash = crypto.createHash('sha256').update(token).digest('hex')
-      painter = state.painters.find((p) => p.portal_token_hash === hash)
-    }
+    const crypto = await import('node:crypto')
+    const hash = crypto.createHash('sha256').update(token).digest('hex')
+    const painter = state.painters.find((p) => p.portal_token_hash === hash)
     if (!painter) return sendJson(res, 404, { error: 'Malíř nebyl nalezen.' })
 
     await storePushSubscription(painter.id, subscription)

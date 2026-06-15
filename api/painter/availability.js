@@ -6,13 +6,8 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJsonBody(req)
-    let token = body.token
-    if (!token && body.painterName) {
-      const state = await getStore().readState()
-      const painter = state.painters.find(p => p.name.toLowerCase() === body.painterName.toLowerCase())
-      if (!painter) return sendJson(res, 404, { error: 'Malíř nebyl nalezen.' })
-      token = painter.portal_access_token
-    }
+    const token = body.token
+    if (!token) return sendJson(res, 401, { error: 'Chybí přístupový token malíře.' })
     const result = await getStore().updatePainterAvailability(token, body)
     return sendJson(res, 200, { ok: true, ...result })
   } catch (error) {

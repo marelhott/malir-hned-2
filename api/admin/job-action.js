@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     } else if (action === 'prepare_job') {
       result = await store.prepareJob(jobId, admin.email, body.confirmedPrice, body.painterPayout)
     } else if (action === 'send_offer') {
-      result = await store.sendOffer(jobId, body.painterId, admin.email, req)
+      result = await store.sendOffer(jobId, body.painterId, admin.email, req, body.durationDays)
     } else if (action === 'withdraw_offer') {
       result = await store.withdrawOffer(jobId, body.offerId, admin.email)
     } else if (action === 'confirm_assignment') {

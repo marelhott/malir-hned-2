@@ -819,11 +819,6 @@ function DaySheet({ dates, draft, setDraft, saving, saveDay, onClose }) {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
-  const painterName = useMemo(() => {
-    const parts = location.pathname.split('/').filter(Boolean)
-    const idx = parts.indexOf('maliri')
-    return idx !== -1 && parts[idx + 1] ? parts[idx + 1] : null
-  }, [])
   const token = useMemo(() => new URLSearchParams(location.search).get('token') || '', [])
 
   const [state, setState] = useState({ loading: true, error: '', painter: null, availability: [] })
@@ -851,9 +846,16 @@ function App() {
   }, [])
 
   async function load() {
-    const url = painterName
-      ? `/api/painter/by-name?name=${encodeURIComponent(painterName)}`
-      : `/api/painter/portal?token=${encodeURIComponent(token)}`
+    if (!token) {
+      setState({
+        loading: false,
+        error: 'Chybí přístupový token. Otevřete soukromý odkaz od dispečinku.',
+        painter: null,
+        availability: [],
+      })
+      return
+    }
+    const url = `/api/painter/portal?token=${encodeURIComponent(token)}`
     const r = await fetch(url)
     const d = await r.json()
     if (!r.ok) { setState({ loading: false, error: d.error || 'Portál se nepodařilo načíst.', painter: null, availability: [] }); return }
@@ -879,16 +881,15 @@ function App() {
         userVisibleOnly: true,
         applicationServerKey: publicKey,
       })
-      const authParam = painterName ? { painterName } : { token }
       await fetch('/api/painter/push-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub.toJSON(), ...authParam }),
+        body: JSON.stringify({ subscription: sub.toJSON(), token }),
       })
     } catch (e) { console.error('[push] subscribe failed:', e) }
   }
 
-  useEffect(() => { load() }, [token, painterName])
+  useEffect(() => { load() }, [token])
 
   // Auto-refresh: při návratu do appky a každých 60 s na pozadí
   useEffect(() => {
@@ -896,7 +897,7 @@ function App() {
     document.addEventListener('visibilitychange', onVisible)
     const timer = setInterval(() => { if (!document.hidden) load() }, 60000)
     return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(timer) }
-  }, [token, painterName])
+  }, [token])
 
   const availabilityMap = useMemo(() => new Map((state.availability || []).map(r => [r.date, r])), [state.availability])
   const monthCells = useMemo(() => buildMonthCells(month, availabilityMap), [month, availabilityMap])
@@ -912,8 +913,7 @@ function App() {
 
   async function save(payload, savingKey) {
     setSaving(savingKey)
-    const authParam = painterName ? { painterName } : { token }
-    const r = await fetch('/api/painter/availability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...authParam, ...payload }) })
+    const r = await fetch('/api/painter/availability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, ...payload }) })
     const d = await r.json()
     setSaving('')
     if (!r.ok) { setState(p => ({ ...p, error: d.error || 'Uložení se nepodařilo.' })); return false }
