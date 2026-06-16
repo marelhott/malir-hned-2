@@ -20,6 +20,7 @@ const C = {
 }
 
 const STATUS_META = {
+  unknown: { label: 'Neoznačeno', bg: '#ffffff', text: C.textLight, dot: '#d8d2c8' },
   available: { label: 'Volno', bg: C.accentSoft, text: C.accent, dot: C.accent },
   limited:   { label: 'Omezeně', bg: C.warnSoft, text: C.warn, dot: C.warn },
   unavailable:{ label: 'Pryč', bg: C.mutedSoft, text: C.muted, dot: C.muted },
@@ -95,7 +96,7 @@ function buildMonthCells(month, availabilityMap) {
   for (let i = 0; i < leading; i++) cells.push(null)
   for (let d = 1; d <= days; d++) {
     const date = `${year}-${pad(mi + 1)}-${pad(d)}`
-    cells.push({ date, day: d, row: availabilityMap.get(date) || { date, status: 'available', capacity: 1, accepts_express: false, note: '' } })
+    cells.push({ date, day: d, row: availabilityMap.get(date) || { date, status: 'unknown', capacity: 0, accepts_express: false, note: '', source: null } })
   }
   while (cells.length % 7) cells.push(null)
   return cells
@@ -185,7 +186,7 @@ function KalendarScreen({ onBack, availabilityMap, monthCells, month, setMonth, 
               const isDefault = !cell.row.id || cell.row.source === 'system' || !cell.row.source
               const meta = isDefault
                 ? { bg: '#fff', text: C.textLight, dot: '#d8d2c8' }
-                : (STATUS_META[cell.row.status] || STATUS_META.available)
+                : (STATUS_META[cell.row.status] || STATUS_META.unknown)
               const selected = dragSel && dragSel.has(cell.date)
               return (
                 <div key={cell.date} data-date={cell.date}
@@ -1141,9 +1142,14 @@ function App() {
     if (!selDates.length) return
     // U jednoho dne předvyplníme jeho hodnoty; u více dní začínáme od "Volno"
     const base = selDates.length === 1
-      ? (availabilityMap.get(selDates[0]) || { status: 'available', capacity: 1, accepts_express: false, note: '' })
+      ? (availabilityMap.get(selDates[0]) || { status: 'unknown', capacity: 0, accepts_express: false, note: '' })
       : { status: 'available', capacity: 1, accepts_express: false, note: '' }
-    setDraft({ status: base.status || 'available', capacity: base.capacity ?? 1, accepts_express: Boolean(base.accepts_express), note: base.note || '' })
+    setDraft({
+      status: base.status === 'unknown' ? 'available' : (base.status || 'available'),
+      capacity: base.status === 'unknown' ? 1 : (base.capacity ?? 1),
+      accepts_express: Boolean(base.accepts_express),
+      note: base.note || '',
+    })
   }, [selDates, availabilityMap])
 
   async function save(payload, savingKey) {
