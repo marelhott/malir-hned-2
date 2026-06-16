@@ -38,6 +38,10 @@ function addDays(dateString, days) {
   return date.toISOString().slice(0, 10)
 }
 
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 async function backupDemoStore() {
   await mkdir(dataDir, { recursive: true })
   try {
@@ -150,6 +154,23 @@ async function findAvailableStartDate(store, painterId, excludedDates = new Set(
   return startRow.date
 }
 
+async function seedPainterAvailability(store, painterId, startDate, days = 45) {
+  const entries = []
+  for (let offset = 0; offset < days; offset += 1) {
+    const date = addDays(startDate, offset)
+    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay()
+    entries.push({
+      date,
+      status: weekday === 0 ? 'unavailable' : weekday === 6 ? 'limited' : 'available',
+      capacity: weekday === 0 ? 0 : 1,
+      accepts_express: false,
+      note: '',
+      source: 'verify',
+    })
+  }
+  await store.updatePainterAvailabilityByPainterId(painterId, { entries })
+}
+
 async function main() {
   await backupDemoStore()
   try {
@@ -157,6 +178,7 @@ async function main() {
     const painters = await store.getPainters()
     assert(painters.length > 0, 'V seed datech chybí malíři.')
     const painter = painters[0]
+    await seedPainterAvailability(store, painter.id, todayIso(), 60)
 
     const usedDates = new Set()
 

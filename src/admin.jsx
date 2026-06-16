@@ -36,9 +36,9 @@ const JOB_STATUS = {
   cancelled:                  { label: 'Zrušeno',              dot: C.danger, pill: C.dangerSoft, text: C.dangerText },
 }
 
-const AVAIL_COLOR = { available: C.accent,     limited: C.warn,      unavailable: C.danger }
-const AVAIL_BG    = { available: C.accentSoft,  limited: C.warnSoft,  unavailable: C.dangerSoft }
-const AVAIL_LABEL = { available: 'Volný',        limited: 'Omezený',   unavailable: 'Obsazený' }
+const AVAIL_COLOR = { available: C.accent, limited: C.warn, unavailable: C.danger, unknown: C.light }
+const AVAIL_BG    = { available: C.accentSoft, limited: C.warnSoft, unavailable: C.dangerSoft, unknown: '#f3f4f6' }
+const AVAIL_LABEL = { available: 'Volný', limited: 'Omezený', unavailable: 'Nedostupný', unknown: 'Nezadáno' }
 
 // ── HELPERS ───────────────────────────────────────────────────
 const today = new Date().toISOString().slice(0, 10)
@@ -295,15 +295,8 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
   const jobDate = activeJob?.preferred_date
 
   function getPainterStatuses(info) {
-    const avail   = info.available_count   || 0
-    const limited = info.limited_count     || 0
-    const blocked = info.blocked_count     || 0
-    return painters.map((_, i) => {
-      if (i < avail)                     return 'available'
-      if (i < avail + limited)           return 'limited'
-      if (i < avail + limited + blocked) return 'unavailable'
-      return 'unknown'
-    })
+    const byId = info.painter_statuses_by_id || {}
+    return painters.map((p) => byId[p.id] || 'unknown')
   }
 
   const LINE = '1px solid #f0f0f0'
@@ -426,7 +419,7 @@ function MonthCalendar({ selectedDay, onSelectDay, monthBase, setMonthBase, mont
 
         {/* Legend */}
         <div style={{ display: 'flex', gap: 16, padding: '10px 16px', alignItems: 'center', borderTop: LINE }}>
-          {[['available','Volný'],['limited','Nevím jistě'],['unavailable','Obsazený']].map(([k,l]) => {
+          {[['available','Volný'],['limited','Nevím jistě'],['unavailable','Nedostupný'],['unknown','Nezadáno']].map(([k,l]) => {
             const s = STATUS_STYLE[k]
             return (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -469,8 +462,9 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
         )}
         {!data && <div style={{ fontSize: 12, color: C.light, padding: '24px 16px', textAlign: 'center' }}>Načítám…</div>}
         {painters.map((p, pi) => {
-          const ac = AVAIL_COLOR[p.availability_status] || C.light
-          const ab = AVAIL_BG[p.availability_status] || C.soft
+          const visualStatus = p.visual_status || p.availability_status || 'unknown'
+          const ac = AVAIL_COLOR[visualStatus] || C.light
+          const ab = AVAIL_BG[visualStatus] || C.soft
           const isSelected = selectedPainterId === p.id
           const hasOverlap = p.block_count > 0
 
@@ -486,12 +480,12 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
                 <span style={{ width: 8, height: 8, borderRadius: 99, background: ac, flexShrink: 0, display:'inline-block' }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: C.text, flex: 1 }}>{p.name}</span>
                 <span style={{ padding: '2px 8px', borderRadius: 99, background: ab, color: ac, fontSize: 11, fontWeight: 500 }}>
-                  {AVAIL_LABEL[p.availability_status] || '—'}
+                  {hasOverlap ? 'Blokováno' : (AVAIL_LABEL[visualStatus] || '—')}
                 </span>
               </div>
               <div style={{ paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <div style={{ fontSize: 11, color: C.light }}>
-                  Kapacita: <span style={{ color: C.text }}>{p.remaining_capacity ?? p.capacity ?? '—'}</span>
+                  Kapacita: <span style={{ color: C.text }}>{visualStatus === 'unknown' ? '—' : (p.remaining_capacity ?? p.capacity ?? '—')}</span>
                   {' · '}
                   {p.accepts_express
                     ? <span style={{ color: C.accent }}>expres ✓</span>
@@ -505,6 +499,7 @@ function PainterAvail({ selectedDay, dayCache, activeJob, onSelectPainter, selec
                   <div style={{ fontSize: 11, color: C.mid }}>🖌 {p.work_types.join(', ')}</div>
                 )}
                 {hasOverlap && <div style={{ fontSize: 11, color: C.danger }}>⚠ {p.block_count} blokace tento den</div>}
+                {visualStatus === 'unknown' && <div style={{ fontSize: 11, color: C.light }}>Dostupnost zatím není zadaná</div>}
                 {p.job_fit?.locality_match === false && <div style={{ fontSize: 11, color: C.warn }}>Mimo lokalitu zakázky</div>}
                 {p.job_fit?.score != null && <div style={{ fontSize: 11, color: C.mid }}>Skóre shody: {p.job_fit.score}</div>}
                 {(p.note || p.painter_note) && <div style={{ fontSize: 11, color: C.mid, lineHeight: 1.4, fontStyle: 'italic' }}>{p.note || p.painter_note}</div>}
@@ -688,11 +683,17 @@ function AssignDetail({ activeJob, activeJobForm, selectedPainter, selectedDay, 
         {selectedPainter && (
           <div style={{ padding: '14px 16px', borderBottom: LINE }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: C.light, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Malíř</div>
+            {(() => {
+              const visualStatus = selectedPainter.visual_status || selectedPainter.availability_status || 'unknown'
+              const statusLabel = selectedPainter.is_blocked ? 'Blokováno' : (AVAIL_LABEL[visualStatus] || '—')
+              return (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: AVAIL_COLOR[selectedPainter.availability_status] || C.light, display:'inline-block' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: AVAIL_COLOR[visualStatus] || C.light, display:'inline-block' }} />
               <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{selectedPainter.name}</span>
-              <span style={{ fontSize: 11, color: C.mid }}>{AVAIL_LABEL[selectedPainter.availability_status]}</span>
+              <span style={{ fontSize: 11, color: C.mid }}>{statusLabel}</span>
             </div>
+              )
+            })()}
             <div style={{ fontSize: 12, color: C.mid }}>Termín: <strong style={{ color: C.text }}>{fmtLong(selectedDay)}</strong></div>
           </div>
         )}
