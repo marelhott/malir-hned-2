@@ -874,6 +874,77 @@ function LoginScreen({ painter, pin, setPin, submitting, error, onSubmit }) {
   )
 }
 
+function ChangePinScreen({ painter, newPin, setNewPin, confirmPin, setConfirmPin, submitting, error, onSubmit, onLogout }) {
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, padding: 14, display: 'grid', placeItems: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 430, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, boxShadow: C.shadow, overflow: 'hidden' }}>
+        <div style={{ padding: '24px 20px 18px', borderBottom: `1px solid ${C.border}`, background: 'linear-gradient(180deg, #f7f3ee 0%, #ffffff 100%)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 999, background: C.accentSoft, color: C.accent, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <Icon name="pin" size={13} color={C.accent} />
+            První Přihlášení
+          </div>
+          <h1 style={{ marginTop: 14, fontSize: 28, lineHeight: 1.05, color: C.text, letterSpacing: '-0.04em' }}>Nastavte si vlastní PIN</h1>
+          <div style={{ marginTop: 8, fontSize: 15, color: C.textMid, lineHeight: 1.5 }}>
+            {painter?.name ? <>Dočasný PIN pro <strong style={{ color: C.text }}>{painter.name}</strong> už nebudete dál používat.</> : 'Před vstupem do portálu si nastavte vlastní PIN.'}
+          </div>
+        </div>
+
+        <form onSubmit={onSubmit} style={{ padding: 18, display: 'grid', gap: 14 }}>
+          <div>
+            <div style={{ fontSize: 12, color: C.textLight, marginBottom: 6 }}>Nový šestimístný PIN</div>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="new-password"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value.replace(/\D+/g, '').slice(0, 6))}
+              placeholder="Např. 482951"
+              style={{ ...field(), textAlign: 'center', fontSize: 24, letterSpacing: '0.25em', fontWeight: 600 }}
+            />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, color: C.textLight, marginBottom: 6 }}>Potvrzení nového PINu</div>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="new-password"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value.replace(/\D+/g, '').slice(0, 6))}
+              placeholder="Zopakujte PIN"
+              style={{ ...field(), textAlign: 'center', fontSize: 24, letterSpacing: '0.25em', fontWeight: 600 }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ padding: '12px 13px', borderRadius: 14, background: C.dangerSoft, color: C.danger, fontSize: 13, lineHeight: 1.5 }}>
+              {error}
+            </div>
+          )}
+
+          <button type="submit" disabled={submitting || newPin.length < 6 || confirmPin.length < 6}
+            style={{ padding: '14px 16px', borderRadius: 14, border: 'none', background: C.accent, color: '#fff', fontSize: 15, fontFamily: "'Outfit', sans-serif", cursor: submitting ? 'default' : 'pointer', opacity: submitting || newPin.length < 6 || confirmPin.length < 6 ? 0.65 : 1, fontWeight: 600 }}>
+            {submitting ? 'Ukládám…' : 'Uložit nový PIN'}
+          </button>
+
+          <button type="button" onClick={onLogout}
+            style={{ padding: '13px 16px', borderRadius: 14, border: `1px solid ${C.border}`, background: '#fff', color: C.textMid, fontSize: 14, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', fontWeight: 600 }}>
+            Odhlásit se
+          </button>
+
+          <div style={{ fontSize: 12, color: C.textLight, lineHeight: 1.6 }}>
+            PIN musí mít přesně 6 číslic. Po uložení se tímto PINem budete přihlašovat příště.
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
   const slug = useMemo(() => {
@@ -896,6 +967,11 @@ function App() {
   const [authRequired, setAuthRequired] = useState(false)
   const [authError, setAuthError] = useState('')
   const [authSubmitting, setAuthSubmitting] = useState(false)
+  const [mustChangePin, setMustChangePin] = useState(false)
+  const [newPin, setNewPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
+  const [pinChangeError, setPinChangeError] = useState('')
+  const [pinChangeSubmitting, setPinChangeSubmitting] = useState(false)
   const swReg = React.useRef(null)
 
   // Register service worker + check push permission
@@ -927,12 +1003,14 @@ function App() {
       setJobs([])
       setPainterNote('')
       setAuthRequired(true)
+      setMustChangePin(false)
       setAuthError('')
       setState({ loading: false, error: '', painter: d.painter || null, availability: [] })
       return
     }
     if (!r.ok) { setState({ loading: false, error: d.error || 'Portál se nepodařilo načíst.', painter: null, availability: [] }); return }
     setAuthRequired(false)
+    setMustChangePin(Boolean(d.painter?.must_change_pin))
     setAuthError('')
     setPainterNote(d.painter?.notes || '')
     setOffers(d.offers || [])
@@ -957,6 +1035,49 @@ function App() {
     }
     setPin('')
     setAuthRequired(false)
+    setMustChangePin(Boolean(d.painter?.must_change_pin))
+    setPinChangeError('')
+    setPainterNote(d.painter?.notes || '')
+    setOffers(d.offers || [])
+    setJobs(d.jobs || [])
+    setState({ loading: false, error: '', painter: d.painter, availability: d.availability || [] })
+  }
+
+  async function submitPinChange(e) {
+    e?.preventDefault?.()
+    setPinChangeError('')
+    if (newPin.length !== 6 || confirmPin.length !== 6) {
+      setPinChangeError('PIN musí mít přesně 6 číslic.')
+      return
+    }
+    if (newPin !== confirmPin) {
+      setPinChangeError('PINy se neshodují.')
+      return
+    }
+
+    setPinChangeSubmitting(true)
+    const r = await fetch('/api/painter/change-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPin, confirmPin }),
+    })
+    const d = await r.json()
+    setPinChangeSubmitting(false)
+    if (r.status === 401) {
+      setMustChangePin(false)
+      setAuthRequired(true)
+      setAuthError(d.error || 'Přihlášení vypršelo. Přihlaste se znovu pomocí PINu.')
+      return
+    }
+    if (!r.ok) {
+      setPinChangeError(d.error || 'Změna PINu se nepodařila.')
+      return
+    }
+
+    setMustChangePin(false)
+    setNewPin('')
+    setConfirmPin('')
+    setPinChangeError('')
     setPainterNote(d.painter?.notes || '')
     setOffers(d.offers || [])
     setJobs(d.jobs || [])
@@ -970,7 +1091,11 @@ function App() {
     setPainterNote('')
     setPin('')
     setAuthRequired(true)
+    setMustChangePin(false)
     setAuthError('')
+    setNewPin('')
+    setConfirmPin('')
+    setPinChangeError('')
     setScreen('home')
     setState((prev) => ({ ...prev, availability: [] }))
   }
@@ -1031,6 +1156,11 @@ function App() {
       setAuthError(d.error || 'Přihlášení vypršelo. Přihlaste se znovu pomocí PINu.')
       return false
     }
+    if (r.status === 403) {
+      setMustChangePin(true)
+      setPinChangeError(d.error || 'Nejdřív si nastavte vlastní PIN.')
+      return false
+    }
     if (!r.ok) { setState(p => ({ ...p, error: d.error || 'Uložení se nepodařilo.' })); return false }
     setPainterNote(d.painter?.notes || '')
     setState(p => ({ ...p, error: '', painter: d.painter, availability: d.availability || p.availability }))
@@ -1045,6 +1175,11 @@ function App() {
     if (r.status === 401) {
       setAuthRequired(true)
       setAuthError(d.error || 'Přihlášení vypršelo. Přihlaste se znovu pomocí PINu.')
+      return
+    }
+    if (r.status === 403) {
+      setMustChangePin(true)
+      setPinChangeError(d.error || 'Nejdřív si nastavte vlastní PIN.')
       return
     }
     if (!r.ok) { setState(p => ({ ...p, error: d.error || 'Reakci se nepodařilo uložit.' })); return }
@@ -1071,6 +1206,22 @@ function App() {
 
   if (authRequired) {
     return <LoginScreen painter={state.painter} pin={pin} setPin={setPin} submitting={authSubmitting} error={authError} onSubmit={loginPainter} />
+  }
+
+  if (mustChangePin) {
+    return (
+      <ChangePinScreen
+        painter={state.painter}
+        newPin={newPin}
+        setNewPin={setNewPin}
+        confirmPin={confirmPin}
+        setConfirmPin={setConfirmPin}
+        submitting={pinChangeSubmitting}
+        error={pinChangeError}
+        onSubmit={submitPinChange}
+        onLogout={logoutPainter}
+      />
+    )
   }
 
   return (
