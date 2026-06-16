@@ -34,65 +34,60 @@ function parseEnv(raw) {
   }, {})
 }
 
-function randomSessionVersion() {
-  return `sv_${crypto.randomBytes(18).toString('base64url')}`
-}
-
 function randomPin() {
   return String(crypto.randomInt(0, 1_000_000)).padStart(6, '0')
 }
 
-function hashPainterPin(pin, salt = crypto.randomBytes(16).toString('hex')) {
-  const digest = crypto.scryptSync(String(pin), salt, 32).toString('hex')
-  return `pin$${salt}$${digest}`
-}
-
 async function main() {
   const env = parseEnv(await readFile(envFile, 'utf8'))
-  const supabaseUrl = env.SUPABASE_URL
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('V .env.dev chybí SUPABASE_URL nebo SUPABASE_SERVICE_ROLE_KEY.')
+  const adminEmail = env.ADMIN_EMAIL
+  const adminPassword = env.ADMIN_PASSWORD
+  const baseUrl = (env.APP_BASE_URL || 'https://malirhned.cz').replace(/\/$/, '')
+  if (!adminEmail || !adminPassword) {
+    throw new Error('V .env.dev chybí ADMIN_EMAIL nebo ADMIN_PASSWORD.')
   }
 
-  const headers = {
-    apikey: serviceRoleKey,
-    Authorization: `Bearer ${serviceRoleKey}`,
-    'Content-Type': 'application/json',
-  }
-
-  const listRes = await fetch(`${supabaseUrl}/rest/v1/painters?select=id,name,email`, { headers })
-  if (!listRes.ok) {
-    throw new Error(`Načtení malířů selhalo: ${listRes.status} ${await listRes.text()}`)
-  }
-  const painters = await listRes.json()
   const allowedNames = new Set(DEFAULT_PAINTERS.map((item) => item.name))
+  const cookieJar = []
+
+  async function requestJson(method, url, payload = null) {
+    const headers = {}
+    if (payload != null) headers['Content-Type'] = 'application/json'
+    if (cookieJar.length > 0) headers.Cookie = cookieJar.join('; ')
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: payload != null ? JSON.stringify(payload) : undefined,
+    })
+    const setCookie = res.headers.get('set-cookie')
+    if (setCookie) cookieJar.length = 0, cookieJar.push(setCookie.split(';')[0])
+    const text = await res.text()
+    const json = text ? JSON.parse(text) : null
+    if (!res.ok) {
+      throw new Error(`${method} ${url} selhalo: ${res.status} ${text}`)
+    }
+    return json
+  }
+
+  await requestJson('POST', `${baseUrl}/api/admin/login`, {
+    email: adminEmail,
+    password: adminPassword,
+  })
+
+  const painters = (await requestJson('GET', `${baseUrl}/api/admin/painters`)).painters
   const output = []
 
   for (const painter of painters.filter((item) => allowedNames.has(item.name))) {
     const pin = randomPin()
-    const sessionVersion = randomSessionVersion()
-    const pinHash = hashPainterPin(pin)
-    const patchRes = await fetch(`${supabaseUrl}/rest/v1/painters?id=eq.${encodeURIComponent(painter.id)}`, {
-      method: 'PATCH',
-      headers: {
-        ...headers,
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify({
-        portal_access_token: sessionVersion,
-        portal_token_hash: pinHash,
-        updated_at: new Date().toISOString(),
-      }),
+    const response = await requestJson('POST', `${baseUrl}/api/admin/painter-pin`, {
+      painterId: painter.id,
+      pin,
     })
-    if (!patchRes.ok) {
-      throw new Error(`Uložení PINu pro ${painter.name} selhalo: ${patchRes.status} ${await patchRes.text()}`)
-    }
     output.push({
       name: painter.name,
       email: painter.email,
       pin,
-      url: `https://malirhned.cz/maliri/${slugifyPainterName(painter.name)}`,
+      url: `${baseUrl}${response.result.portalUrl || `/maliri/${slugifyPainterName(painter.name)}`}`,
     })
   }
 
