@@ -38,10 +38,6 @@ function addDays(dateString, days) {
   return date.toISOString().slice(0, 10)
 }
 
-function extractTokenFromPortalUrl(url) {
-  return new URL(url, process.env.APP_BASE_URL).searchParams.get('token')
-}
-
 async function backupDemoStore() {
   await mkdir(dataDir, { recursive: true })
   try {
@@ -142,8 +138,8 @@ async function createJobViaPublicApi(store, preferredDate, label) {
   return job
 }
 
-async function findAvailableStartDate(store, painterToken, excludedDates = new Set()) {
-  const portal = await store.getPainterPortal(painterToken)
+async function findAvailableStartDate(store, painterId, excludedDates = new Set()) {
+  const portal = await store.getPainterPortal(painterId)
   const startRow = portal.availability.find((row) => {
     if (row.status !== 'available') return false
     if (excludedDates.has(row.date)) return false
@@ -161,12 +157,10 @@ async function main() {
     const painters = await store.getPainters()
     assert(painters.length > 0, 'V seed datech chybí malíři.')
     const painter = painters[0]
-    const painterToken = extractTokenFromPortalUrl(painter.portal_url)
-    assert(painterToken, 'Nepodařilo se získat token malíře z portálové URL.')
 
     const usedDates = new Set()
 
-    const confirmedStart = await findAvailableStartDate(store, painterToken, usedDates)
+    const confirmedStart = await findAvailableStartDate(store, painter.id, usedDates)
     usedDates.add(confirmedStart)
     usedDates.add(addDays(confirmedStart, 1))
     usedDates.add(addDays(confirmedStart, 2))
@@ -177,7 +171,7 @@ async function main() {
       headers: { host: 'localhost:3000', 'x-forwarded-proto': 'http' },
     }, 3)
 
-    const pendingPortal = await store.getPainterPortal(painterToken)
+    const pendingPortal = await store.getPainterPortal(painter.id)
     const pendingOffer = pendingPortal.offers.find((offer) => offer.id === sentOffer.offer.id)
     assert(pendingOffer?.status === 'pending', 'Nabídka se malíři nepropsala jako pending.')
     assert(pendingOffer.job?.contact_locked === true, 'Kontakt klienta nesmí být odemčen před potvrzením.')
@@ -187,32 +181,32 @@ async function main() {
       const dayPainter = adminDay.selected_day?.painters?.find((item) => item.id === painter.id)
       assert(dayPainter?.temporary_holds === 1, `Dispečerský kalendář neukazuje temporary hold pro ${date}.`)
 
-      const portalDay = (await store.getPainterPortal(painterToken)).availability.find((row) => row.date === date)
+      const portalDay = (await store.getPainterPortal(painter.id)).availability.find((row) => row.date === date)
       assert(portalDay?.status === 'unavailable', `Portál malíře neukazuje blokaci pro ${date}.`)
       assert((portalDay?.temporary_holds || 0) === 1, `Portál malíře neukazuje temporary hold pro ${date}.`)
     }
 
-    await store.respondToOffer(sentOffer.offer.offer_token, 'accept', 3)
-    const acceptedPortal = await store.getPainterPortal(painterToken)
+    await store.respondToOfferByPainterId(painter.id, sentOffer.offer.id, 'accept', 3)
+    const acceptedPortal = await store.getPainterPortal(painter.id)
     const acceptedJob = acceptedPortal.jobs.find((job) => job.id === confirmedJob.id)
     assert(acceptedJob?.status === 'painter_accepted', 'Po přijetí se zakázka nepřesunula do seznamu zakázek malíře.')
     assert(acceptedJob?.contact_locked === true, 'Kontakt klienta se odemkl příliš brzy po přijetí nabídky.')
 
     await store.confirmAssignment(confirmedJob.id, process.env.ADMIN_EMAIL)
-    const confirmedPortal = await store.getPainterPortal(painterToken)
+    const confirmedPortal = await store.getPainterPortal(painter.id)
     const finalJob = confirmedPortal.jobs.find((job) => job.id === confirmedJob.id)
     assert(finalJob?.status === 'confirmed_to_client', 'Po potvrzení dispečerem nemá zakázka finální stav.')
     assert(finalJob?.contact_locked !== true, 'Kontakt klienta zůstal zamčený i po potvrzení dispečerem.')
     assert(finalJob?.client_phone, 'Malíř po potvrzení stále nevidí kontakt na klienta.')
 
     for (const date of [confirmedStart, addDays(confirmedStart, 1), addDays(confirmedStart, 2)]) {
-      const portalDay = (await store.getPainterPortal(painterToken)).availability.find((row) => row.date === date)
+      const portalDay = (await store.getPainterPortal(painter.id)).availability.find((row) => row.date === date)
       assert((portalDay?.confirmed_blocks || 0) === 1, `Potvrzený blok se nepropsal do portálu pro ${date}.`)
       assert((portalDay?.temporary_holds || 0) === 0, `Temporary hold zůstal viset i po potvrzení pro ${date}.`)
     }
 
     await store.cancelAdminJob(confirmedJob.id, process.env.ADMIN_EMAIL)
-    const cancelledPortal = await store.getPainterPortal(painterToken)
+    const cancelledPortal = await store.getPainterPortal(painter.id)
     const cancelledJob = cancelledPortal.jobs.find((job) => job.id === confirmedJob.id)
     assert(!cancelledJob, 'Po zrušení potvrzené zakázky zůstala zakázka v seznamu malíře.')
     const cancelledState = await store.getJob(confirmedJob.id)
@@ -221,27 +215,27 @@ async function main() {
     assert(cancelledState?.job?.selected_painter_id == null, 'Po admin zrušení potvrzené zakázky zůstal selected_painter_id vyplněný.')
     assert(cancelledState?.job?.selected_offer_id == null, 'Po admin zrušení potvrzené zakázky zůstal selected_offer_id vyplněný.')
     for (const date of [confirmedStart, addDays(confirmedStart, 1), addDays(confirmedStart, 2)]) {
-      const portalDay = (await store.getPainterPortal(painterToken)).availability.find((row) => row.date === date)
+      const portalDay = (await store.getPainterPortal(painter.id)).availability.find((row) => row.date === date)
       assert((portalDay?.confirmed_blocks || 0) === 0, `Po zrušení potvrzené zakázky zůstal confirmed block v portálu pro ${date}.`)
     }
 
-    const declinedStart = await findAvailableStartDate(store, painterToken, usedDates)
+    const declinedStart = await findAvailableStartDate(store, painter.id, usedDates)
     usedDates.add(declinedStart)
     const declinedJob = await createJobViaPublicApi(store, declinedStart, 'Odmítnuta')
     await store.prepareJob(declinedJob.id, process.env.ADMIN_EMAIL, 11000, 7000)
     const declinedOffer = await store.sendOffer(declinedJob.id, painter.id, process.env.ADMIN_EMAIL, {
       headers: { host: 'localhost:3000', 'x-forwarded-proto': 'http' },
     }, 1)
-    await store.respondToOffer(declinedOffer.offer.offer_token, 'decline', 1)
+    await store.respondToOfferByPainterId(painter.id, declinedOffer.offer.id, 'decline', 1)
 
-    const declinedPortalDay = (await store.getPainterPortal(painterToken)).availability.find((row) => row.date === declinedStart)
+    const declinedPortalDay = (await store.getPainterPortal(painter.id)).availability.find((row) => row.date === declinedStart)
     assert(declinedPortalDay?.status !== 'unavailable' || (declinedPortalDay?.confirmed_blocks || 0) === 0, 'Po odmítnutí zůstal den zablokovaný.')
     assert((declinedPortalDay?.temporary_holds || 0) === 0, 'Po odmítnutí zůstal temporary hold aktivní.')
 
     const declinedJobState = await store.getJob(declinedJob.id)
     assert(declinedJobState?.job?.status === 'ready_to_offer', 'Po odmítnutí se zakázka nevrátila do ready_to_offer.')
 
-    const expiredStart = await findAvailableStartDate(store, painterToken, usedDates)
+    const expiredStart = await findAvailableStartDate(store, painter.id, usedDates)
     const expiredJob = await createJobViaPublicApi(store, expiredStart, 'Prošla')
     await store.prepareJob(expiredJob.id, process.env.ADMIN_EMAIL, 13000, 8000)
     const expiredOffer = await store.sendOffer(expiredJob.id, painter.id, process.env.ADMIN_EMAIL, {
@@ -266,7 +260,7 @@ async function main() {
 
     const expiredJobState = await store.getJob(expiredJob.id)
     assert(expiredJobState?.job?.status === 'ready_to_offer', 'Cron nevrátil expirovanou zakázku do ready_to_offer.')
-    const expiredPortalDay = (await store.getPainterPortal(painterToken)).availability.find((row) => row.date === expiredStart)
+    const expiredPortalDay = (await store.getPainterPortal(painter.id)).availability.find((row) => row.date === expiredStart)
     assert((expiredPortalDay?.temporary_holds || 0) === 0, 'Cron neuvolnil temporary hold po expiraci nabídky.')
 
     const byNameResult = await invokeJsonHandler(painterByNameHandler, {

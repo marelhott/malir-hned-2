@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "verify:flow": "node scripts/verify-dispatch-flow.mjs"
+    "verify:flow": "node scripts/verify-dispatch-flow.mjs",
+    "reset:painter-pins": "node scripts/reset-painter-pins.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.2",

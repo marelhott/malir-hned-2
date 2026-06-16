@@ -1,4 +1,5 @@
-import { sendJson, sendMethodNotAllowed, readJsonBody, getQuery } from '../../lib/server/http.js'
+import { requirePainterSession } from '../../lib/server/auth.js'
+import { sendJson, sendMethodNotAllowed, readJsonBody } from '../../lib/server/http.js'
 import { getStore } from '../../lib/server/store.js'
 import { storePushSubscription } from '../../lib/server/push.js'
 
@@ -6,15 +7,14 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return sendMethodNotAllowed(res, ['POST'])
 
   try {
+    const session = requirePainterSession(req)
+    if (!session) return sendJson(res, 401, { error: 'Přihlášení malíře vypršelo. Přihlaste se znovu pomocí PINu.' })
     const body = await readJsonBody(req)
-    const { subscription, token } = body
+    const { subscription } = body
     if (!subscription?.endpoint) return sendJson(res, 400, { error: 'Chybí subscription.' })
-    if (!token) return sendJson(res, 401, { error: 'Chybí přístupový token malíře.' })
 
     const state = await getStore().readState()
-    const crypto = await import('node:crypto')
-    const hash = crypto.createHash('sha256').update(token).digest('hex')
-    const painter = state.painters.find((p) => p.portal_token_hash === hash)
+    const painter = state.painters.find((p) => p.id === session.painterId && p.portal_access_token === session.sessionVersion)
     if (!painter) return sendJson(res, 404, { error: 'Malíř nebyl nalezen.' })
 
     await storePushSubscription(painter.id, subscription)

@@ -601,7 +601,7 @@ function NabidkyScreen({ offers, respondingId, respondOffer, onBack }) {
                   </div>
 
                   {/* days input + action buttons */}
-                  {offer.offer_token && (
+                  {offer.status === 'pending' && (
                     <div style={{ padding: '0 16px 16px' }}>
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 11, color: C.textLight, marginBottom: 6 }}>
@@ -634,15 +634,15 @@ function NabidkyScreen({ offers, respondingId, respondOffer, onBack }) {
                         )}
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                        <button type="button" disabled={!!respondingId} onClick={() => handleAccept(offer.offer_token, offer.id)}
+                        <button type="button" disabled={!!respondingId} onClick={() => handleAccept(offer.id, offer.id)}
                           style={{ padding: '12px 12px', borderRadius: 12, border: 'none', background: C.accent, color: '#fff', fontSize: 14, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', opacity: respondingId ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 500 }}>
                           <Icon name="check" size={15} color="#fff" />
-                          {respondingId === offer.offer_token + 'accepted' ? 'Ukládám…' : 'Přijmout'}
+                          {respondingId === offer.id + 'accepted' ? 'Ukládám…' : 'Přijmout'}
                         </button>
-                        <button type="button" disabled={!!respondingId} onClick={() => respondOffer(offer.offer_token, 'declined')}
+                        <button type="button" disabled={!!respondingId} onClick={() => respondOffer(offer.id, 'declined')}
                           style={{ padding: '12px 12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.danger, fontSize: 14, fontFamily: "'Outfit', sans-serif", cursor: 'pointer', opacity: respondingId ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <Icon name="x" size={15} color={C.danger} />
-                          {respondingId === offer.offer_token + 'declined' ? 'Ukládám…' : 'Odmítnout'}
+                          {respondingId === offer.id + 'declined' ? 'Ukládám…' : 'Odmítnout'}
                         </button>
                       </div>
                     </div>
@@ -678,7 +678,7 @@ function NabidkyScreen({ offers, respondingId, respondOffer, onBack }) {
 }
 
 // ── Home screen ───────────────────────────────────────────────────────────────
-function HomeScreen({ painter, offers, jobs, onNav, error, pushState, onPushToggle }) {
+function HomeScreen({ painter, offers, jobs, onNav, error, pushState, onPushToggle, onLogout }) {
   const pending = offers.filter(o => o.status === 'pending').length
   const activeJobs = jobs.filter(j => j.status === 'confirmed_to_client' || j.status === 'in_progress').length
   const monthTotal = jobs.filter(j => j.painter_reward && ['completed', 'done', 'confirmed_to_client', 'in_progress'].includes(j.status))
@@ -721,6 +721,12 @@ function HomeScreen({ painter, offers, jobs, onNav, error, pushState, onPushTogg
   return (
     <div style={{ minHeight: '100vh', background: C.bg, padding: 14 }}>
       <div style={{ maxWidth: 430, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button type="button" onClick={onLogout}
+            style={{ padding: '8px 11px', borderRadius: 999, border: `1px solid ${C.border}`, background: '#fff', color: C.textMid, fontSize: 12, fontFamily: "'Outfit', sans-serif", cursor: 'pointer' }}>
+            Odhlásit
+          </button>
+        </div>
 
         {/* header card */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, boxShadow: C.shadow, padding: '22px 20px 20px', marginBottom: 12 }}>
@@ -817,9 +823,63 @@ function DaySheet({ dates, draft, setDraft, saving, saveDay, onClose }) {
   )
 }
 
+function LoginScreen({ painter, pin, setPin, submitting, error, onSubmit }) {
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, padding: 14, display: 'grid', placeItems: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 430, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, boxShadow: C.shadow, overflow: 'hidden' }}>
+        <div style={{ padding: '24px 20px 18px', borderBottom: `1px solid ${C.border}`, background: 'linear-gradient(180deg, #f7f3ee 0%, #ffffff 100%)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 999, background: C.accentSoft, color: C.accent, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <Icon name="pin" size={13} color={C.accent} />
+            PIN Přihlášení
+          </div>
+          <h1 style={{ marginTop: 14, fontSize: 28, lineHeight: 1.05, color: C.text, letterSpacing: '-0.04em' }}>Malířský portál</h1>
+          <div style={{ marginTop: 8, fontSize: 15, color: C.textMid, lineHeight: 1.5 }}>
+            {painter?.name ? <>Přihlášení pro <strong style={{ color: C.text }}>{painter.name}</strong>.</> : 'Přihlášení do malířského portálu.'}
+          </div>
+        </div>
+
+        <form onSubmit={onSubmit} style={{ padding: 18, display: 'grid', gap: 14 }}>
+          <div>
+            <div style={{ fontSize: 12, color: C.textLight, marginBottom: 6 }}>Šestimístný PIN</div>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D+/g, '').slice(0, 6))}
+              placeholder="Např. 123456"
+              style={{ ...field(), textAlign: 'center', fontSize: 24, letterSpacing: '0.25em', fontWeight: 600 }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ padding: '12px 13px', borderRadius: 14, background: C.dangerSoft, color: C.danger, fontSize: 13, lineHeight: 1.5 }}>
+              {error}
+            </div>
+          )}
+
+          <button type="submit" disabled={submitting || pin.length < 6}
+            style={{ padding: '14px 16px', borderRadius: 14, border: 'none', background: C.accent, color: '#fff', fontSize: 15, fontFamily: "'Outfit', sans-serif", cursor: submitting ? 'default' : 'pointer', opacity: submitting || pin.length < 6 ? 0.65 : 1, fontWeight: 600 }}>
+            {submitting ? 'Přihlašuji…' : 'Přihlásit se'}
+          </button>
+
+          <div style={{ fontSize: 12, color: C.textLight, lineHeight: 1.6 }}>
+            Přístup už není vázaný na tajný odkaz. Po otevření své stránky se přihlásíte jen PINem.
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
-  const token = useMemo(() => new URLSearchParams(location.search).get('token') || '', [])
+  const slug = useMemo(() => {
+    const match = location.pathname.match(/\/maliri\/([^/?#]+)/)
+    return match ? decodeURIComponent(match[1]) : ''
+  }, [])
 
   const [state, setState] = useState({ loading: true, error: '', painter: null, availability: [] })
   const [offers, setOffers] = useState([])
@@ -832,6 +892,10 @@ function App() {
   const [respondingId, setRespondingId] = useState('')
   const [screen, setScreen] = useState('home')
   const [pushState, setPushState] = useState('unknown') // 'unknown'|'unsupported'|'default'|'granted'|'denied'
+  const [pin, setPin] = useState('')
+  const [authRequired, setAuthRequired] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [authSubmitting, setAuthSubmitting] = useState(false)
   const swReg = React.useRef(null)
 
   // Register service worker + check push permission
@@ -846,23 +910,69 @@ function App() {
   }, [])
 
   async function load() {
-    if (!token) {
+    if (!slug) {
       setState({
         loading: false,
-        error: 'Chybí přístupový token. Otevřete soukromý odkaz od dispečinku.',
+        error: 'Chybí adresa malíře. Otevřete stránku ve tvaru /maliri/jmeno.',
         painter: null,
         availability: [],
       })
       return
     }
-    const url = `/api/painter/portal?token=${encodeURIComponent(token)}`
+    const url = `/api/painter/portal?slug=${encodeURIComponent(slug)}`
     const r = await fetch(url)
     const d = await r.json()
+    if (r.status === 401) {
+      setOffers([])
+      setJobs([])
+      setPainterNote('')
+      setAuthRequired(true)
+      setAuthError('')
+      setState({ loading: false, error: '', painter: d.painter || null, availability: [] })
+      return
+    }
     if (!r.ok) { setState({ loading: false, error: d.error || 'Portál se nepodařilo načíst.', painter: null, availability: [] }); return }
+    setAuthRequired(false)
+    setAuthError('')
     setPainterNote(d.painter?.notes || '')
     setOffers(d.offers || [])
     setJobs(d.jobs || [])
     setState({ loading: false, error: '', painter: d.painter, availability: d.availability || [] })
+  }
+
+  async function loginPainter(e) {
+    e?.preventDefault?.()
+    setAuthSubmitting(true)
+    setAuthError('')
+    const r = await fetch('/api/painter/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, pin }),
+    })
+    const d = await r.json()
+    setAuthSubmitting(false)
+    if (!r.ok) {
+      setAuthError(d.error || 'Přihlášení se nepodařilo.')
+      return
+    }
+    setPin('')
+    setAuthRequired(false)
+    setPainterNote(d.painter?.notes || '')
+    setOffers(d.offers || [])
+    setJobs(d.jobs || [])
+    setState({ loading: false, error: '', painter: d.painter, availability: d.availability || [] })
+  }
+
+  async function logoutPainter() {
+    await fetch('/api/painter/logout', { method: 'POST' })
+    setOffers([])
+    setJobs([])
+    setPainterNote('')
+    setPin('')
+    setAuthRequired(true)
+    setAuthError('')
+    setScreen('home')
+    setState((prev) => ({ ...prev, availability: [] }))
   }
 
   async function handlePushToggle() {
@@ -884,12 +994,12 @@ function App() {
       await fetch('/api/painter/push-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub.toJSON(), token }),
+        body: JSON.stringify({ subscription: sub.toJSON() }),
       })
     } catch (e) { console.error('[push] subscribe failed:', e) }
   }
 
-  useEffect(() => { load() }, [token])
+  useEffect(() => { load() }, [slug])
 
   // Auto-refresh: při návratu do appky a každých 60 s na pozadí
   useEffect(() => {
@@ -897,7 +1007,7 @@ function App() {
     document.addEventListener('visibilitychange', onVisible)
     const timer = setInterval(() => { if (!document.hidden) load() }, 60000)
     return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(timer) }
-  }, [token])
+  }, [slug])
 
   const availabilityMap = useMemo(() => new Map((state.availability || []).map(r => [r.date, r])), [state.availability])
   const monthCells = useMemo(() => buildMonthCells(month, availabilityMap), [month, availabilityMap])
@@ -913,20 +1023,30 @@ function App() {
 
   async function save(payload, savingKey) {
     setSaving(savingKey)
-    const r = await fetch('/api/painter/availability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, ...payload }) })
+    const r = await fetch('/api/painter/availability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     const d = await r.json()
     setSaving('')
+    if (r.status === 401) {
+      setAuthRequired(true)
+      setAuthError(d.error || 'Přihlášení vypršelo. Přihlaste se znovu pomocí PINu.')
+      return false
+    }
     if (!r.ok) { setState(p => ({ ...p, error: d.error || 'Uložení se nepodařilo.' })); return false }
     setPainterNote(d.painter?.notes || '')
     setState(p => ({ ...p, error: '', painter: d.painter, availability: d.availability || p.availability }))
     return true
   }
 
-  async function respondOffer(offerToken, decision, estimatedDays) {
-    setRespondingId(offerToken + decision)
-    const r = await fetch('/api/painter/respond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: offerToken, decision, estimatedDays: estimatedDays || null }) })
+  async function respondOffer(offerId, decision, estimatedDays) {
+    setRespondingId(offerId + decision)
+    const r = await fetch('/api/painter/respond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ offerId, decision, estimatedDays: estimatedDays || null }) })
     const d = await r.json()
     setRespondingId('')
+    if (r.status === 401) {
+      setAuthRequired(true)
+      setAuthError(d.error || 'Přihlášení vypršelo. Přihlaste se znovu pomocí PINu.')
+      return
+    }
     if (!r.ok) { setState(p => ({ ...p, error: d.error || 'Reakci se nepodařilo uložit.' })); return }
     load()
   }
@@ -949,10 +1069,14 @@ function App() {
     return <div style={{ minHeight: '100vh', background: C.bg, display: 'grid', placeItems: 'center', color: C.textMid, fontFamily: "'Outfit', sans-serif", fontSize: 14 }}>Načítám…</div>
   }
 
+  if (authRequired) {
+    return <LoginScreen painter={state.painter} pin={pin} setPin={setPin} submitting={authSubmitting} error={authError} onSubmit={loginPainter} />
+  }
+
   return (
     <>
       {screen === 'home' && (
-        <HomeScreen painter={state.painter} offers={offers} jobs={jobs} error={state.error} onNav={setScreen} pushState={pushState} onPushToggle={handlePushToggle} />
+        <HomeScreen painter={state.painter} offers={offers} jobs={jobs} error={state.error} onNav={setScreen} pushState={pushState} onPushToggle={handlePushToggle} onLogout={logoutPainter} />
       )}
       {screen === 'nabidky' && (
         <NabidkyScreen offers={offers} respondingId={respondingId} respondOffer={respondOffer} onBack={() => setScreen('home')} />
