@@ -243,21 +243,17 @@ function App() {
           setFormData={setFormData}
           priceRange={priceRange}
         />
-        {selectedSlot && (
-          <PainterSection
-            selectedSlot={selectedSlot}
-            monthIdx={monthIdx}
-            onDetailClick={() => setIsPainterOpen(true)}
-          />
-        )}
-        {selectedSlot && (
+        <PainterSection
+          selectedSlot={selectedSlot}
+          monthIdx={monthIdx}
+          onDetailClick={() => setIsPainterOpen(true)}
+        />
         <OrderSection
           selectedSlot={selectedSlot}
           monthIdx={monthIdx}
           priceRange={priceRange}
           onOrderClick={() => setIsOrderOpen(true)}
-          />
-        )}
+        />
       </main>
       <SiteFooter />
 

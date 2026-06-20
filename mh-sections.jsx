@@ -293,7 +293,7 @@ function CalcSection({ formData, setFormData, priceRange }) {
 
 // ── MALÍŘ ─────────────────────────────────────────────────────
 function PainterSection({ selectedSlot }) {
-  if (!selectedSlot) return null;
+  const hasSelection = Boolean(selectedSlot);
   const painters = Object.values(PM);
 
   return (
@@ -302,8 +302,21 @@ function PainterSection({ selectedSlot }) {
         <SectionHead eyebrow="Malíř" title="Přiřazení malíře" />
         <Card style={{ padding: '28px 32px' }}>
           <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, margin: '0 0 24px', lineHeight: 1.65, textAlign: 'center' }}>
-            Dispečink vybere nejvhodnějšího malíře podle termínu, lokality a rozsahu práce. Potvrdíme vám ho po přijetí zakázky.
+            {hasSelection
+              ? 'Dispečink vybere nejvhodnějšího malíře podle termínu, lokality a rozsahu práce. Potvrdíme vám ho po přijetí zakázky.'
+              : 'Malíře přiděluje dispečink až po výběru termínu a odeslání poptávky. Níže vidíte tým, ze kterého vybíráme podle reálné dostupnosti.'}
           </p>
+          {!hasSelection && (
+            <div style={{ margin: '0 0 24px', padding: '18px 20px', borderRadius: T.cr, border: `1px solid ${T.border}`, background: '#f7f4f0', textAlign: 'center' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.textLight, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Nejdřív termín</div>
+              <p style={{ fontSize: 14, fontWeight: 300, color: T.textMid, lineHeight: 1.6, margin: '0 0 14px' }}>
+                Jakmile v kalendáři vyberete volný den, ukážeme navazující objednávku pro daný termín.
+              </p>
+              <a href="#terminy" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '10px 16px', borderRadius: T.br, background: T.accent, color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 400, boxShadow: `0 10px 24px ${T.accentShadow}` }}>
+                Vybrat termín
+              </a>
+            </div>
+          )}
           <div className="mh-painter-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
             {painters.map((p) => (
               <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
@@ -322,13 +335,20 @@ function PainterSection({ selectedSlot }) {
 
 // ── OBJEDNÁVKA ────────────────────────────────────────────────
 function OrderSection({ selectedSlot, monthIdx, priceRange, onOrderClick }) {
-  if (!selectedSlot) return null;
-  const items = [
-    ['Datum',            monthIdx != null ? dayLbl(monthIdx, selectedSlot.day) : dayLbl(0, selectedSlot.day)],
-    ['Čas',              selectedSlot.time],
-    ['Orientační cena',  fmtRange(priceRange)],
-    ['Malíř',            selectedSlot.painter.name],
-  ];
+  const hasSelection = Boolean(selectedSlot);
+  const items = hasSelection
+    ? [
+        ['Datum', monthIdx != null ? dayLbl(monthIdx, selectedSlot.day) : dayLbl(0, selectedSlot.day)],
+        ['Čas', selectedSlot.time],
+        ['Orientační cena', fmtRange(priceRange)],
+        ['Malíř', selectedSlot.painter.name],
+      ]
+    : [
+        ['Datum', 'Vyberte termín'],
+        ['Čas', 'Podle dne'],
+        ['Orientační cena', fmtRange(priceRange)],
+        ['Malíř', 'Přidělí dispečink'],
+      ];
   return (
     <section id="objednavka" style={{ padding: '0 0 44px' }}>
       <div className="mh-site-pad" style={{ maxWidth: 1280, margin: '0 auto' }}>
@@ -344,10 +364,18 @@ function OrderSection({ selectedSlot, monthIdx, priceRange, onOrderClick }) {
           </div>
           <div style={{ padding: '24px 28px' }}>
             <p style={{ fontSize: 15, fontWeight: 300, color: T.textMid, lineHeight: 1.5, margin: '0 0 22px', textAlign: 'center' }}>
-              Vyplníte kontaktní údaje a zakázka odejde dispečinku. Obratem vám potvrdíme přijetí a jakmile malíř zakázku přijme, ozve se vám napřímo.
+              {hasSelection
+                ? 'Vyplníte kontaktní údaje a zakázka odejde dispečinku. Obratem vám potvrdíme přijetí a jakmile malíř zakázku přijme, ozve se vám napřímo.'
+                : 'Objednávka je připravená hned pod kalendářem. Nejdřív ale potřebujeme vybraný volný den, abychom mohli navázat konkrétní poptávku.'}
             </p>
-            <button type="button" onClick={onOrderClick} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
-              Odeslat objednávku
+            <button type="button" onClick={() => {
+              if (hasSelection) {
+                onOrderClick();
+                return;
+              }
+              document.getElementById('terminy')?.scrollIntoView({ behavior: 'smooth' });
+            }} style={{ width: '100%', padding: '14px', borderRadius: T.br, background: T.accent, color: '#fff', fontSize: 15, fontWeight: 400, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", boxShadow: `0 10px 24px ${T.accentShadow}`, border: 'none', letterSpacing: '-0.01em' }}>
+              {hasSelection ? 'Odeslat objednávku' : 'Vybrat termín v kalendáři'}
             </button>
           </div>
         </Card>
