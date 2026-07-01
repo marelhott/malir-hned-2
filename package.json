@@ -9,8 +9,9 @@
     "reset:painter-pins": "node scripts/reset-painter-pins.mjs"
   },
   "dependencies": {
+    "@vercel/functions": "^2.2.13",
     "@supabase/supabase-js": "^2.57.2",
-    "nodemailer": "^9.0.0",
+    "nodemailer": "^9.0.1",
     "web-push": "^3.6.7"
   },
   "devDependencies": {

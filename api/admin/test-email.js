@@ -1,7 +1,10 @@
+import { requireAdmin } from '../../lib/server/auth.js'
 import { sendJson, sendMethodNotAllowed } from '../../lib/server/http.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return sendMethodNotAllowed(res, ['GET'])
+  const admin = requireAdmin(req)
+  if (!admin) return sendJson(res, 401, { error: 'Unauthorized' })
 
   const key = process.env.RESEND_API_KEY || ''
   const from = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
@@ -25,7 +28,7 @@ export default async function handler(req, res) {
       resend_status: r.status,
       resend_ok: r.ok,
       resend_response: data,
-      env: { key_prefix: key.slice(0, 8) + '...', from, to },
+      env: { from, to, requested_by: admin.email },
     })
   } catch (err) {
     return sendJson(res, 500, { error: err.message })

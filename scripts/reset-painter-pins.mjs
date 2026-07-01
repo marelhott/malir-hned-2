@@ -39,12 +39,18 @@ function randomPin() {
 }
 
 async function main() {
-  const env = parseEnv(await readFile(envFile, 'utf8'))
+  let fileEnv = {}
+  try {
+    fileEnv = parseEnv(await readFile(envFile, 'utf8'))
+  } catch {
+    fileEnv = {}
+  }
+  const env = { ...fileEnv, ...process.env }
   const adminEmail = env.ADMIN_EMAIL
   const adminPassword = env.ADMIN_PASSWORD
-  const baseUrl = (env.APP_BASE_URL || 'https://malirhned.cz').replace(/\/$/, '')
+  const baseUrl = String(env.APP_BASE_URL || 'https://malirhned.cz').replace(/\/$/, '')
   if (!adminEmail || !adminPassword) {
-    throw new Error('V .env.dev chybí ADMIN_EMAIL nebo ADMIN_PASSWORD.')
+    throw new Error('Chybí ADMIN_EMAIL nebo ADMIN_PASSWORD v prostředí.')
   }
 
   const allowedNames = new Set(DEFAULT_PAINTERS.map((item) => item.name))

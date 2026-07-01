@@ -40,12 +40,78 @@ function HeroSection() {
           </a>
         </div>
 
-        {/* Vpravo — obrázek malíře */}
-        <div className="mh-hero-img" style={{ position: 'relative', background: '#ffffff', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
-          <img
-            src="uploads/hero.png"
-            alt="Malíř Hned – jak to funguje"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center', display: 'block' }}
+        {/* Vpravo — hero video */}
+        <div className="mh-hero-img" style={{ position: 'relative', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <video
+            src="uploads/hero-video.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onLoadedMetadata={(event) => {
+              event.currentTarget.playbackRate = 0.7;
+            }}
+            onPlay={(event) => {
+              event.currentTarget.playbackRate = 0.7;
+            }}
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: '-4%',
+              width: '108%',
+              height: '108%',
+              objectFit: 'cover',
+              objectPosition: 'center 44%',
+              display: 'block',
+              filter: 'blur(30px) saturate(0.9) brightness(1.04)',
+              opacity: 0.48,
+              transform: 'scale(1.03)',
+            }}
+          />
+          <video
+            src="uploads/hero-video.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onLoadedMetadata={(event) => {
+              event.currentTarget.playbackRate = 0.7;
+            }}
+            onPlay={(event) => {
+              event.currentTarget.playbackRate = 0.7;
+            }}
+            aria-label="Malíř Hned – ukázka malování"
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              objectPosition: 'center 44%',
+              display: 'block',
+              background: 'transparent',
+              transform: 'scale(0.982)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.88) 9%, #000 18%, #000 82%, rgba(0,0,0,0.88) 91%, transparent 100%)',
+              maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.88) 9%, #000 18%, #000 82%, rgba(0,0,0,0.88) 91%, transparent 100%)',
+            }}
+          />
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 2,
+              pointerEvents: 'none',
+              background: `
+                radial-gradient(circle at top left, rgba(255,255,255,0.86) 0, rgba(255,255,255,0.46) 10%, rgba(255,255,255,0) 22%),
+                radial-gradient(circle at top right, rgba(255,255,255,0.86) 0, rgba(255,255,255,0.46) 10%, rgba(255,255,255,0) 22%),
+                radial-gradient(circle at bottom left, rgba(255,255,255,0.86) 0, rgba(255,255,255,0.46) 10%, rgba(255,255,255,0) 22%),
+                radial-gradient(circle at bottom right, rgba(255,255,255,0.86) 0, rgba(255,255,255,0.46) 10%, rgba(255,255,255,0) 22%),
+                linear-gradient(to right, rgba(255,255,255,0.82) 0, rgba(255,255,255,0.22) 6%, rgba(255,255,255,0.02) 12%, rgba(255,255,255,0) 18%, rgba(255,255,255,0) 82%, rgba(255,255,255,0.02) 88%, rgba(255,255,255,0.22) 94%, rgba(255,255,255,0.82) 100%)
+              `,
+            }}
           />
         </div>
       </div>

@@ -14,51 +14,7 @@ export default async function handler(req, res) {
 
   try {
     const store = getStore()
-    const state = await store.readState()
-    const now = new Date()
-    let expired = 0
-
-    for (const offer of state.job_offers) {
-      if (offer.status !== 'pending') continue
-      if (!offer.expires_at) continue
-      if (new Date(offer.expires_at) > now) continue
-
-      offer.status = 'expired'
-      offer.updated_at = now.toISOString()
-
-      // Reset job to ready_to_offer so admin sees it needs re-offering
-      const job = state.jobs.find((j) => j.id === offer.job_id)
-      if (job && job.status === 'offered_to_painter') {
-        job.status = 'ready_to_offer'
-        job.assigned_painter_id = null
-        job.updated_at = now.toISOString()
-        for (const block of state.painter_capacity_blocks.filter((row) =>
-          row.job_id === job.id &&
-          row.status === 'active' &&
-          row.block_type === 'temporary_hold'
-        )) {
-          block.status = 'released'
-          block.updated_at = now.toISOString()
-        }
-        state.job_events.push({
-          id: crypto.randomUUID(),
-          job_id: job.id,
-          offer_id: offer.id,
-          actor_type: 'system',
-          actor_id: null,
-          actor_label: 'System',
-          event_type: 'offer_expired',
-          payload: { painterId: offer.painter_id, painterName: offer.painter_name },
-          created_at: now.toISOString(),
-        })
-      }
-      expired++
-    }
-
-    if (expired > 0) {
-      await store.writeState(state)
-    }
-
+    const { expired } = await store.expirePendingOffers()
     return sendJson(res, 200, { ok: true, expired })
   } catch (error) {
     return sendJson(res, 500, { error: error.message })
