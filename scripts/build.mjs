@@ -192,6 +192,89 @@ function buildSeoShellStyles() {
   </style>`
 }
 
+function buildMaintenanceStyles() {
+  return `<style>
+    .mh-hold-shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      font-family: 'Outfit', sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.78), rgba(255,255,255,0) 28%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.74), rgba(255,255,255,0) 26%),
+        linear-gradient(180deg, #efe9df 0%, #ece4d7 100%);
+    }
+    .mh-hold-card {
+      width: min(760px, 100%);
+      background: rgba(255,255,255,0.95);
+      border: 1px solid rgba(175,165,148,0.28);
+      border-radius: 32px;
+      box-shadow: 0 2px 8px rgba(20,14,6,0.04), 0 28px 80px rgba(20,14,6,0.1);
+      padding: 48px 36px;
+      text-align: center;
+    }
+    .mh-hold-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      margin-bottom: 22px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(175,165,148,0.28);
+      color: #2a7a4e;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .mh-hold-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #2a7a4e;
+    }
+    .mh-hold-card h1 {
+      margin: 0 0 16px;
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      font-weight: 300;
+      color: #18170f;
+    }
+    .mh-hold-card p {
+      margin: 0 auto;
+      max-width: 520px;
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.7;
+      color: #5c5449;
+      font-weight: 300;
+    }
+    @media (max-width: 720px) {
+      .mh-hold-card {
+        padding: 38px 24px;
+        border-radius: 26px;
+      }
+    }
+  </style>`
+}
+
+function buildMaintenanceShell() {
+  return `
+    <main class="mh-hold-shell">
+      <section class="mh-hold-card" aria-label="Dočasná úvodní stránka">
+        <div class="mh-hold-kicker">
+          <span class="mh-hold-dot"></span>
+          Malíř Hned
+        </div>
+        <h1>Chystáme pro vás něco nového.</h1>
+        <p>Na webu právě pracujeme. Děkujeme za strpení, brzy se vrátíme s novou verzí.</p>
+      </section>
+    </main>
+  `
+}
+
 function buildHomeSeoShell() {
   return `
     <main class="mh-seo-shell">
@@ -364,36 +447,18 @@ Sitemap: ${siteUrl}/sitemap.xml
 }
 
 async function buildHomePage() {
-  const [html, dataJsx, uiJsx, sectionsJsx] = await Promise.all([
-    readFile(path.join(rootDir, 'Malir Hned v2.html'), 'utf8'),
-    readFile(path.join(rootDir, 'mh-data.jsx'), 'utf8'),
-    readFile(path.join(rootDir, 'mh-ui.jsx'), 'utf8'),
-    readFile(path.join(rootDir, 'mh-sections.jsx'), 'utf8'),
-  ])
-
-  const appMatch = html.match(/<script type="text\/babel">([\s\S]*?)<\/script>\s*<\/body>/)
-  if (!appMatch) throw new Error('Nenalezen inline app script v Malir Hned v2.html')
-
-  const combinedSource = [
-    dataJsx,
-    `{\n${uiJsx}\n}`,
-    `{\n${sectionsJsx}\n}`,
-    `{\n${appMatch[1].trim()}\n}`,
-  ].join('\n\n')
-
-  await compileJs(combinedSource, 'home.js')
+  const html = await readFile(path.join(rootDir, 'Malir Hned v2.html'), 'utf8')
 
   let cleanedHtml = stripBabelScripts(html)
-  cleanedHtml = upsertTitle(cleanedHtml, 'Malíř pokojů Praha a Středočeský kraj | Malíř Hned')
+  cleanedHtml = upsertTitle(cleanedHtml, 'Chystáme pro vás něco nového | Malíř Hned')
   cleanedHtml = injectIntoHead(cleanedHtml, buildMetaTags({
-    title: 'Malíř pokojů Praha a Středočeský kraj | Malíř Hned',
-    description: 'Objednejte malování bytu nebo pokoje online. Vyberete termín, dispečink přidělí vhodného malíře a potvrzená zakázka se propíše do živého kalendáře.',
+    title: 'Chystáme pro vás něco nového | Malíř Hned',
+    description: 'Web Malíř Hned je dočasně v úpravě. Brzy se vrátíme s novou verzí.',
     canonical: `${siteUrl}/`,
+    robots: 'noindex,nofollow,noarchive',
   }))
-  cleanedHtml = injectIntoHead(cleanedHtml, buildSeoShellStyles())
-  cleanedHtml = injectIntoHead(cleanedHtml, buildHomeStructuredData())
-  cleanedHtml = injectIntoRoot(cleanedHtml, buildHomeSeoShell())
-  cleanedHtml = injectBundle(cleanedHtml, 'home.js')
+  cleanedHtml = injectIntoHead(cleanedHtml, buildMaintenanceStyles())
+  cleanedHtml = injectIntoRoot(cleanedHtml, buildMaintenanceShell())
   await writeFile(path.join(distDir, 'index.html'), cleanedHtml, 'utf8')
   await writeFile(path.join(distDir, 'Malir Hned v2.html'), cleanedHtml, 'utf8')
 }
